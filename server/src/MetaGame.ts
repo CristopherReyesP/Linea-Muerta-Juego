@@ -260,31 +260,50 @@ export class MetaGame {
     const info = this.selectedMinigames[this.currentMinigameIndex]
 
     if (info.id === 'cooperar-traicionar') {
-      // Winner of cooperar/traicionar gets +1 global
-      if (result.winnerId) {
-        const mp = this.metaPlayers.get(result.winnerId)
-        if (mp) mp.addWin()
+      // Global scoring rule:
+      // - Every shadow gets -1 global.
+      // - If there are players with positive balance, all players tied at highest balance get +1 global.
+      // - If nobody has positive balance, no +1 is awarded.
+      const coopPlayers = Array.from(this.getMinigamePlayers().values())
+
+      for (const p of coopPlayers) {
+        if (p.isShadow) {
+          const mp = this.metaPlayers.get(p.id)
+          if (mp) mp.adjustScore(-1)
+        }
+      }
+
+      const positive = coopPlayers.filter((p) => p.balance > 0)
+      if (positive.length > 0) {
+        const maxBalance = Math.max(...positive.map((p) => p.balance))
+        const topPlayers = positive.filter((p) => p.balance === maxBalance)
+        for (const p of topPlayers) {
+          const mp = this.metaPlayers.get(p.id)
+          if (mp) mp.addWin()
+        }
       }
     } else if (info.id === 'votacion-sobra') {
-      // Most voted loses 1 global point
+      // Most voted loses 1 global point (ties affect all tied players)
       const minigame = this.currentMinigame as VotacionSobra
-      const mostVotedId = minigame.getMostVotedId()
-      if (mostVotedId) {
+      const mostVotedIds = minigame.getMostVotedIds()
+      for (const mostVotedId of mostVotedIds) {
         const mp = this.metaPlayers.get(mostVotedId)
         if (mp) mp.adjustScore(-1)
       }
     } else if (info.id === 'votacion-merece') {
-      // Most voted gains 1 global point
+      // Most voted gains 1 global point (ties affect all tied players)
       const minigame = this.currentMinigame as VotacionMerece
-      const mostVotedId = minigame.getMostVotedId()
-      if (mostVotedId) {
+      const mostVotedIds = minigame.getMostVotedIds()
+      for (const mostVotedId of mostVotedIds) {
         const mp = this.metaPlayers.get(mostVotedId)
         if (mp) mp.addWin()
       }
     } else if (info.id === 'adivina-linea') {
-      // Winner (most correct guesses) gets +1 global
-      if (result.winnerId) {
-        const mp = this.metaPlayers.get(result.winnerId)
+      // Winners (most correct guesses) get +1 global. Ties award all tied players.
+      const minigame = this.currentMinigame as AdivinaLinea
+      const topScorerIds = minigame.getTopScorerIds()
+      for (const winnerId of topScorerIds) {
+        const mp = this.metaPlayers.get(winnerId)
         if (mp) mp.addWin()
       }
     } else if (info.id === 'la-bomba') {

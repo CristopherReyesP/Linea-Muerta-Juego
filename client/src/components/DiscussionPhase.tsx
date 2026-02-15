@@ -10,6 +10,8 @@ export function DiscussionPhase({ onContinue }: Props) {
   const globalScoreboard = useGameStore(s => s.globalScoreboard)
   const playerId = useGameStore(s => s.playerId)
   const hostId = useGameStore(s => s.hostId)
+  const micMuted = useGameStore(s => s.micMuted)
+  const toggleMic = useGameStore(s => s.toggleMic)
 
   const isHost = playerId === hostId
 
@@ -125,32 +127,59 @@ export function DiscussionPhase({ onContinue }: Props) {
         ))}
       </motion.div>
 
-      {/* Open voice indicator */}
+      {/* Open voice indicator + mic toggle */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
         style={{
           display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <div style={{
+          display: 'flex',
           alignItems: 'center',
           gap: 8,
           padding: '8px 16px',
           border: '1px solid var(--green-dim)',
           background: 'rgba(0,255,65,0.05)',
-        }}
-      >
-        <div style={{
-          width: 8,
-          height: 8,
-          borderRadius: '50%',
-          background: 'var(--green-neon)',
-          boxShadow: '0 0 8px var(--green-neon)',
-        }}
-        className="pulse"
-        />
-        <span style={{ fontSize: 11, color: 'var(--green-dim)', letterSpacing: 1 }}>
-          VOZ ABIERTA - TODOS PUEDEN HABLAR
-        </span>
+        }}>
+          <div style={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: 'var(--green-neon)',
+            boxShadow: '0 0 8px var(--green-neon)',
+          }}
+          className="pulse"
+          />
+          <span style={{ fontSize: 11, color: 'var(--green-dim)', letterSpacing: 1 }}>
+            VOZ ABIERTA - TODOS PUEDEN HABLAR
+          </span>
+        </div>
+
+        <button
+          onClick={toggleMic}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 20px',
+            border: `1px solid ${micMuted ? 'var(--red-danger)' : 'var(--green-dim)'}`,
+            background: micMuted ? 'rgba(255,0,0,0.1)' : 'rgba(0,255,65,0.05)',
+            color: micMuted ? 'var(--red-danger)' : 'var(--green-dim)',
+            cursor: 'pointer',
+            fontSize: 11,
+            letterSpacing: 1,
+            fontFamily: 'inherit',
+          }}
+        >
+          <span style={{ fontSize: 16 }}>{micMuted ? '\u{1F507}' : '\u{1F3A4}'}</span>
+          {micMuted ? 'MICROFONO APAGADO' : 'MICROFONO ENCENDIDO'}
+        </button>
       </motion.div>
 
       {/* Next minigame preview */}

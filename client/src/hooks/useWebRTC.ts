@@ -24,12 +24,19 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
   const animFrameRef = useRef<number>(0)
   const remoteStreamRef = useRef<MediaStream | null>(null)
 
+  // Multi-peer refs for open voice (discussion phase)
+  const multiPeerRef = useRef<Map<string, RTCPeerConnection>>(new Map())
+  const multiAudioRef = useRef<Map<string, HTMLAudioElement>>(new Map())
+  const multiStreamRef = useRef<MediaStream | null>(null)
+
   const activeCallPeerId = useGameStore(s => s.activeCallPeerId)
   const playerId = useGameStore(s => s.playerId)
   const shadowInterference = useGameStore(s => s.shadowInterference)
   const voiceDistortion = useGameStore(s => s.voiceDistortion)
   const activeMinigameId = useGameStore(s => s.activeMinigameId)
   const playerVolume = useGameStore(s => s.playerVolume)
+  const openVoicePlayerIds = useGameStore(s => s.openVoicePlayerIds)
+  const micMuted = useGameStore(s => s.micMuted)
 
   const cleanup = useCallback(() => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
@@ -54,6 +61,20 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
     analyserRef.current = null
     setAudioData(new Uint8Array(0))
     setIsSpeaking(false)
+  }, [])
+
+  const cleanupMultiPeer = useCallback(() => {
+    multiPeerRef.current.forEach(pc => pc.close())
+    multiPeerRef.current.clear()
+    multiAudioRef.current.forEach(audio => {
+      audio.srcObject = null
+      audio.remove()
+    })
+    multiAudioRef.current.clear()
+    if (multiStreamRef.current) {
+      multiStreamRef.current.getTracks().forEach(t => t.stop())
+      multiStreamRef.current = null
+    }
   }, [])
 
   const startAudioAnalysis = useCallback((stream: MediaStream) => {
@@ -133,16 +154,22 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
     }
   }, [cleanup, playerVolume, socketRef, startAudioAnalysis])
 
-  // Listen for WebRTC signaling
+  // Listen for WebRTC signaling (supports both 1-to-1 and multi-peer)
   useEffect(() => {
     const socket = socketRef.current
     if (!socket) return
 
+    const findPc = (fromId: string): RTCPeerConnection | null => {
+      // Check multi-peer map first, then single-peer ref
+      return multiPeerRef.current.get(fromId) ?? peerRef.current
+    }
+
     const handleOffer = async ({ fromId, offer }: { fromId: string; offer: RTCSessionDescriptionInit }) => {
-      if (!peerRef.current) {
+      let pc: RTCPeerConnection | null | undefined = multiPeerRef.current.get(fromId)
+      if (!pc && !peerRef.current) {
         await setupPeerConnection(false, fromId)
       }
-      const pc = peerRef.current
+      pc = multiPeerRef.current.get(fromId) ?? peerRef.current
       if (!pc) return
 
       await pc.setRemoteDescription(new RTCSessionDescription(offer))
@@ -155,14 +182,14 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
       })
     }
 
-    const handleAnswer = async ({ answer }: { fromId: string; answer: RTCSessionDescriptionInit }) => {
-      const pc = peerRef.current
+    const handleAnswer = async ({ fromId, answer }: { fromId: string; answer: RTCSessionDescriptionInit }) => {
+      const pc = findPc(fromId)
       if (!pc) return
       await pc.setRemoteDescription(new RTCSessionDescription(answer))
     }
 
-    const handleCandidate = async ({ candidate }: { fromId: string; candidate: RTCIceCandidateInit }) => {
-      const pc = peerRef.current
+    const handleCandidate = async ({ fromId, candidate }: { fromId: string; candidate: RTCIceCandidateInit }) => {
+      const pc = findPc(fromId)
       if (!pc) return
       await pc.addIceCandidate(new RTCIceCandidate(candidate))
     }
@@ -188,6 +215,104 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
       cleanup()
     }
   }, [activeCallPeerId, playerId, setupPeerConnection, cleanup])
+
+  // Multi-peer: open voice during discussion phase
+  useEffect(() => {
+    if (!playerId || openVoicePlayerIds.length === 0) {
+      cleanupMultiPeer()
+      return
+    }
+
+    const otherPeers = openVoicePlayerIds.filter(id => id !== playerId)
+    if (otherPeers.length === 0) {
+      cleanupMultiPeer()
+      return
+    }
+
+    let cancelled = false
+
+    const setupMultiPeer = async () => {
+      try {
+        // Get mic stream (shared for all peers)
+        if (!multiStreamRef.current) {
+          multiStreamRef.current = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+          })
+        }
+        if (cancelled) return
+
+        const stream = multiStreamRef.current!
+        const audioTrack = stream.getAudioTracks()[0]
+
+        for (const peerId of otherPeers) {
+          if (cancelled) return
+          if (multiPeerRef.current.has(peerId)) continue
+
+          const pc = new RTCPeerConnection(ICE_SERVERS)
+          multiPeerRef.current.set(peerId, pc)
+
+          pc.addTrack(audioTrack, stream)
+
+          pc.ontrack = (event) => {
+            const audio = new Audio()
+            audio.srcObject = event.streams[0]
+            audio.volume = playerVolume
+            audio.play().catch(() => {})
+            multiAudioRef.current.set(peerId, audio)
+          }
+
+          pc.onicecandidate = (event) => {
+            if (event.candidate) {
+              socketRef.current?.emit('webrtc_ice_candidate', {
+                targetId: peerId,
+                candidate: event.candidate.toJSON()
+              })
+            }
+          }
+
+          // Lower ID initiates
+          const isInitiator = playerId < peerId
+          if (isInitiator) {
+            const offer = await pc.createOffer()
+            await pc.setLocalDescription(offer)
+            socketRef.current?.emit('webrtc_offer', {
+              targetId: peerId,
+              offer: pc.localDescription!
+            })
+          }
+        }
+      } catch (err) {
+        console.error('Multi-peer WebRTC setup failed:', err)
+      }
+    }
+
+    setupMultiPeer()
+
+    return () => {
+      cancelled = true
+      cleanupMultiPeer()
+    }
+  }, [openVoicePlayerIds, playerId, playerVolume, socketRef, cleanupMultiPeer])
+
+  // Update volume on multi-peer audio elements
+  useEffect(() => {
+    multiAudioRef.current.forEach(audio => {
+      audio.volume = playerVolume
+    })
+  }, [playerVolume])
+
+  // Mute/unmute mic for multi-peer open voice
+  useEffect(() => {
+    if (multiStreamRef.current) {
+      multiStreamRef.current.getAudioTracks().forEach(t => {
+        t.enabled = !micMuted
+      })
+    }
+  }, [micMuted])
 
   const buildProcessedOutgoingTrack = useCallback(async (inputStream: MediaStream): Promise<MediaStreamTrack | null> => {
     const ctx = new AudioContext()
@@ -230,6 +355,10 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
     compressor.attack.value = 0.002
     compressor.release.value = 0.2
 
+    // Makeup gain to avoid near-silent processed voice in some devices/browsers.
+    const postGain = ctx.createGain()
+    postGain.gain.value = 1.8
+
     let disguiseNode: AudioWorkletNode | null = null
     try {
       await ctx.audioWorklet.addModule('/audio/voice-disguise-worklet.js')
@@ -267,7 +396,8 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
       waveshaper.connect(amGain)
     }
     amGain.connect(compressor)
-    compressor.connect(destination)
+    compressor.connect(postGain)
+    postGain.connect(destination)
 
     const track = destination.stream.getAudioTracks()[0] ?? null
     if (!track) {
@@ -276,6 +406,7 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
       outgoingFxCtxRef.current = null
       return null
     }
+    track.enabled = true
     return track
   }, [])
 
@@ -285,7 +416,11 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
     if (!sender || !rawTrack) return
 
     if (!enabled) {
-      await sender.replaceTrack(rawTrack)
+      try {
+        await sender.replaceTrack(rawTrack)
+      } catch {
+        // keep current track if replace fails
+      }
       if (localProcessedTrackRef.current) {
         localProcessedTrackRef.current.stop()
         localProcessedTrackRef.current = null
@@ -301,7 +436,18 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
       localProcessedTrackRef.current = await buildProcessedOutgoingTrack(localStreamRef.current)
     }
     if (localProcessedTrackRef.current) {
-      await sender.replaceTrack(localProcessedTrackRef.current)
+      try {
+        await sender.replaceTrack(localProcessedTrackRef.current)
+        return
+      } catch {
+        // fallback below
+      }
+    }
+    // Fallback safety: never leave sender in a broken/silent state.
+    try {
+      await sender.replaceTrack(rawTrack)
+    } catch {
+      // ignore
     }
   }, [buildProcessedOutgoingTrack])
 
@@ -315,8 +461,11 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
   useEffect(() => {
     if (remoteAudioRef.current) {
       remoteAudioRef.current.volume = playerVolume
+      if (activeCallPeerId && remoteAudioRef.current.srcObject) {
+        void remoteAudioRef.current.play().catch(() => {})
+      }
     }
-  }, [playerVolume, voiceDistortion])
+  }, [playerVolume, voiceDistortion, activeCallPeerId])
 
   // Apply audio distortion when shadow interference is active
   useEffect(() => {

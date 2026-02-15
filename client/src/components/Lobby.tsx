@@ -7,6 +7,7 @@ import lobbyImage from '../../lobby.png'
 import { PlayerState, type PlayerData } from '../types'
 
 type LobbyView = 'welcome' | 'create' | 'join'
+type CustomizeTab = 'masks' | 'accessories'
 
 interface Props {
   onCreateGame: (name: string, avatarId?: string, avatarColor?: string, accessoryId?: string) => void
@@ -67,6 +68,7 @@ const accessoryOptions = [
   { id: 'pet-cat', premium: false },
   { id: 'angel-wings', premium: true },
   { id: 'butterfly-wings', premium: true },
+  { id: 'straw-hat', premium: true },
 ]
 
 const inputStyle: React.CSSProperties = {
@@ -98,6 +100,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
   const [selectedAvatarId, setSelectedAvatarId] = useState('neon-eyes')
   const [selectedAvatarColor, setSelectedAvatarColor] = useState('#00e5ff')
   const [selectedAccessoryId, setSelectedAccessoryId] = useState('none')
+  const [customizeTab, setCustomizeTab] = useState<CustomizeTab>('masks')
   const [devMode, setDevMode] = useState(false)
   const [selectedMinigameIds, setSelectedMinigameIds] = useState<string[]>([])
   const gameId = useGameStore(s => s.gameId)
@@ -188,6 +191,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
   const isSelectedAccessoryPremium = !!selectedAccessory?.premium
   const selectedAvatar = avatarOptions.find((a) => a.id === selectedAvatarId)
   const isSelectedAvatarPremium = !!selectedAvatar?.premium
+  const hasPremiumSelection = isSelectedAvatarPremium || isSelectedAccessoryPremium
 
   return (
     <div style={{
@@ -345,11 +349,11 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 8,
-                    border: `1px solid ${isSelectedAvatarPremium ? 'rgba(255, 214, 102, 0.78)' : '#223'}`,
-                    background: isSelectedAvatarPremium
+                    border: `1px solid ${hasPremiumSelection ? 'rgba(255, 214, 102, 0.78)' : '#223'}`,
+                    background: hasPremiumSelection
                       ? 'linear-gradient(180deg, rgba(52,34,8,0.33), rgba(10,12,20,0.48))'
                       : 'rgba(0,0,0,0.35)',
-                    boxShadow: isSelectedAvatarPremium ? '0 0 16px rgba(255,214,102,0.22)' : undefined,
+                    boxShadow: hasPremiumSelection ? '0 0 16px rgba(255,214,102,0.22)' : undefined,
                     padding: 10,
                   }}>
                     <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2, textAlign: 'center' }}>
@@ -358,48 +362,84 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                       <PlayerAvatar player={selectedAvatarPreview} size={74} showName={false} showState={false} />
                     </div>
-                    <div style={avatarGridStyle}>
-                      {avatarOptions.map((avatar) => (
-                        <button
-                          key={avatar.id}
-                          type="button"
-                          onClick={() => setSelectedAvatarId(avatar.id)}
-                          style={{
-                            border: `1px solid ${
-                              selectedAvatarId === avatar.id
-                                ? (avatar.premium ? '#ffd666' : 'var(--cyan)')
-                                : (avatar.premium ? 'rgba(255,214,102,0.5)' : '#333')
-                            }`,
-                            background: selectedAvatarId === avatar.id
-                              ? (avatar.premium ? 'rgba(255,214,102,0.18)' : 'rgba(0,229,255,0.12)')
-                              : (avatar.premium ? 'rgba(255,214,102,0.08)' : 'rgba(255,255,255,0.02)'),
-                            padding: '6px 4px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <PlayerAvatar
-                            player={{ ...selectedAvatarPreview, id: `opt-${avatar.id}`, avatarId: avatar.id }}
-                            size={42}
-                            showName={false}
-                            showState={false}
-                          />
-                        </button>
-                      ))}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => setCustomizeTab('masks')}
+                        style={{
+                          border: `1px solid ${customizeTab === 'masks' ? 'var(--cyan)' : '#333'}`,
+                          background: customizeTab === 'masks' ? 'rgba(0,229,255,0.14)' : 'rgba(255,255,255,0.03)',
+                          color: customizeTab === 'masks' ? 'var(--cyan)' : 'var(--gray-text)',
+                          fontSize: 10,
+                          letterSpacing: 1.6,
+                          padding: '6px 8px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        MASCARAS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCustomizeTab('accessories')}
+                        style={{
+                          border: `1px solid ${customizeTab === 'accessories' ? 'var(--cyan)' : '#333'}`,
+                          background: customizeTab === 'accessories' ? 'rgba(0,229,255,0.14)' : 'rgba(255,255,255,0.03)',
+                          color: customizeTab === 'accessories' ? 'var(--cyan)' : 'var(--gray-text)',
+                          fontSize: 10,
+                          letterSpacing: 1.6,
+                          padding: '6px 8px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        ACCESORIOS
+                      </button>
                     </div>
-                    {isSelectedAvatarPremium && (
-                      <div style={{
-                        marginTop: 2,
-                        textAlign: 'center',
-                        fontSize: 10,
-                        letterSpacing: 2,
-                        color: '#ffd666',
-                        textShadow: '0 0 10px rgba(255,214,102,0.35)',
-                      }}>
-                        PREMIUM
-                      </div>
+                    {customizeTab === 'masks' && (
+                      <>
+                        <div style={avatarGridStyle}>
+                          {avatarOptions.map((avatar) => (
+                            <button
+                              key={avatar.id}
+                              type="button"
+                              onClick={() => setSelectedAvatarId(avatar.id)}
+                              style={{
+                                border: `1px solid ${
+                                  selectedAvatarId === avatar.id
+                                    ? (avatar.premium ? '#ffd666' : 'var(--cyan)')
+                                    : (avatar.premium ? 'rgba(255,214,102,0.5)' : '#333')
+                                }`,
+                                background: selectedAvatarId === avatar.id
+                                  ? (avatar.premium ? 'rgba(255,214,102,0.18)' : 'rgba(0,229,255,0.12)')
+                                  : (avatar.premium ? 'rgba(255,214,102,0.08)' : 'rgba(255,255,255,0.02)'),
+                                padding: '6px 4px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <PlayerAvatar
+                                player={{ ...selectedAvatarPreview, id: `opt-${avatar.id}`, avatarId: avatar.id }}
+                                size={42}
+                                showName={false}
+                                showState={false}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                        {isSelectedAvatarPremium && (
+                          <div style={{
+                            marginTop: 2,
+                            textAlign: 'center',
+                            fontSize: 10,
+                            letterSpacing: 2,
+                            color: '#ffd666',
+                            textShadow: '0 0 10px rgba(255,214,102,0.35)',
+                          }}>
+                            PREMIUM
+                          </div>
+                        )}
+                      </>
                     )}
                     <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 4 }}>
                       {avatarColors.map((color) => (
@@ -419,51 +459,52 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                         />
                       ))}
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2, textAlign: 'center', marginTop: 4 }}>
-                      ACCESORIOS
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                      {accessoryOptions.map((accessory) => (
-                        <button
-                          key={accessory.id}
-                          type="button"
-                          onClick={() => setSelectedAccessoryId(accessory.id)}
-                          style={{
-                            border: `1px solid ${
-                              selectedAccessoryId === accessory.id
-                                ? (accessory.premium ? '#ffd666' : 'var(--cyan)')
-                                : (accessory.premium ? 'rgba(255,214,102,0.5)' : '#333')
-                            }`,
-                            background: selectedAccessoryId === accessory.id
-                              ? (accessory.premium ? 'rgba(255,214,102,0.18)' : 'rgba(0,229,255,0.12)')
-                              : (accessory.premium ? 'rgba(255,214,102,0.08)' : 'rgba(255,255,255,0.02)'),
-                            padding: '6px 4px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <PlayerAvatar
-                            player={{ ...selectedAvatarPreview, id: `acc-opt-${accessory.id}`, accessoryId: accessory.id }}
-                            size={44}
-                            showName={false}
-                            showState={false}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                    {isSelectedAccessoryPremium && (
-                      <div style={{
-                        marginTop: 2,
-                        textAlign: 'center',
-                        fontSize: 10,
-                        letterSpacing: 2,
-                        color: '#ffd666',
-                        textShadow: '0 0 10px rgba(255,214,102,0.35)',
-                      }}>
-                        PREMIUM
-                      </div>
+                    {customizeTab === 'accessories' && (
+                      <>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                          {accessoryOptions.map((accessory) => (
+                            <button
+                              key={accessory.id}
+                              type="button"
+                              onClick={() => setSelectedAccessoryId(accessory.id)}
+                              style={{
+                                border: `1px solid ${
+                                  selectedAccessoryId === accessory.id
+                                    ? (accessory.premium ? '#ffd666' : 'var(--cyan)')
+                                    : (accessory.premium ? 'rgba(255,214,102,0.5)' : '#333')
+                                }`,
+                                background: selectedAccessoryId === accessory.id
+                                  ? (accessory.premium ? 'rgba(255,214,102,0.18)' : 'rgba(0,229,255,0.12)')
+                                  : (accessory.premium ? 'rgba(255,214,102,0.08)' : 'rgba(255,255,255,0.02)'),
+                                padding: '6px 4px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <PlayerAvatar
+                                player={{ ...selectedAvatarPreview, id: `acc-opt-${accessory.id}`, accessoryId: accessory.id }}
+                                size={44}
+                                showName={false}
+                                showState={false}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                        {isSelectedAccessoryPremium && (
+                          <div style={{
+                            marginTop: 2,
+                            textAlign: 'center',
+                            fontSize: 10,
+                            letterSpacing: 2,
+                            color: '#ffd666',
+                            textShadow: '0 0 10px rgba(255,214,102,0.35)',
+                          }}>
+                            PREMIUM
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
 
@@ -539,11 +580,11 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 8,
-                    border: `1px solid ${isSelectedAvatarPremium ? 'rgba(255, 214, 102, 0.78)' : '#223'}`,
-                    background: isSelectedAvatarPremium
+                    border: `1px solid ${hasPremiumSelection ? 'rgba(255, 214, 102, 0.78)' : '#223'}`,
+                    background: hasPremiumSelection
                       ? 'linear-gradient(180deg, rgba(52,34,8,0.33), rgba(10,12,20,0.48))'
                       : 'rgba(0,0,0,0.35)',
-                    boxShadow: isSelectedAvatarPremium ? '0 0 16px rgba(255,214,102,0.22)' : undefined,
+                    boxShadow: hasPremiumSelection ? '0 0 16px rgba(255,214,102,0.22)' : undefined,
                     padding: 10,
                   }}>
                     <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2, textAlign: 'center' }}>
@@ -552,48 +593,84 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                       <PlayerAvatar player={selectedAvatarPreview} size={74} showName={false} showState={false} />
                     </div>
-                    <div style={avatarGridStyle}>
-                      {avatarOptions.map((avatar) => (
-                        <button
-                          key={avatar.id}
-                          type="button"
-                          onClick={() => setSelectedAvatarId(avatar.id)}
-                          style={{
-                            border: `1px solid ${
-                              selectedAvatarId === avatar.id
-                                ? (avatar.premium ? '#ffd666' : 'var(--cyan)')
-                                : (avatar.premium ? 'rgba(255,214,102,0.5)' : '#333')
-                            }`,
-                            background: selectedAvatarId === avatar.id
-                              ? (avatar.premium ? 'rgba(255,214,102,0.18)' : 'rgba(0,229,255,0.12)')
-                              : (avatar.premium ? 'rgba(255,214,102,0.08)' : 'rgba(255,255,255,0.02)'),
-                            padding: '6px 4px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <PlayerAvatar
-                            player={{ ...selectedAvatarPreview, id: `join-opt-${avatar.id}`, avatarId: avatar.id }}
-                            size={42}
-                            showName={false}
-                            showState={false}
-                          />
-                        </button>
-                      ))}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => setCustomizeTab('masks')}
+                        style={{
+                          border: `1px solid ${customizeTab === 'masks' ? 'var(--cyan)' : '#333'}`,
+                          background: customizeTab === 'masks' ? 'rgba(0,229,255,0.14)' : 'rgba(255,255,255,0.03)',
+                          color: customizeTab === 'masks' ? 'var(--cyan)' : 'var(--gray-text)',
+                          fontSize: 10,
+                          letterSpacing: 1.6,
+                          padding: '6px 8px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        MASCARAS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCustomizeTab('accessories')}
+                        style={{
+                          border: `1px solid ${customizeTab === 'accessories' ? 'var(--cyan)' : '#333'}`,
+                          background: customizeTab === 'accessories' ? 'rgba(0,229,255,0.14)' : 'rgba(255,255,255,0.03)',
+                          color: customizeTab === 'accessories' ? 'var(--cyan)' : 'var(--gray-text)',
+                          fontSize: 10,
+                          letterSpacing: 1.6,
+                          padding: '6px 8px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        ACCESORIOS
+                      </button>
                     </div>
-                    {isSelectedAvatarPremium && (
-                      <div style={{
-                        marginTop: 2,
-                        textAlign: 'center',
-                        fontSize: 10,
-                        letterSpacing: 2,
-                        color: '#ffd666',
-                        textShadow: '0 0 10px rgba(255,214,102,0.35)',
-                      }}>
-                        PREMIUM
-                      </div>
+                    {customizeTab === 'masks' && (
+                      <>
+                        <div style={avatarGridStyle}>
+                          {avatarOptions.map((avatar) => (
+                            <button
+                              key={avatar.id}
+                              type="button"
+                              onClick={() => setSelectedAvatarId(avatar.id)}
+                              style={{
+                                border: `1px solid ${
+                                  selectedAvatarId === avatar.id
+                                    ? (avatar.premium ? '#ffd666' : 'var(--cyan)')
+                                    : (avatar.premium ? 'rgba(255,214,102,0.5)' : '#333')
+                                }`,
+                                background: selectedAvatarId === avatar.id
+                                  ? (avatar.premium ? 'rgba(255,214,102,0.18)' : 'rgba(0,229,255,0.12)')
+                                  : (avatar.premium ? 'rgba(255,214,102,0.08)' : 'rgba(255,255,255,0.02)'),
+                                padding: '6px 4px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <PlayerAvatar
+                                player={{ ...selectedAvatarPreview, id: `join-opt-${avatar.id}`, avatarId: avatar.id }}
+                                size={42}
+                                showName={false}
+                                showState={false}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                        {isSelectedAvatarPremium && (
+                          <div style={{
+                            marginTop: 2,
+                            textAlign: 'center',
+                            fontSize: 10,
+                            letterSpacing: 2,
+                            color: '#ffd666',
+                            textShadow: '0 0 10px rgba(255,214,102,0.35)',
+                          }}>
+                            PREMIUM
+                          </div>
+                        )}
+                      </>
                     )}
                     <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 4 }}>
                       {avatarColors.map((color) => (
@@ -613,51 +690,52 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                         />
                       ))}
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2, textAlign: 'center', marginTop: 4 }}>
-                      ACCESORIOS
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                      {accessoryOptions.map((accessory) => (
-                        <button
-                          key={accessory.id}
-                          type="button"
-                          onClick={() => setSelectedAccessoryId(accessory.id)}
-                          style={{
-                            border: `1px solid ${
-                              selectedAccessoryId === accessory.id
-                                ? (accessory.premium ? '#ffd666' : 'var(--cyan)')
-                                : (accessory.premium ? 'rgba(255,214,102,0.5)' : '#333')
-                            }`,
-                            background: selectedAccessoryId === accessory.id
-                              ? (accessory.premium ? 'rgba(255,214,102,0.18)' : 'rgba(0,229,255,0.12)')
-                              : (accessory.premium ? 'rgba(255,214,102,0.08)' : 'rgba(255,255,255,0.02)'),
-                            padding: '6px 4px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <PlayerAvatar
-                            player={{ ...selectedAvatarPreview, id: `join-acc-opt-${accessory.id}`, accessoryId: accessory.id }}
-                            size={44}
-                            showName={false}
-                            showState={false}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                    {isSelectedAccessoryPremium && (
-                      <div style={{
-                        marginTop: 2,
-                        textAlign: 'center',
-                        fontSize: 10,
-                        letterSpacing: 2,
-                        color: '#ffd666',
-                        textShadow: '0 0 10px rgba(255,214,102,0.35)',
-                      }}>
-                        PREMIUM
-                      </div>
+                    {customizeTab === 'accessories' && (
+                      <>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                          {accessoryOptions.map((accessory) => (
+                            <button
+                              key={accessory.id}
+                              type="button"
+                              onClick={() => setSelectedAccessoryId(accessory.id)}
+                              style={{
+                                border: `1px solid ${
+                                  selectedAccessoryId === accessory.id
+                                    ? (accessory.premium ? '#ffd666' : 'var(--cyan)')
+                                    : (accessory.premium ? 'rgba(255,214,102,0.5)' : '#333')
+                                }`,
+                                background: selectedAccessoryId === accessory.id
+                                  ? (accessory.premium ? 'rgba(255,214,102,0.18)' : 'rgba(0,229,255,0.12)')
+                                  : (accessory.premium ? 'rgba(255,214,102,0.08)' : 'rgba(255,255,255,0.02)'),
+                                padding: '6px 4px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <PlayerAvatar
+                                player={{ ...selectedAvatarPreview, id: `join-acc-opt-${accessory.id}`, accessoryId: accessory.id }}
+                                size={44}
+                                showName={false}
+                                showState={false}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                        {isSelectedAccessoryPremium && (
+                          <div style={{
+                            marginTop: 2,
+                            textAlign: 'center',
+                            fontSize: 10,
+                            letterSpacing: 2,
+                            color: '#ffd666',
+                            textShadow: '0 0 10px rgba(255,214,102,0.35)',
+                          }}>
+                            PREMIUM
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
 

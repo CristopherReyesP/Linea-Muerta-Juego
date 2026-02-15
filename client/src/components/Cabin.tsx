@@ -66,6 +66,12 @@ export function Cabin({
       display: 'flex',
       height: '100%',
       width: '100%',
+      background: `
+        radial-gradient(circle at 12% 18%, rgba(0, 180, 255, 0.12), transparent 34%),
+        radial-gradient(circle at 88% 22%, rgba(255, 40, 40, 0.11), transparent 36%),
+        radial-gradient(circle at 50% 120%, rgba(0, 0, 0, 0.55), transparent 55%),
+        linear-gradient(180deg, #05080e 0%, #03050a 58%, #020307 100%)
+      `,
     }}>
       {/* Main area */}
       <div style={{
@@ -73,9 +79,25 @@ export function Cabin({
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
+        borderRight: '1px solid rgba(0, 229, 255, 0.1)',
+        boxShadow: 'inset 0 0 38px rgba(0, 229, 255, 0.06), inset 0 -36px 80px rgba(0,0,0,0.42)',
       }}>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            zIndex: 0,
+            background: `
+              linear-gradient(90deg, rgba(0,0,0,0.34) 0%, transparent 18%, transparent 82%, rgba(0,0,0,0.34) 100%),
+              linear-gradient(180deg, rgba(0,0,0,0.44) 0%, transparent 22%, transparent 76%, rgba(0,0,0,0.52) 100%)
+            `,
+          }}
+        />
         {/* Minigame header bar */}
-        <MinigameHeader />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <MinigameHeader />
+        </div>
 
         {/* Header */}
         <div style={{
@@ -83,8 +105,11 @@ export function Cabin({
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '12px 24px',
-          borderBottom: '1px solid #222',
-          background: 'rgba(0,0,0,0.5)',
+          borderBottom: '1px solid rgba(0, 229, 255, 0.2)',
+          background: 'linear-gradient(180deg, rgba(7,12,20,0.92), rgba(4,8,14,0.88))',
+          boxShadow: '0 10px 22px rgba(0,0,0,0.35)',
+          position: 'relative',
+          zIndex: 1,
         }}>
           <BalanceDisplay />
 
@@ -142,12 +167,25 @@ export function Cabin({
           alignItems: 'center',
           gap: 16,
           padding: '8px 24px',
-          borderBottom: '1px solid #111',
+          borderBottom: '1px solid rgba(0,229,255,0.14)',
+          background: 'linear-gradient(180deg, rgba(0,229,255,0.08), rgba(0,229,255,0.02))',
+          position: 'relative',
+          zIndex: 1,
         }}>
           <div style={{
-            fontSize: 12,
+            fontSize: 15,
+            fontWeight: 'bold',
             color: phase === GamePhase.DECISION_PHASE ? 'var(--red-danger)' : 'var(--green-dim)',
-            letterSpacing: 3,
+            letterSpacing: 2.6,
+            textTransform: 'uppercase',
+            border: `1px solid ${phase === GamePhase.DECISION_PHASE ? 'rgba(255,23,68,0.5)' : 'rgba(0,255,65,0.42)'}`,
+            background: phase === GamePhase.DECISION_PHASE
+              ? 'rgba(255,23,68,0.09)'
+              : 'rgba(0,255,65,0.08)',
+            padding: '5px 12px',
+            boxShadow: phase === GamePhase.DECISION_PHASE
+              ? '0 0 14px rgba(255,23,68,0.18)'
+              : '0 0 14px rgba(0,255,65,0.16)',
           }}
           className={phase === GamePhase.DECISION_PHASE ? 'pulse' : ''}
           >
@@ -166,6 +204,8 @@ export function Cabin({
           gap: 20,
           padding: 24,
           overflowY: 'auto',
+          position: 'relative',
+          zIndex: 1,
         }}>
           {phase === GamePhase.CALL_PHASE && (
             <CallPanel

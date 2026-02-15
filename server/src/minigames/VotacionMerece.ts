@@ -116,23 +116,20 @@ export class VotacionMerece extends MiniGame {
     for (const targetId of this.votes.values()) {
       voteCounts.set(targetId, (voteCounts.get(targetId) ?? 0) + 1)
     }
-
-    let maxVotes = 0
-    let mostVotedId = ''
-    for (const [playerId, count] of voteCounts) {
-      if (count > maxVotes) {
-        maxVotes = count
-        mostVotedId = playerId
-      }
-    }
-
-    const mostVoted = this.players.get(mostVotedId)
+    const mostVotedIds = this.getMostVotedIds()
+    const maxVotes = mostVotedIds.length > 0 ? (voteCounts.get(mostVotedIds[0]) ?? 0) : 0
+    const firstMostVotedId = mostVotedIds[0] ?? ''
+    const tiedNames = mostVotedIds
+      .map((id) => this.players.get(id)?.name ?? 'Nadie')
+      .join(', ')
 
     this.io.to(this.room).emit('vote_result', {
-      targetId: mostVotedId,
-      targetName: mostVoted?.name ?? 'Nadie',
+      targetId: firstMostVotedId,
+      targetName: mostVotedIds.length > 1 ? `Empate: ${tiedNames}` : (this.players.get(firstMostVotedId)?.name ?? 'Nadie'),
       voteCount: maxVotes,
-      effect: maxVotes > 0 ? `+1 punto global para ${mostVoted?.name ?? 'Nadie'}` : 'Sin votos suficientes'
+      effect: maxVotes > 0
+        ? (mostVotedIds.length > 1 ? `+1 punto global para empatados: ${tiedNames}` : `+1 punto global para ${tiedNames}`)
+        : 'Sin votos suficientes'
     })
 
     this.broadcastState()
@@ -147,14 +144,11 @@ export class VotacionMerece extends MiniGame {
       voteCounts.set(targetId, (voteCounts.get(targetId) ?? 0) + 1)
     }
 
-    let maxVotes = 0
-    let mostVotedId = ''
-    for (const [playerId, count] of voteCounts) {
-      if (count > maxVotes) {
-        maxVotes = count
-        mostVotedId = playerId
-      }
-    }
+    const mostVotedIds = this.getMostVotedIds()
+    const firstMostVotedId = mostVotedIds[0] ?? ''
+    const tiedNames = mostVotedIds
+      .map((id) => this.players.get(id)?.name ?? 'Nadie')
+      .join(', ')
 
     const allPlayers = Array.from(this.players.values())
       .filter(p => p.state !== PlayerState.DISCONNECTED)
@@ -166,35 +160,40 @@ export class VotacionMerece extends MiniGame {
     }))
 
     this.io.to(this.room).emit('game_over', {
-      winnerId: mostVotedId,
-      winnerName: this.players.get(mostVotedId)?.name ?? 'Nadie',
-      reason: `${this.players.get(mostVotedId)?.name ?? 'Nadie'} fue el mas votado (+1 punto global)`,
+      winnerId: firstMostVotedId,
+      winnerName: mostVotedIds.length > 1 ? `Empate: ${tiedNames}` : (this.players.get(firstMostVotedId)?.name ?? 'Nadie'),
+      reason: mostVotedIds.length > 1
+        ? `Empate en votos: ${tiedNames} (+1 punto global para cada uno)`
+        : `${this.players.get(firstMostVotedId)?.name ?? 'Nadie'} fue el mas votado (+1 punto global)`,
       standings
     })
 
     this.emitComplete({
       minigameId: this.info.id,
       minigameName: this.info.name,
-      winnerId: mostVotedId,
-      winnerName: this.players.get(mostVotedId)?.name ?? 'Nadie',
+      winnerId: firstMostVotedId,
+      winnerName: mostVotedIds.length > 1 ? `Empate: ${tiedNames}` : (this.players.get(firstMostVotedId)?.name ?? 'Nadie'),
       standings
     })
   }
 
   getMostVotedId(): string {
+    return this.getMostVotedIds()[0] ?? ''
+  }
+
+  getMostVotedIds(): string[] {
     const voteCounts: Map<string, number> = new Map()
     for (const targetId of this.votes.values()) {
       voteCounts.set(targetId, (voteCounts.get(targetId) ?? 0) + 1)
     }
+    if (voteCounts.size === 0) return []
     let maxVotes = 0
-    let mostVotedId = ''
-    for (const [playerId, count] of voteCounts) {
-      if (count > maxVotes) {
-        maxVotes = count
-        mostVotedId = playerId
-      }
+    for (const count of voteCounts.values()) {
+      if (count > maxVotes) maxVotes = count
     }
-    return mostVotedId
+    return Array.from(voteCounts.entries())
+      .filter(([, count]) => count === maxVotes)
+      .map(([playerId]) => playerId)
   }
 
   votePlayer(voterId: string, targetId: string): boolean {

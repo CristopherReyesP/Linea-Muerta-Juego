@@ -1,4 +1,5 @@
 import { PlayerState, PlayerData } from '../types'
+import { useGameStore } from '../store/gameStore'
 
 interface Props {
   player: PlayerData
@@ -8,14 +9,16 @@ interface Props {
 }
 
 export function PlayerAvatar({ player, size = 60, showName = true, showState = true }: Props) {
+  const activeMinigameId = useGameStore((s) => s.activeMinigameId)
+  const hideIdentity = activeMinigameId === 'adivina-linea'
   const stateColor = getStateColor(player.state)
   const isShadow = player.isShadow
   const isAtRisk = player.state === PlayerState.AT_RISK
   const avatarId = player.avatarId ?? 'neon-eyes'
   const avatarColor = player.avatarColor ?? stateColor
   const accessoryId = player.accessoryId ?? 'none'
-  const premiumAccessory = accessoryId === 'neon-ears' || accessoryId === 'butterfly-wings' || accessoryId === 'angel-wings'
-  const outlineColor = avatarColor
+  const premiumAccessory = !hideIdentity && (accessoryId === 'neon-ears' || accessoryId === 'butterfly-wings' || accessoryId === 'angel-wings' || accessoryId === 'straw-hat')
+  const outlineColor = hideIdentity ? '#1f2228' : avatarColor
 
   return (
     <div
@@ -37,34 +40,34 @@ export function PlayerAvatar({ player, size = 60, showName = true, showState = t
           opacity: player.state === PlayerState.DISCONNECTED ? 0.3 : 1,
         }}
       >
-        {renderBackAccessory(accessoryId, avatarColor)}
+        {!hideIdentity && renderBackAccessory(accessoryId, avatarColor)}
         {/* Hood shape */}
         <path
           d="M50 6 L28 20 C18 28 13 42 13 57 L13 84 C13 90 18 95 24 95 L76 95 C82 95 87 90 87 84 L87 57 C87 42 82 28 72 20 L50 6Z"
-          fill={isShadow ? '#303030' : '#111826'}
+          fill={hideIdentity ? '#0b0d11' : isShadow ? '#303030' : '#111826'}
           stroke={outlineColor}
           strokeWidth="2.4"
         />
         {/* Inner hood rim to separate hood from mask opening */}
         <path
           d="M50 15 C35 15 24 30 24 47 C24 63 31 76 39 84 L61 84 C69 76 76 63 76 47 C76 30 65 15 50 15Z"
-          fill={isShadow ? '#252525' : '#0f1625'}
-          stroke={isShadow ? '#4a4a4a' : 'rgba(180, 230, 255, 0.35)'}
+          fill={hideIdentity ? '#0a0c10' : isShadow ? '#252525' : '#0f1625'}
+          stroke={hideIdentity ? '#191c22' : isShadow ? '#4a4a4a' : 'rgba(180, 230, 255, 0.35)'}
           strokeWidth="1.4"
         />
         {/* Opening contour around mask */}
         <path
           d="M50 23 C38 23 30 35 30 50 C30 63 38 72 50 72 C62 72 70 63 70 50 C70 35 62 23 50 23Z"
-          fill="#06080c"
-          stroke="rgba(120, 190, 235, 0.24)"
+          fill={hideIdentity ? '#050608' : '#06080c'}
+          stroke={hideIdentity ? 'rgba(35, 40, 48, 0.6)' : 'rgba(120, 190, 235, 0.24)'}
           strokeWidth="1.2"
         />
         {/* Subtle center seam on hood */}
-        <path d="M50 10 L50 28" stroke="rgba(190, 235, 255, 0.18)" strokeWidth="1" />
+        <path d="M50 10 L50 28" stroke={hideIdentity ? 'rgba(60, 66, 76, 0.45)' : 'rgba(190, 235, 255, 0.18)'} strokeWidth="1" />
         {/* Face shadow / mask area */}
-        <path d="M50 26 C36 26 28 38 28 51 C28 65 37 74 50 74 C63 74 72 65 72 51 C72 38 64 26 50 26Z" fill="#07090d" />
-        {renderAccessory(accessoryId, avatarColor)}
-        {renderFaceMark(avatarId, avatarColor, player.state === PlayerState.IN_CALL)}
+        <path d="M50 26 C36 26 28 38 28 51 C28 65 37 74 50 74 C63 74 72 65 72 51 C72 38 64 26 50 26Z" fill={hideIdentity ? '#030405' : '#07090d'} />
+        {!hideIdentity && renderAccessory(accessoryId, avatarColor)}
+        {!hideIdentity && renderFaceMark(avatarId, avatarColor, player.state === PlayerState.IN_CALL)}
       </svg>
 
       {showName && (
@@ -231,6 +234,19 @@ function renderAccessory(accessoryId: string, color: string) {
           <circle cx="69.5" cy="17" r="1.3" fill={color} />
           <circle cx="74.5" cy="17" r="1.3" fill={color} />
           <path d="M72 19 L70.7 20.3 L72 21.2 L73.3 20.3 Z" fill={color} opacity="0.7" />
+        </g>
+      )
+    case 'straw-hat':
+      return (
+        <g>
+          <ellipse cx="50" cy="20.8" rx="31.5" ry="9.1" fill="#cfa251" stroke="#7a4e1f" strokeWidth="1.6" />
+          <ellipse cx="50" cy="20.8" rx="25.5" ry="6.3" fill="none" stroke="#edcd88" strokeWidth="1" opacity="0.48" />
+          <path d="M33 22 C33 12 40.8 6.2 50 6.2 C59.2 6.2 67 12 67 22 L67 24.8 C67 27.2 65.2 29.2 62.8 29.2 L37.2 29.2 C34.8 29.2 33 27.2 33 24.8 Z" fill="#deb86a" stroke="#7a4e1f" strokeWidth="1.5" />
+          <path d="M34.6 17.3 C39.2 15.6 60.8 15.6 65.4 17.3 L65.4 22.2 C60.8 24 39.2 24 34.6 22.2 Z" fill="#b92f2f" />
+          <path d="M35.4 16.9 C40.2 15.4 59.8 15.4 64.6 16.9" stroke="#f07e7e" strokeWidth="0.8" opacity="0.55" />
+          <path d="M34.1 24.7 C39.5 26.1 60.5 26.1 65.9 24.7" stroke="#8a2222" strokeWidth="0.85" opacity="0.55" />
+          <path d="M36 10.8 C40.8 8 59.2 8 64 10.8" stroke="#f4d89f" strokeWidth="1.1" fill="none" opacity="0.56" />
+          <path d="M20 20.9 C28.8 24.7 71.2 24.7 80 20.9" stroke="#f1d28e" strokeWidth="1.15" fill="none" opacity="0.62" />
         </g>
       )
     case 'angel-wings':

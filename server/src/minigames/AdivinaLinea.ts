@@ -155,16 +155,14 @@ export class AdivinaLinea extends MiniGame {
     for (const player of this.players.values()) {
       if (player.state !== PlayerState.DISCONNECTED) {
         // If already submitted guesses during call phase, lock them
-        player.state = this.guesses.has(player.id) ? PlayerState.LOCKED : PlayerState.DECIDING
+        player.state = this.hasCompleteSubmission(player.id) ? PlayerState.LOCKED : PlayerState.DECIDING
       }
     }
 
     this.io.to(this.room).emit('decision_requested')
 
     // If everyone already submitted during call phase, skip ahead
-    const allGuessed = Array.from(this.players.values())
-      .filter(p => p.state !== PlayerState.DISCONNECTED)
-      .every(p => this.guesses.has(p.id))
+    const allGuessed = this.haveAllParticipantsSubmittedComplete()
 
     if (allGuessed) {
       if (this.phaseTimer) clearTimeout(this.phaseTimer)
@@ -274,6 +272,10 @@ export class AdivinaLinea extends MiniGame {
 
   // Get winner ID for MetaGame scoring
   getWinnerId(): string {
+    return this.getTopScorerIds()[0] ?? ''
+  }
+
+  getTopScorerIds(): string[] {
     const scores: Record<string, number> = {}
     for (const [playerId, playerGuesses] of this.guesses) {
       scores[playerId] = 0
@@ -286,14 +288,12 @@ export class AdivinaLinea extends MiniGame {
     }
 
     let maxScore = 0
-    let winnerId = ''
-    for (const [playerId, score] of Object.entries(scores)) {
-      if (score > maxScore) {
-        maxScore = score
-        winnerId = playerId
-      }
+    for (const score of Object.values(scores)) {
+      if (score > maxScore) maxScore = score
     }
-    return winnerId
+    return Object.entries(scores)
+      .filter(([, score]) => score === maxScore)
+      .map(([playerId]) => playerId)
   }
 
   submitLineGuesses(playerId: string, guesses: Record<string, string>): boolean {
@@ -306,12 +306,10 @@ export class AdivinaLinea extends MiniGame {
     this.guesses.set(playerId, guesses)
 
     // Check if all players have submitted
-    const allGuessed = Array.from(this.players.values())
-      .filter(p => p.state !== PlayerState.DISCONNECTED)
-      .every(p => this.guesses.has(p.id))
+    const allGuessed = this.haveAllParticipantsSubmittedComplete()
 
     if (this.phase === AdivinaPhase.GUESSING_PHASE) {
-      player.state = PlayerState.LOCKED
+      player.state = this.hasCompleteSubmission(playerId) ? PlayerState.LOCKED : PlayerState.DECIDING
       this.broadcastState()
 
       if (allGuessed) {
@@ -326,6 +324,36 @@ export class AdivinaLinea extends MiniGame {
     }
 
     return true
+  }
+
+  private getParticipantIds(): string[] {
+    return Array.from(this.playerToLine.keys()).filter((id) => {
+      const player = this.players.get(id)
+      return Boolean(player) && player!.state !== PlayerState.DISCONNECTED
+    })
+  }
+
+  private hasCompleteSubmission(playerId: string): boolean {
+    const submission = this.guesses.get(playerId)
+    if (!submission) return false
+    const myLine = this.playerToLine.get(playerId)
+    if (!myLine) return false
+
+    const requiredLines = Array.from(this.lineAssignments.keys()).filter((line) => line !== myLine)
+    if (requiredLines.length === 0) return false
+
+    for (const line of requiredLines) {
+      const guessedPlayerId = submission[line]
+      if (!guessedPlayerId) return false
+      if (!this.players.has(guessedPlayerId)) return false
+    }
+    return true
+  }
+
+  private haveAllParticipantsSubmittedComplete(): boolean {
+    const participants = this.getParticipantIds()
+    if (participants.length === 0) return false
+    return participants.every((id) => this.hasCompleteSubmission(id))
   }
 
   skipToFinish(): void {

@@ -93,6 +93,7 @@ interface GameStore {
 
   // Open voice
   openVoicePlayerIds: string[]
+  micMuted: boolean
 
   // Adivina la Linea
   voiceDistortion: boolean
@@ -131,6 +132,8 @@ interface GameStore {
   setSessionComplete: (data: SessionCompleteData | null) => void
   setMinigameIntro: (info: MiniGameInfo, index: number, total: number) => void
   setOpenVoicePlayerIds: (ids: string[]) => void
+  setMicMuted: (muted: boolean) => void
+  toggleMic: () => void
   setVoiceDistortion: (enabled: boolean) => void
   setLineAssignments: (data: GameStore['lineAssignments']) => void
   setLineGuessResults: (data: GameStore['lineGuessResults']) => void
@@ -178,6 +181,7 @@ const initialState = {
   shadowInterference: false,
   gameOver: null,
   openVoicePlayerIds: [],
+  micMuted: false,
   voiceDistortion: false,
   lineAssignments: null,
   lineGuessResults: null,
@@ -269,7 +273,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     bombOutcome: null,
   }),
 
-  setOpenVoicePlayerIds: (ids) => set({ openVoicePlayerIds: ids }),
+  setOpenVoicePlayerIds: (ids) => set({ openVoicePlayerIds: ids, micMuted: false }),
+  setMicMuted: (muted) => set({ micMuted: muted }),
+  toggleMic: () => set((s) => ({ micMuted: !s.micMuted })),
   setVoiceDistortion: (enabled) => set({ voiceDistortion: enabled }),
   setLineAssignments: (data) => set({ lineAssignments: data }),
   setLineGuessResults: (data) => set({ lineGuessResults: data }),

@@ -36,13 +36,20 @@ export function CallPanel({
     !activeCallPeerId &&
     !pendingCall
 
-  // Players available to call (only filter out players in ACTIVE calls)
-  const availablePlayers = players.filter(p =>
+  const callTargets = players.filter(p =>
     p.id !== myPlayer?.id &&
-    p.state !== PlayerState.DISCONNECTED &&
-    p.state !== PlayerState.IN_CALL &&
-    (p.isAlive || p.isShadow)
+    p.state !== PlayerState.DISCONNECTED
   )
+
+  const getCallStatus = (player: typeof players[number]): { key: 'available' | 'in_call' | 'unavailable'; label: string; color: string } => {
+    if (player.state === PlayerState.IN_CALL) {
+      return { key: 'in_call', label: 'En llamada', color: '#ffab00' }
+    }
+    if (!player.isAlive && !player.isShadow) {
+      return { key: 'unavailable', label: 'No disponible', color: '#7a7a7a' }
+    }
+    return { key: 'available', label: 'Disponible', color: '#00ff41' }
+  }
 
   return (
     <div style={{
@@ -101,6 +108,8 @@ export function CallPanel({
             >
               LLAMANDO...
             </div>
+
+            <PhoneWaves color="var(--green-neon)" />
 
             <PlayerAvatar player={pendingTarget} size={70} />
 
@@ -224,6 +233,25 @@ export function CallPanel({
               EN LLAMADA
             </div>
 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 44,
+              height: 44,
+              border: '1px solid var(--cyan)',
+              borderRadius: '50%',
+              background: 'rgba(0,229,255,0.08)',
+              boxShadow: '0 0 14px rgba(0,229,255,0.28)',
+              fontSize: 20,
+              color: 'var(--cyan)',
+            }}
+            className="pulse"
+            title="Llamada activa"
+            >
+              📞
+            </div>
+
             <PlayerAvatar player={peer} size={80} />
 
             <div style={{
@@ -269,54 +297,67 @@ export function CallPanel({
             SELECCIONA A QUIEN LLAMAR
           </div>
 
-          {availablePlayers.length > 0 ? (
+          {callTargets.length > 0 ? (
             <div style={{
               display: 'flex',
               flexWrap: 'wrap',
               gap: 12,
               justifyContent: 'center',
             }}>
-              {availablePlayers.map(p => (
+              {callTargets.map(p => {
+                const callStatus = getCallStatus(p)
+                const canCallTarget = canCall && callStatus.key === 'available'
+                return (
                 <motion.button
                   key={p.id}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => canCall && onCallPlayer(p.id)}
-                  disabled={!canCall}
+                  onClick={() => canCallTarget && onCallPlayer(p.id)}
+                  disabled={!canCallTarget}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: 8,
                     padding: 16,
-                    border: `1px solid ${p.state === PlayerState.AT_RISK ? 'var(--red-danger)' : p.isShadow ? 'var(--gray-shadow)' : 'var(--green-dim)'}`,
+                    border: `1px solid ${
+                      callStatus.key === 'available'
+                        ? (p.state === PlayerState.AT_RISK ? 'var(--red-danger)' : p.isShadow ? 'var(--gray-shadow)' : 'var(--green-dim)')
+                        : callStatus.color
+                    }`,
                     background: 'var(--bg-panel)',
-                    cursor: canCall ? 'pointer' : 'not-allowed',
-                    opacity: canCall ? 1 : 0.4,
+                    cursor: canCallTarget ? 'pointer' : 'not-allowed',
+                    opacity: canCallTarget ? 1 : 0.65,
                     fontFamily: 'var(--font-mono)',
                     transition: 'border-color 0.2s, box-shadow 0.2s',
                   }}
                   onMouseEnter={e => {
-                    if (canCall) {
+                    if (canCallTarget) {
                       (e.currentTarget as HTMLElement).style.boxShadow = '0 0 15px rgba(0,255,65,0.2)'
                       ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--green-neon)'
                     }
                   }}
                   onMouseLeave={e => {
                     (e.currentTarget as HTMLElement).style.boxShadow = 'none'
-                    ;(e.currentTarget as HTMLElement).style.borderColor = p.state === PlayerState.AT_RISK ? 'var(--red-danger)' : p.isShadow ? 'var(--gray-shadow)' : 'var(--green-dim)'
+                    ;(e.currentTarget as HTMLElement).style.borderColor = callStatus.key === 'available'
+                      ? (p.state === PlayerState.AT_RISK ? 'var(--red-danger)' : p.isShadow ? 'var(--gray-shadow)' : 'var(--green-dim)')
+                      : callStatus.color
                   }}
                 >
                   <PlayerAvatar player={p} size={50} showState={false} />
-                  <span style={{
-                    fontSize: 10,
-                    color: 'var(--green-neon)',
-                    letterSpacing: 2,
-                  }}>
-                    LLAMAR
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 11, color: callStatus.color }}>☎</span>
+                    <span style={{
+                      fontSize: 10,
+                      color: callStatus.color,
+                      letterSpacing: 1.2,
+                      textTransform: 'uppercase',
+                    }}>
+                      {callStatus.label}
+                    </span>
+                  </div>
                 </motion.button>
-              ))}
+              )})}
             </div>
           ) : (
             <div style={{
@@ -329,6 +370,30 @@ export function CallPanel({
           )}
         </motion.div>
       )}
+    </div>
+  )
+}
+
+function PhoneWaves({ color }: { color: string }) {
+  return (
+    <div style={{ position: 'relative', width: 54, height: 54, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {[0, 0.38, 0.76].map((delay, idx) => (
+        <motion.span
+          key={idx}
+          initial={{ scale: 0.5, opacity: 0.65 }}
+          animate={{ scale: 1.45, opacity: 0 }}
+          transition={{ duration: 1.25, repeat: Infinity, ease: 'easeOut', delay }}
+          style={{
+            position: 'absolute',
+            width: 42,
+            height: 42,
+            borderRadius: '50%',
+            border: `1.4px solid ${color}`,
+            boxShadow: `0 0 8px ${color}`,
+          }}
+        />
+      ))}
+      <span style={{ color, fontSize: 16 }}>📞</span>
     </div>
   )
 }

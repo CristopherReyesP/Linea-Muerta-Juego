@@ -76,17 +76,20 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
           </div>
         </div>
 
-        <div
-          style={{
-            fontSize: 56,
-            fontWeight: 'bold',
-            letterSpacing: 5,
-            color: isUrgent ? 'var(--red-danger)' : 'var(--green-neon)',
-            textShadow: isUrgent ? '0 0 20px rgba(255,23,68,0.5)' : '0 0 20px rgba(0,255,65,0.3)',
-          }}
-          className={isUrgent ? 'flicker' : ''}
-        >
-          {remainingSeconds}s
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          <BombIllustration urgent={isUrgent} />
+          <div
+            style={{
+              fontSize: 56,
+              fontWeight: 'bold',
+              letterSpacing: 5,
+              color: isUrgent ? 'var(--red-danger)' : 'var(--green-neon)',
+              textShadow: isUrgent ? '0 0 20px rgba(255,23,68,0.5)' : '0 0 20px rgba(0,255,65,0.3)',
+            }}
+            className={isUrgent ? 'flicker' : ''}
+          >
+            {remainingSeconds}s
+          </div>
         </div>
 
         <motion.div
@@ -206,6 +209,43 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
             : `Esperando decision de ${bombState.holderName}.`}
         </div>
       </div>
+    </div>
+  )
+}
+
+function BombIllustration({ urgent }: { urgent: boolean }) {
+  return (
+    <div
+      style={{
+        width: 122,
+        height: 102,
+        border: `1px solid ${urgent ? 'rgba(255,23,68,0.75)' : 'rgba(0,229,255,0.55)'}`,
+        background: urgent ? 'rgba(255,23,68,0.08)' : 'rgba(0,229,255,0.05)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <svg width="96" height="78" viewBox="0 0 96 78" role="img" aria-label="Bomba">
+        <defs>
+          <radialGradient id="bombBody" cx="38%" cy="35%" r="68%">
+            <stop offset="0%" stopColor="#48576d" />
+            <stop offset="55%" stopColor="#263244" />
+            <stop offset="100%" stopColor="#131c2a" />
+          </radialGradient>
+        </defs>
+        <path d="M63 15 L73 6" stroke="#9eaac0" strokeWidth="3" strokeLinecap="round" />
+        <rect x="71" y="3" width="9" height="6" rx="1.5" fill="#8895ad" />
+        <path d="M58 15 C65 10 70 11 74 14 C78 17 80 22 79 26" stroke="#c8d4ea" strokeWidth="2.2" fill="none" />
+        <path d="M79 26 C83 22 87 22 91 25" stroke="#ffd36e" strokeWidth="2.4" fill="none" />
+        <circle cx="48" cy="45" r="30" fill="url(#bombBody)" stroke={urgent ? '#ff6d86' : '#6ce8ff'} strokeWidth="2.4" />
+        <circle cx="38" cy="35" r="6.5" fill="rgba(255,255,255,0.14)" />
+        <circle cx="48" cy="45" r="10" fill="#0f1520" stroke={urgent ? '#ff7e94' : '#7beeff'} strokeWidth="1.6" />
+        <text x="48" y="49" textAnchor="middle" style={{ fontSize: 12, fontWeight: 'bold', fill: urgent ? '#ff9bae' : '#a0f4ff' }}>
+          !
+        </text>
+        <circle cx="92" cy="24" r="3.8" fill={urgent ? '#ff3d5e' : '#ffd36e'} className={urgent ? 'pulse-red' : 'pulse'} />
+      </svg>
     </div>
   )
 }

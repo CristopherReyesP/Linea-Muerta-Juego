@@ -131,6 +131,7 @@ export function useSocket() {
 
     socket.on('minigame_intro', ({ minigame, index, total }) => {
       store.setMinigameIntro(minigame, index, total)
+      store.setOpenVoicePlayerIds([])
     })
 
     socket.on('discussion_started', (data) => {
@@ -140,6 +141,7 @@ export function useSocket() {
 
     socket.on('session_complete', (data) => {
       store.setSessionComplete(data)
+      store.setOpenVoicePlayerIds([])
       stopAmbient()
     })
 

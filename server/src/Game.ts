@@ -1,0 +1,335 @@
+import { Server } from 'socket.io'
+import { Player } from './Player'
+import { CallManager } from './CallManager'
+import {
+  GamePhase, PlayerState, Decision,
+  GameStateSnapshot, RoundResult, GameConfig, DEFAULT_CONFIG
+} from './types'
+
+export class Game {
+  id: string
+  phase: GamePhase = GamePhase.LOBBY
+  round: number = 0
+  players: Map<string, Player> = new Map()
+  decisions: Map<string, Decision> = new Map()
+  callManager: CallManager = new CallManager()
+  config: GameConfig
+  phaseEndTime: number = 0
+  phaseTimer: NodeJS.Timeout | null = null
+  hostId: string | null = null
+  private io: Server
+
+  constructor(id: string, io: Server, config?: Partial<GameConfig>) {
+    this.id = id
+    this.io = io
+    this.config = { ...DEFAULT_CONFIG, ...config }
+  }
+
+  private get room(): string {
+    return `game:${this.id}`
+  }
+
+  addPlayer(player: Player): boolean {
+    if (this.players.size >= this.config.maxPlayers) return false
+    if (this.phase !== GamePhase.LOBBY) return false
+
+    this.players.set(player.id, player)
+    if (!this.hostId) this.hostId = player.id
+
+    this.io.to(player.socketId).socketsJoin(this.room)
+    this.broadcastState()
+    return true
+  }
+
+  removePlayer(playerId: string): void {
+    const player = this.players.get(playerId)
+    if (!player) return
+
+    player.state = PlayerState.DISCONNECTED
+    this.callManager.hangUp(playerId, this.players, this.io)
+
+    if (this.hostId === playerId) {
+      // Transfer host
+      for (const [id, p] of this.players) {
+        if (id !== playerId && p.state !== PlayerState.DISCONNECTED) {
+          this.hostId = id
+          break
+        }
+      }
+    }
+
+    this.broadcastState()
+    this.checkGameOver()
+  }
+
+  reconnectPlayer(playerId: string, newSocketId: string): boolean {
+    const player = this.players.get(playerId)
+    if (!player) return false
+
+    player.socketId = newSocketId
+    player.setActive()
+    this.io.to(newSocketId).socketsJoin(this.room)
+    this.broadcastState()
+    return true
+  }
+
+  startGame(): void {
+    if (this.players.size < this.config.minPlayers) return
+    if (this.phase !== GamePhase.LOBBY) return
+
+    for (const player of this.players.values()) {
+      player.state = PlayerState.ACTIVE
+    }
+
+    this.round = 1
+    this.startPhase(GamePhase.CALL_PHASE)
+  }
+
+  private startPhase(phase: GamePhase): void {
+    this.phase = phase
+
+    let duration = 0
+    switch (phase) {
+      case GamePhase.CALL_PHASE:
+        duration = this.config.callPhaseDuration
+        this.onCallPhaseStart()
+        break
+      case GamePhase.DECISION_PHASE:
+        duration = this.config.decisionPhaseDuration
+        this.onDecisionPhaseStart()
+        break
+      case GamePhase.RESULT_PHASE:
+        duration = this.config.resultPhaseDuration
+        this.onResultPhaseStart()
+        break
+    }
+
+    this.phaseEndTime = Date.now() + duration * 1000
+
+    this.io.to(this.room).emit('phase_changed', {
+      phase: this.phase,
+      endTime: this.phaseEndTime
+    })
+
+    this.broadcastState()
+
+    if (this.phaseTimer) clearTimeout(this.phaseTimer)
+    this.phaseTimer = setTimeout(() => this.advancePhase(), duration * 1000)
+  }
+
+  private advancePhase(): void {
+    switch (this.phase) {
+      case GamePhase.CALL_PHASE:
+        this.startPhase(GamePhase.DECISION_PHASE)
+        break
+      case GamePhase.DECISION_PHASE:
+        this.startPhase(GamePhase.RESULT_PHASE)
+        break
+      case GamePhase.RESULT_PHASE:
+        if (!this.checkGameOver()) {
+          this.round++
+          this.startPhase(GamePhase.CALL_PHASE)
+        }
+        break
+    }
+  }
+
+  private onCallPhaseStart(): void {
+    for (const player of this.players.values()) {
+      if (player.isAlive) {
+        player.setActive()
+      }
+    }
+  }
+
+  private onDecisionPhaseStart(): void {
+    // End all active calls
+    this.callManager.endAllCalls(this.players, this.io)
+
+    // Set all alive players to DECIDING
+    this.decisions.clear()
+    for (const player of this.players.values()) {
+      if (player.isAlive) {
+        player.state = PlayerState.DECIDING
+      }
+    }
+
+    this.io.to(this.room).emit('decision_requested')
+  }
+
+  private onResultPhaseStart(): void {
+    // Auto-submit for players who didn't decide (random)
+    for (const player of this.players.values()) {
+      if (player.isAlive && !this.decisions.has(player.id)) {
+        this.decisions.set(player.id, Math.random() > 0.5 ? Decision.COOPERATE : Decision.BETRAY)
+      }
+    }
+
+    const result = this.resolveRound()
+
+    // Apply balance changes
+    for (const [playerId, change] of Object.entries(result.balanceChanges)) {
+      const player = this.players.get(playerId)
+      if (player) {
+        const wasShadow = player.isShadow
+        player.updateBalance(change)
+
+        if (!wasShadow && player.isShadow) {
+          this.io.to(this.room).emit('player_became_shadow', {
+            playerId: player.id,
+            playerName: player.name
+          })
+        }
+      }
+    }
+
+    this.io.to(this.room).emit('round_result', result)
+    this.broadcastState()
+  }
+
+  private resolveRound(): RoundResult {
+    const decisions: Record<string, Decision> = {}
+    const balanceChanges: Record<string, number> = {}
+
+    let cooperateCount = 0
+    let betrayCount = 0
+
+    for (const [playerId, decision] of this.decisions) {
+      decisions[playerId] = decision
+      if (decision === Decision.COOPERATE) cooperateCount++
+      else betrayCount++
+    }
+
+    const majorityDecision = cooperateCount >= betrayCount
+      ? Decision.COOPERATE
+      : Decision.BETRAY
+
+    for (const [playerId, decision] of this.decisions) {
+      if (majorityDecision === Decision.COOPERATE) {
+        // Majority cooperated
+        balanceChanges[playerId] = decision === Decision.COOPERATE ? 30 : 50
+      } else {
+        // Majority betrayed
+        balanceChanges[playerId] = decision === Decision.COOPERATE ? -40 : -10
+      }
+    }
+
+    return { round: this.round, decisions, majorityDecision, balanceChanges }
+  }
+
+  submitDecision(playerId: string, decision: Decision): boolean {
+    if (this.phase !== GamePhase.DECISION_PHASE) return false
+    const player = this.players.get(playerId)
+    if (!player || !player.isAlive) return false
+    if (this.decisions.has(playerId)) return false
+
+    this.decisions.set(playerId, decision)
+    player.state = PlayerState.LOCKED
+    this.broadcastState()
+
+    // Check if all alive players have decided
+    const allDecided = Array.from(this.players.values())
+      .filter(p => p.isAlive)
+      .every(p => this.decisions.has(p.id))
+
+    if (allDecided) {
+      if (this.phaseTimer) clearTimeout(this.phaseTimer)
+      this.startPhase(GamePhase.RESULT_PHASE)
+    }
+
+    return true
+  }
+
+  callPlayer(callerId: string, targetId: string): void {
+    if (this.phase !== GamePhase.CALL_PHASE) return
+    const caller = this.players.get(callerId)
+    if (!caller || caller.state === PlayerState.IN_CALL) return
+    if (!caller.isAlive && !caller.isShadow) return
+
+    const target = this.players.get(targetId)
+    if (!target) return
+    if (target.state === PlayerState.DISCONNECTED || target.state === PlayerState.IN_CALL) return
+    if (!target.isAlive && !target.isShadow) return
+    if (target.id === callerId) return
+
+    this.callManager.initiateCall(caller, target, this.io)
+    this.broadcastState()
+  }
+
+  useShadowInterference(shadowId: string, targetId: string): void {
+    if (this.phase !== GamePhase.CALL_PHASE) return
+    const shadow = this.players.get(shadowId)
+    if (!shadow || !shadow.isShadow) return
+    if (!shadow.useCharge()) return
+
+    const target = this.players.get(targetId)
+    if (!target) return
+
+    // Send interference effect to target
+    this.io.to(target.socketId).emit('shadow_interference', { duration: 10 })
+    this.broadcastState()
+  }
+
+  private checkGameOver(): boolean {
+    const activePlayers = Array.from(this.players.values()).filter(
+      p => p.isAlive && p.state !== PlayerState.DISCONNECTED
+    )
+
+    let reason = ''
+
+    if (activePlayers.length <= 1) {
+      reason = 'Ultimo jugador en pie'
+    } else if (this.round >= this.config.maxRounds) {
+      reason = `Se completaron las ${this.config.maxRounds} rondas`
+    }
+
+    if (!reason) return false
+
+    this.phase = GamePhase.GAME_OVER
+    if (this.phaseTimer) clearTimeout(this.phaseTimer)
+
+    // Winner = alive player with highest balance
+    const allPlayers = Array.from(this.players.values())
+      .filter(p => p.state !== PlayerState.DISCONNECTED)
+    const sorted = [...allPlayers].sort((a, b) => b.balance - a.balance)
+    const winner = sorted[0]
+
+    const standings = sorted.map(p => ({
+      name: p.name,
+      balance: p.balance,
+      isShadow: p.isShadow,
+    }))
+
+    this.io.to(this.room).emit('game_over', {
+      winnerId: winner?.id ?? '',
+      winnerName: winner?.name ?? 'Nadie',
+      reason,
+      standings,
+    })
+    this.broadcastState()
+    return true
+  }
+
+  getSnapshot(): GameStateSnapshot {
+    return {
+      gameId: this.id,
+      phase: this.phase,
+      round: this.round,
+      maxRounds: this.config.maxRounds,
+      players: Array.from(this.players.values()).map(p => p.toData()),
+      phaseEndTime: this.phaseEndTime,
+      activeCalls: this.callManager.getActiveCalls()
+    }
+  }
+
+  broadcastState(): void {
+    this.io.to(this.room).emit('game_state_update', this.getSnapshot())
+  }
+
+  getPlayerBySocketId(socketId: string): Player | undefined {
+    for (const player of this.players.values()) {
+      if (player.socketId === socketId) return player
+    }
+    return undefined
+  }
+}

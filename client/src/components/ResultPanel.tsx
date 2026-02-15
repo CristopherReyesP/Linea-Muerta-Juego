@@ -12,7 +12,10 @@ export function ResultPanel() {
 
   const myDecision = lastResult.decisions[playerId]
   const myChange = lastResult.balanceChanges[playerId] ?? 0
-  const isPositive = myChange > 0
+  const myRachaResult = lastResult.rachaResults?.[playerId]
+  const rachaAmount = myRachaResult?.amount ?? 0
+  const totalChange = myChange + rachaAmount
+  const isPositive = totalChange > 0
 
   return (
     <AnimatePresence>
@@ -81,8 +84,41 @@ export function ResultPanel() {
             color: isPositive ? 'var(--green-neon)' : 'var(--red-danger)',
           }}
         >
-          {isPositive ? '+' : ''}{myChange}
+          {isPositive ? '+' : ''}{totalChange}
         </motion.div>
+
+        {/* Desglose de cambios */}
+        <div style={{ display: 'flex', gap: 16, fontSize: 10, color: 'var(--gray-text)' }}>
+          <span>Ronda: {myChange > 0 ? '+' : ''}{myChange}</span>
+          {rachaAmount !== 0 && (
+            <span style={{ color: rachaAmount > 0 ? 'var(--green-neon)' : 'var(--red-danger)' }}>
+              Racha: {rachaAmount > 0 ? '+' : ''}{rachaAmount}
+            </span>
+          )}
+        </div>
+
+        {/* Racha bonus/penalizacion */}
+        {myRachaResult && myRachaResult.type && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            style={{
+              padding: '8px 16px',
+              border: `1px solid ${myRachaResult.type === 'bonus' ? 'var(--green-neon)' : 'var(--red-danger)'}`,
+              background: myRachaResult.type === 'bonus' ? 'rgba(0,255,65,0.1)' : 'rgba(255,23,68,0.1)',
+            }}
+          >
+            <div style={{
+              fontSize: 11,
+              fontWeight: 'bold',
+              color: myRachaResult.type === 'bonus' ? 'var(--green-neon)' : 'var(--red-danger)',
+              textAlign: 'center',
+            }}>
+              {myRachaResult.message}
+            </div>
+          </motion.div>
+        )}
 
         {/* Summary of all players */}
         <div style={{

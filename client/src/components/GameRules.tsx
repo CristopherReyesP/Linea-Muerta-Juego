@@ -11,7 +11,7 @@ const rules = [
   },
   {
     title: 'FASE DE LLAMADA (60s)',
-    text: 'Habla con otros jugadores por voz. Negocia, miente, convence. La informacion es poder.',
+    text: 'Habla con otros jugadores por voz. Negocia, miente, convince. La informacion es poder.',
   },
   {
     title: 'FASE DE DECISION (10s)',
@@ -22,6 +22,14 @@ const rules = [
     items: [
       'Si la mayoria COOPERA: cooperadores +30, traidores +50',
       'Si la mayoria TRAICIONA: cooperadores -40, traidores -10',
+    ],
+  },
+  {
+    title: 'RACHAS',
+    items: [
+      'Cooperar 2 veces seguidas: +10 de bonus',
+      'Traicionar 2 veces seguidas: -25 de penalizacion',
+      'La racha se rompe si cambias de decision',
     ],
   },
   {

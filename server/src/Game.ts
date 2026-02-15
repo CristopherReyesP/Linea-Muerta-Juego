@@ -166,15 +166,73 @@ export class Game {
     }
 
     const result = this.resolveRound()
+    const rachaResults: Record<string, { type: 'bonus' | 'penalizacion' | null; amount: number; message: string }> = {}
 
-    // Apply balance changes
+    // Apply balance changes and process rachas
     for (const [playerId, change] of Object.entries(result.balanceChanges)) {
       const player = this.players.get(playerId)
-      if (player) {
-        const wasShadow = player.isShadow
-        player.updateBalance(change)
+      if (!player) continue
 
-        if (!wasShadow && player.isShadow) {
+      const wasShadow = player.isShadow
+      const wasAlive = player.isAlive
+      player.updateBalance(change)
+
+      if (!wasShadow && player.isShadow) {
+        this.io.to(this.room).emit('player_became_shadow', {
+          playerId: player.id,
+          playerName: player.name
+        })
+        rachaResults[playerId] = { type: null, amount: 0, message: '' }
+        continue
+      }
+
+      // Process rachas only for alive players (ACTIVE or AT_RISK)
+      if (wasAlive && player.isAlive) {
+        const decision = this.decisions.get(playerId)
+        
+        if (decision === Decision.COOPERATE) {
+          player.rachaCooperar += 1
+          player.rachaTraicionar = 0
+
+          if (player.rachaCooperar === 2) {
+            player.balance += 10
+            rachaResults[playerId] = {
+              type: 'bonus',
+              amount: 10,
+              message: 'Bonus de confianza: cooperaste 2 rondas seguidas (+10)'
+            }
+            player.rachaCooperar = 0
+          } else {
+            rachaResults[playerId] = { type: null, amount: 0, message: '' }
+          }
+        } else if (decision === Decision.BETRAY) {
+          player.rachaTraicionar += 1
+          player.rachaCooperar = 0
+
+          if (player.rachaTraicionar === 2) {
+            player.balance -= 25
+            rachaResults[playerId] = {
+              type: 'penalizacion',
+              amount: -25,
+              message: 'Desconfianza generada: traicionaste 2 rondas seguidas (-25)'
+            }
+            player.rachaTraicionar = 0
+          } else {
+            rachaResults[playerId] = { type: null, amount: 0, message: '' }
+          }
+        } else {
+          rachaResults[playerId] = { type: null, amount: 0, message: '' }
+        }
+      } else {
+        rachaResults[playerId] = { type: null, amount: 0, message: '' }
+      }
+
+      // Check if racha bonus/penalization caused player to become shadow
+      if (player.isAlive && player.balance <= 0) {
+        player.balance = 0
+        const becameShadow = !player.isShadow
+        player.becomeShadow()
+        if (becameShadow) {
           this.io.to(this.room).emit('player_became_shadow', {
             playerId: player.id,
             playerName: player.name
@@ -183,6 +241,7 @@ export class Game {
       }
     }
 
+    result.rachaResults = rachaResults
     this.io.to(this.room).emit('round_result', result)
     this.broadcastState()
   }

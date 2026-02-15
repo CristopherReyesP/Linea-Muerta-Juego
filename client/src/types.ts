@@ -32,6 +32,8 @@ export interface PlayerData {
   isAlive: boolean
   isShadow: boolean
   shadowCharges: number
+  rachaCooperar: number
+  rachaTraicionar: number
 }
 
 export interface CallData {
@@ -46,6 +48,7 @@ export interface RoundResult {
   decisions: Record<string, Decision>
   majorityDecision: Decision
   balanceChanges: Record<string, number>
+  rachaResults?: Record<string, { type: 'bonus' | 'penalizacion' | null; amount: number; message: string }>
 }
 
 export interface GameStateSnapshot {

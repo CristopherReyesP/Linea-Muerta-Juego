@@ -10,6 +10,8 @@ export class Player implements PlayerData {
   isAlive: boolean
   isShadow: boolean
   shadowCharges: number
+  rachaCooperar: number
+  rachaTraicionar: number
 
   constructor(socketId: string, name: string) {
     this.id = uuid()
@@ -20,6 +22,8 @@ export class Player implements PlayerData {
     this.isAlive = true
     this.isShadow = false
     this.shadowCharges = 0
+    this.rachaCooperar = 0
+    this.rachaTraicionar = 0
   }
 
   updateBalance(amount: number): void {
@@ -39,6 +43,8 @@ export class Player implements PlayerData {
     this.isAlive = false
     this.state = PlayerState.SHADOW
     this.shadowCharges = DEFAULT_CONFIG.shadowCharges
+    this.rachaCooperar = 0
+    this.rachaTraicionar = 0
   }
 
   useCharge(): boolean {
@@ -68,7 +74,9 @@ export class Player implements PlayerData {
       state: this.state,
       isAlive: this.isAlive,
       isShadow: this.isShadow,
-      shadowCharges: this.shadowCharges
+      shadowCharges: this.shadowCharges,
+      rachaCooperar: this.rachaCooperar,
+      rachaTraicionar: this.rachaTraicionar
     }
   }
 }

@@ -1,7 +1,8 @@
 import { Server, Socket } from 'socket.io'
 import { GameManager } from './GameManager'
-import { Player } from './Player'
-import { Decision } from './types'
+import { Decision, MetaGamePhase } from './types'
+import { AdivinaLinea } from './minigames/AdivinaLinea'
+import { LaBomba } from './minigames/LaBomba'
 
 export function registerEvents(io: Server, gameManager: GameManager): void {
   io.on('connection', (socket: Socket) => {
@@ -9,15 +10,15 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
 
     socket.on('create_game', ({ name }: { name: string }) => {
       const game = gameManager.createGame()
-      const player = new Player(socket.id, name)
+      const metaPlayer = game.addPlayer(socket.id, name)
 
-      if (!game.addPlayer(player)) {
+      if (!metaPlayer) {
         socket.emit('error', 'No se pudo crear la partida')
         return
       }
 
-      socket.emit('game_joined', { gameId: game.id, playerId: player.id })
-      game.broadcastState()
+      socket.emit('game_joined', { gameId: game.id, playerId: metaPlayer.id })
+      game.broadcastMetaState()
     })
 
     socket.on('join_game', ({ name, gameId }: { name: string; gameId: string }) => {
@@ -29,120 +30,207 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
         return
       }
 
-      if (game.phase !== 'LOBBY') {
+      if (game.metaPhase !== MetaGamePhase.LOBBY) {
         socket.emit('error', 'La partida ya comenzo.')
         return
       }
 
-      const player = new Player(socket.id, name)
+      const metaPlayer = game.addPlayer(socket.id, name)
 
-      if (!game.addPlayer(player)) {
+      if (!metaPlayer) {
         socket.emit('error', 'La sala esta llena.')
         return
       }
 
-      socket.emit('game_joined', { gameId: game.id, playerId: player.id })
-      game.broadcastState()
+      socket.emit('game_joined', { gameId: game.id, playerId: metaPlayer.id })
+      game.broadcastMetaState()
     })
 
-    socket.on('start_game', () => {
+    socket.on('start_game', (data?: { selectedMinigameIds?: string[] }) => {
       const result = gameManager.getGameBySocket(socket.id)
-      if (!result?.player || !result.game) return
+      if (!result) return
 
-      if (result.game.hostId !== result.player.id) {
+      if (result.game.hostId !== result.metaPlayer.id) {
         socket.emit('error', 'Solo el anfitrion puede iniciar')
         return
       }
 
-      result.game.startGame()
+      result.game.startSession({
+        selectedMinigameIds: data?.selectedMinigameIds,
+      })
     })
 
     socket.on('call_player', (targetId: string) => {
       const result = gameManager.getGameBySocket(socket.id)
-      if (!result?.player || !result.game) return
+      if (!result) return
 
-      result.game.callPlayer(result.player.id, targetId)
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame) return
+
+      minigame.callPlayer(result.metaPlayer.id, targetId)
     })
 
     socket.on('accept_call', (callId: string) => {
       const result = gameManager.getGameBySocket(socket.id)
-      if (!result?.player || !result.game) return
+      if (!result) return
 
-      result.game.callManager.acceptCall(callId, result.game.players, io)
-      result.game.broadcastState()
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame) return
+
+      const players = (minigame as any).players as Map<string, any>
+      result.game.callManagerInstance.acceptCall(callId, players, io)
+      minigame.broadcastState()
     })
 
     socket.on('reject_call', (callId: string) => {
       const result = gameManager.getGameBySocket(socket.id)
-      if (!result?.player || !result.game) return
+      if (!result) return
 
-      result.game.callManager.rejectCall(callId, result.game.players, io)
-      result.game.broadcastState()
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame) return
+
+      const players = (minigame as any).players as Map<string, any>
+      result.game.callManagerInstance.rejectCall(callId, players, io)
+      minigame.broadcastState()
     })
 
     socket.on('hang_up', () => {
       const result = gameManager.getGameBySocket(socket.id)
-      if (!result?.player || !result.game) return
+      if (!result) return
 
-      result.game.callManager.hangUp(result.player.id, result.game.players, io)
-      result.game.broadcastState()
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame) return
+
+      const players = (minigame as any).players as Map<string, any>
+      result.game.callManagerInstance.hangUp(result.metaPlayer.id, players, io)
+      minigame.broadcastState()
     })
 
     socket.on('submit_decision', (decision: Decision) => {
       const result = gameManager.getGameBySocket(socket.id)
-      if (!result?.player || !result.game) return
+      if (!result) return
 
       if (decision !== Decision.COOPERATE && decision !== Decision.BETRAY) {
         socket.emit('error', 'Decision invalida')
         return
       }
 
-      result.game.submitDecision(result.player.id, decision)
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame) return
+
+      minigame.submitDecision(result.metaPlayer.id, decision)
+    })
+
+    socket.on('vote_player', (targetPlayerId: string) => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) return
+
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame) return
+
+      minigame.votePlayer(result.metaPlayer.id, targetPlayerId)
     })
 
     socket.on('use_shadow_interference', (targetPlayerId: string) => {
       const result = gameManager.getGameBySocket(socket.id)
-      if (!result?.player || !result.game) return
+      if (!result) return
 
-      result.game.useShadowInterference(result.player.id, targetPlayerId)
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame) return
+
+      minigame.useShadowInterference(result.metaPlayer.id, targetPlayerId)
+    })
+
+    socket.on('submit_line_guesses', (guesses: Record<string, string>) => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) return
+
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame) return
+
+      if ('submitLineGuesses' in minigame) {
+        (minigame as AdivinaLinea).submitLineGuesses(result.metaPlayer.id, guesses)
+      }
+    })
+
+    socket.on('pass_bomb', (targetPlayerId: string) => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) return
+
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame) return
+      if (!(minigame instanceof LaBomba)) return
+
+      minigame.passBomb(result.metaPlayer.id, targetPlayerId)
+    })
+
+    socket.on('attempt_defuse', () => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) return
+
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame) return
+      if (!(minigame instanceof LaBomba)) return
+
+      minigame.attemptDefuse(result.metaPlayer.id)
+    })
+
+    socket.on('continue_to_next', () => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) return
+
+      result.game.continueToNext(result.metaPlayer.id)
+    })
+
+    socket.on('skip_to_finish', () => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) return
+
+      // Only host can skip
+      if (result.game.hostId !== result.metaPlayer.id) return
+
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame) return
+
+      minigame.skipToFinish()
     })
 
     // WebRTC Signaling
     socket.on('webrtc_offer', ({ targetId, offer }) => {
       const result = gameManager.getGameBySocket(socket.id)
-      if (!result?.player || !result.game) return
+      if (!result) return
 
-      const target = result.game.players.get(targetId)
+      const target = result.game.metaPlayers.get(targetId)
       if (!target) return
 
       io.to(target.socketId).emit('webrtc_offer', {
-        fromId: result.player.id,
+        fromId: result.metaPlayer.id,
         offer
       })
     })
 
     socket.on('webrtc_answer', ({ targetId, answer }) => {
       const result = gameManager.getGameBySocket(socket.id)
-      if (!result?.player || !result.game) return
+      if (!result) return
 
-      const target = result.game.players.get(targetId)
+      const target = result.game.metaPlayers.get(targetId)
       if (!target) return
 
       io.to(target.socketId).emit('webrtc_answer', {
-        fromId: result.player.id,
+        fromId: result.metaPlayer.id,
         answer
       })
     })
 
     socket.on('webrtc_ice_candidate', ({ targetId, candidate }) => {
       const result = gameManager.getGameBySocket(socket.id)
-      if (!result?.player || !result.game) return
+      if (!result) return
 
-      const target = result.game.players.get(targetId)
+      const target = result.game.metaPlayers.get(targetId)
       if (!target) return
 
       io.to(target.socketId).emit('webrtc_ice_candidate', {
-        fromId: result.player.id,
+        fromId: result.metaPlayer.id,
         candidate
       })
     })

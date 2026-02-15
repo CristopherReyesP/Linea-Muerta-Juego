@@ -48,7 +48,15 @@ export class CallManager {
     this.calls.set(call.id, call)
     this.pendingOutgoing.set(caller.id, call.id)
 
-    caller.state = PlayerState.IN_CALL
+    // DON'T set caller to IN_CALL yet - only on accept
+    // This allows the caller to still receive incoming calls while waiting
+
+    // Notify caller that call is ringing
+    io.to(caller.socketId).emit('call_ringing', {
+      callId: call.id,
+      targetId: receiver.id,
+      targetName: receiver.name
+    })
 
     // Send incoming call to receiver
     io.to(receiver.socketId).emit('incoming_call', {
@@ -120,7 +128,10 @@ export class CallManager {
         }
       }
       const player = players.get(playerId)
-      if (player) player.setActive()
+      if (player) {
+        player.setActive()
+        io.to(player.socketId).emit('call_ended', { callId: pendingCallId })
+      }
       this.cleanupCall(pendingCallId)
     }
   }

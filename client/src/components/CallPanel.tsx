@@ -19,12 +19,14 @@ export function CallPanel({
 }: Props) {
   const phase = useGameStore(s => s.phase)
   const incomingCalls = useGameStore(s => s.incomingCalls)
+  const pendingCall = useGameStore(s => s.pendingCall)
   const activeCallPeerId = useGameStore(s => s.activeCallPeerId)
   const players = useGameStore(s => s.players)
   const myPlayer = useGameStore(s => s.getMyPlayer())
   const shadowInterference = useGameStore(s => s.shadowInterference)
 
   const peer = activeCallPeerId ? players.find(p => p.id === activeCallPeerId) : null
+  const pendingTarget = pendingCall ? players.find(p => p.id === pendingCall.targetId) : null
 
   const hasIncomingCalls = incomingCalls.length > 0
 
@@ -32,9 +34,9 @@ export function CallPanel({
     myPlayer &&
     (myPlayer.state === PlayerState.ACTIVE || myPlayer.state === PlayerState.AT_RISK || myPlayer.isShadow) &&
     !activeCallPeerId &&
-    !hasIncomingCalls
+    !pendingCall
 
-  // Players available to call
+  // Players available to call (only filter out players in ACTIVE calls)
   const availablePlayers = players.filter(p =>
     p.id !== myPlayer?.id &&
     p.state !== PlayerState.DISCONNECTED &&
@@ -72,10 +74,56 @@ export function CallPanel({
         )}
       </AnimatePresence>
 
-      {/* Incoming calls */}
+      {/* Pending outgoing call - "Llamando a..." */}
+      <AnimatePresence>
+        {pendingCall && pendingTarget && !activeCallPeerId && (
+          <motion.div
+            key="pending"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 16,
+              padding: 24,
+              border: '1px solid var(--green-dim)',
+              background: 'var(--bg-panel)',
+            }}
+          >
+            <div style={{
+              fontSize: 12,
+              color: 'var(--green-dim)',
+              letterSpacing: 3,
+            }}
+            className="pulse"
+            >
+              LLAMANDO...
+            </div>
+
+            <PlayerAvatar player={pendingTarget} size={70} />
+
+            <div style={{
+              fontSize: 11,
+              color: 'var(--gray-text)',
+              letterSpacing: 1,
+            }}>
+              Esperando respuesta
+            </div>
+
+            <button className="btn btn-red" onClick={onHangUp} style={{ fontSize: 11 }}>
+              CANCELAR
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Incoming calls - show even if we have a pending outgoing call */}
       <AnimatePresence>
         {hasIncomingCalls && !activeCallPeerId && (
           <motion.div
+            key="incoming"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -199,8 +247,8 @@ export function CallPanel({
         )}
       </AnimatePresence>
 
-      {/* Idle state - player selection */}
-      {!hasIncomingCalls && !activeCallPeerId && phase === GamePhase.CALL_PHASE && (
+      {/* Idle state - player selection (only when no pending call, no incoming, no active) */}
+      {!hasIncomingCalls && !activeCallPeerId && !pendingCall && phase === GamePhase.CALL_PHASE && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

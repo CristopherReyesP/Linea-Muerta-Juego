@@ -4,10 +4,31 @@ import { useGameStore } from '../store/gameStore'
 export function GameOver() {
   const gameOver = useGameStore(s => s.gameOver)
   const playerId = useGameStore(s => s.playerId)
+  const activeMinigameId = useGameStore(s => s.activeMinigameId)
 
   if (!gameOver) return null
 
-  const isWinner = gameOver.winnerId === playerId
+  const isVotacionSobra = activeMinigameId === 'votacion-sobra'
+  const isBombMinigame = activeMinigameId === 'la-bomba'
+  const isWinner = isVotacionSobra
+    ? gameOver.winnerId !== playerId // In "Quien Sobra?" the "winner" is actually the loser
+    : gameOver.winnerId === playerId
+
+  const scoreEffectText = isVotacionSobra
+    ? '-1 PUNTO GLOBAL'
+    : isBombMinigame
+      ? (gameOver.winnerId ? '+2 PUNTOS GLOBAL' : '-2 PUNTOS GLOBAL')
+      : '+1 PUNTO GLOBAL'
+
+  const announcementLabel = isVotacionSobra
+    ? 'MAS VOTADO'
+    : isBombMinigame
+      ? (gameOver.winnerId ? 'DESACTIVADOR' : 'RESULTADO')
+      : 'GANADOR DE LA RONDA'
+
+  const announcementName = isBombMinigame && !gameOver.winnerId
+    ? 'LA BOMBA EXPLOTO'
+    : gameOver.winnerName
 
   return (
     <div style={{
@@ -60,6 +81,46 @@ export function GameOver() {
         }}
       >
         {isWinner ? 'VICTORIA' : 'DERROTA'}
+      </motion.div>
+
+      {/* Winner/loser announcement */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.7, type: 'spring' }}
+        style={{
+          padding: '12px 24px',
+          border: `1px solid ${isVotacionSobra ? 'var(--red-danger)' : isBombMinigame && !gameOver.winnerId ? 'var(--red-danger)' : 'var(--green-neon)'}`,
+          background: isVotacionSobra || (isBombMinigame && !gameOver.winnerId) ? 'rgba(255,23,68,0.08)' : 'rgba(0,255,65,0.08)',
+          textAlign: 'center',
+        }}
+      >
+        <div style={{
+          fontSize: 11,
+          color: 'var(--gray-text)',
+          letterSpacing: 2,
+          marginBottom: 4,
+        }}>
+          {announcementLabel}
+        </div>
+        <div style={{
+          fontSize: 20,
+          fontWeight: 'bold',
+          color: isVotacionSobra || (isBombMinigame && !gameOver.winnerId) ? 'var(--red-danger)' : 'var(--green-neon)',
+          textShadow: isVotacionSobra || (isBombMinigame && !gameOver.winnerId)
+            ? '0 0 15px rgba(255,23,68,0.4)'
+            : '0 0 15px rgba(0,255,65,0.4)',
+        }}>
+          {announcementName}
+        </div>
+        <div style={{
+          fontSize: 11,
+          color: isVotacionSobra || (isBombMinigame && !gameOver.winnerId) ? 'var(--red-danger)' : 'var(--cyan)',
+          marginTop: 4,
+          letterSpacing: 1,
+        }}>
+          {scoreEffectText}
+        </div>
       </motion.div>
 
       {/* Standings */}

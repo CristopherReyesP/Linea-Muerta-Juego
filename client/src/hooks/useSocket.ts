@@ -8,6 +8,7 @@ import {
   playCallAccepted, playCallEnded,
   playPhaseChange, playShadowTransition,
   playBalanceUp, playBalanceDown,
+  playBombExplosion, playBombDefused,
 } from '../audio/SoundEngine'
 
 const SOCKET_URL = 'http://localhost:3001'
@@ -34,8 +35,18 @@ export function useSocket() {
       store.setPlayerInfo(playerId, gameId)
     })
 
+    // Meta-game state updates
+    socket.on('meta_state_update', (state) => {
+      store.updateMetaState(state)
+    })
+
+    // Minigame state updates (from active minigame)
     socket.on('game_state_update', (state) => {
       store.updateGameState(state)
+    })
+
+    socket.on('call_ringing', ({ callId, targetId, targetName }) => {
+      store.setPendingCall({ callId, targetId, targetName })
     })
 
     socket.on('incoming_call', ({ callId, callerId, callerName }) => {
@@ -44,6 +55,7 @@ export function useSocket() {
     })
 
     socket.on('call_started', ({ callId, peerId }) => {
+      store.setPendingCall(null)
       store.clearIncomingCalls()
       store.setActiveCall(callId, peerId)
       stopRing()
@@ -51,12 +63,14 @@ export function useSocket() {
     })
 
     socket.on('call_ended', () => {
+      store.setPendingCall(null)
       store.setActiveCall(null, null)
       stopRing()
       playCallEnded()
     })
 
     socket.on('call_rejected', () => {
+      store.setPendingCall(null)
       store.setActiveCall(null, null)
       stopRing()
       playCallEnded()
@@ -64,7 +78,6 @@ export function useSocket() {
 
     socket.on('call_cancelled', ({ callId }: { callId: string }) => {
       store.removeIncomingCall(callId)
-      // Stop ring only if no more incoming calls
       if (useGameStore.getState().incomingCalls.length === 0) {
         stopRing()
       }
@@ -72,12 +85,12 @@ export function useSocket() {
 
     socket.on('phase_changed', ({ phase, endTime }) => {
       store.setPhase(phase, endTime)
+      store.setPendingCall(null)
       store.clearIncomingCalls()
       store.setActiveCall(null, null)
       stopRing()
       playPhaseChange()
 
-      // Start ambient on first game phase
       if (phase === 'CALL_PHASE') {
         startAmbient()
       } else if (phase === 'GAME_OVER') {
@@ -87,12 +100,12 @@ export function useSocket() {
 
     socket.on('decision_requested', () => {
       store.setMyDecision(null)
+      store.setMyVote(null)
     })
 
     socket.on('round_result', (result) => {
       store.setLastResult(result)
 
-      // Play balance sound for current player
       const myId = useGameStore.getState().playerId
       if (myId && result.balanceChanges[myId] !== undefined) {
         if (result.balanceChanges[myId] > 0) {
@@ -103,6 +116,10 @@ export function useSocket() {
       }
     })
 
+    socket.on('vote_result', (result) => {
+      store.setVoteResult(result)
+    })
+
     socket.on('player_became_shadow', () => {
       playShadowTransition()
     })
@@ -110,6 +127,58 @@ export function useSocket() {
     socket.on('game_over', (data) => {
       store.setGameOver(data)
       stopAmbient()
+    })
+
+    socket.on('minigame_intro', ({ minigame, index, total }) => {
+      store.setMinigameIntro(minigame, index, total)
+    })
+
+    socket.on('discussion_started', (data) => {
+      store.setDiscussionData(data)
+      stopAmbient()
+    })
+
+    socket.on('session_complete', (data) => {
+      store.setSessionComplete(data)
+      stopAmbient()
+    })
+
+    socket.on('open_voice', ({ playerIds }) => {
+      store.setOpenVoicePlayerIds(playerIds)
+    })
+
+    socket.on('voice_distortion', ({ enabled }) => {
+      store.setVoiceDistortion(enabled)
+    })
+
+    socket.on('line_assignments', (data) => {
+      store.setLineAssignments(data)
+    })
+
+    socket.on('line_guess_results', (data) => {
+      store.setLineGuessResults(data)
+    })
+
+    socket.on('bomb_state_update', (data) => {
+      store.setBombState(data)
+    })
+
+    socket.on('bomb_passed', (data) => {
+      store.setBombLastPass(data)
+    })
+
+    socket.on('bomb_defuse_result', (data) => {
+      store.setBombDefuseResult(data)
+    })
+
+    socket.on('bomb_exploded', (data) => {
+      store.setBombOutcome({ type: 'exploded', playerId: data.playerId, playerName: data.playerName })
+      playBombExplosion()
+    })
+
+    socket.on('bomb_defused', (data) => {
+      store.setBombOutcome({ type: 'defused', playerId: data.playerId, playerName: data.playerName, chance: data.chance })
+      playBombDefused()
     })
 
     socket.on('shadow_interference', ({ duration }) => {
@@ -138,8 +207,8 @@ export function useSocket() {
     socketRef.current?.emit('join_game', { name, gameId })
   }, [])
 
-  const startGame = useCallback(() => {
-    socketRef.current?.emit('start_game')
+  const startGame = useCallback((data?: { selectedMinigameIds?: string[] }) => {
+    socketRef.current?.emit('start_game', data)
   }, [])
 
   const callPlayer = useCallback((targetId: string) => {
@@ -153,7 +222,6 @@ export function useSocket() {
   const rejectCall = useCallback((callId: string) => {
     socketRef.current?.emit('reject_call', callId)
     store.removeIncomingCall(callId)
-    // Stop ring only if no more incoming calls
     if (useGameStore.getState().incomingCalls.length === 0) {
       stopRing()
     }
@@ -162,6 +230,8 @@ export function useSocket() {
 
   const hangUp = useCallback(() => {
     socketRef.current?.emit('hang_up')
+    store.setPendingCall(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const submitDecision = useCallback((decision: Decision) => {
@@ -170,8 +240,36 @@ export function useSocket() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const votePlayer = useCallback((targetPlayerId: string) => {
+    socketRef.current?.emit('vote_player', targetPlayerId)
+    store.setMyVote(targetPlayerId)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const useShadowInterference = useCallback((targetPlayerId: string) => {
     socketRef.current?.emit('use_shadow_interference', targetPlayerId)
+  }, [])
+
+  const submitLineGuesses = useCallback((guesses: Record<string, string>) => {
+    socketRef.current?.emit('submit_line_guesses', guesses)
+    store.setMyLineGuesses(guesses)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const passBomb = useCallback((targetPlayerId: string) => {
+    socketRef.current?.emit('pass_bomb', targetPlayerId)
+  }, [])
+
+  const attemptDefuse = useCallback(() => {
+    socketRef.current?.emit('attempt_defuse')
+  }, [])
+
+  const skipToFinish = useCallback(() => {
+    socketRef.current?.emit('skip_to_finish')
+  }, [])
+
+  const continueToNext = useCallback(() => {
+    socketRef.current?.emit('continue_to_next')
   }, [])
 
   return {
@@ -184,6 +282,12 @@ export function useSocket() {
     rejectCall,
     hangUp,
     submitDecision,
+    votePlayer,
+    submitLineGuesses,
+    passBomb,
+    attemptDefuse,
+    skipToFinish,
     useShadowInterference,
+    continueToNext,
   }
 }

@@ -5,6 +5,8 @@ import { PlayerState } from '../types'
 export function PlayerList() {
   const players = useGameStore(s => s.players)
   const playerId = useGameStore(s => s.playerId)
+  const activeMinigameId = useGameStore(s => s.activeMinigameId)
+  const bombState = useGameStore(s => s.bombState)
 
   const sortedPlayers = [...players]
     .filter(p => p.id !== playerId)
@@ -21,6 +23,8 @@ export function PlayerList() {
       }
       return (order[a.state] ?? 4) - (order[b.state] ?? 4)
     })
+
+  const isBombMinigame = activeMinigameId === 'la-bomba'
 
   return (
     <div style={{
@@ -76,8 +80,10 @@ export function PlayerList() {
             }}
             className={player.isShadow ? 'glitch-text' : ''}
             >
-              {player.isShadow ? 'SOMBRA' : player.state === PlayerState.AT_RISK ? 'PELIGRO' :
-                player.state === PlayerState.IN_CALL ? 'EN LLAMADA' : 'ACTIVO'}
+              {isBombMinigame && bombState?.holderId === player.id
+                ? 'TIENE BOMBA'
+                : player.isShadow ? 'SOMBRA' : player.state === PlayerState.AT_RISK ? 'PELIGRO' :
+                  player.state === PlayerState.IN_CALL ? 'EN LLAMADA' : 'ACTIVO'}
             </span>
           </div>
         </div>

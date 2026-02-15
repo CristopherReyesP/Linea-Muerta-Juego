@@ -1,10 +1,17 @@
 import { motion } from 'framer-motion'
+import { useGameStore } from '../store/gameStore'
 
 interface Props {
   onClose: () => void
 }
 
-const rules = [
+interface RuleSection {
+  title: string
+  text?: string
+  items?: string[]
+}
+
+const cooperarTraicionarRules: RuleSection[] = [
   {
     title: 'OBJETIVO',
     text: 'Sobrevive 10 rondas con el mayor saldo posible. Si tu saldo llega a 0, te conviertes en SOMBRA.',
@@ -27,7 +34,7 @@ const rules = [
   {
     title: 'RACHAS',
     items: [
-      'Cooperar 2 veces seguidas: +10 de bonus',
+      'Cooperar 2 veces seguidas: +15 de bonus',
       'Traicionar 2 veces seguidas: -25 de penalizacion',
       'La racha se rompe si cambias de decision',
     ],
@@ -42,7 +49,158 @@ const rules = [
   },
 ]
 
+const votacionSobraRules: RuleSection[] = [
+  {
+    title: 'OBJETIVO',
+    text: 'Vota por el jugador que crees que domina demasiado. El mas votado pierde 1 punto global.',
+  },
+  {
+    title: 'FASE DE LLAMADA (20s)',
+    text: 'Habla con otros jugadores para discutir quien esta dominando la sesion.',
+  },
+  {
+    title: 'FASE DE VOTACION (15s)',
+    text: 'Vota en secreto por el jugador que crees que sobra. No puedes votarte a ti mismo.',
+  },
+  {
+    title: 'RESULTADO',
+    items: [
+      'El jugador mas votado pierde 1 punto del scoreboard global',
+      'En caso de empate, todos los empatados pierden el punto',
+    ],
+  },
+]
+
+const votacionMereceRules: RuleSection[] = [
+  {
+    title: 'OBJETIVO',
+    text: 'Vota por el jugador que mas merece seguir adelante. El mas votado gana 1 punto global.',
+  },
+  {
+    title: 'FASE DE LLAMADA (20s)',
+    text: 'Habla con otros jugadores para discutir quien merece ser reconocido.',
+  },
+  {
+    title: 'FASE DE VOTACION (15s)',
+    text: 'Vota en secreto por el jugador que mas merece. No puedes votarte a ti mismo.',
+  },
+  {
+    title: 'RESULTADO',
+    items: [
+      'El jugador mas votado gana 1 punto del scoreboard global',
+      'En caso de empate, todos los empatados ganan el punto',
+    ],
+  },
+]
+
+const adivinaLineaRules: RuleSection[] = [
+  {
+    title: 'OBJETIVO',
+    text: 'Descubre quien esta detras de cada linea telefonica. Gana quien adivine mas identidades.',
+  },
+  {
+    title: 'IDENTIDADES OCULTAS',
+    text: 'Los nombres de los jugadores estan ocultos. Solo veras numeros de linea (Linea 1, Linea 2, etc.).',
+  },
+  {
+    title: 'VOCES DISTORSIONADAS',
+    text: 'Las voces se escuchan distorsionadas para dificultar el reconocimiento. Presta atencion a las pistas en la conversacion.',
+  },
+  {
+    title: 'FASE DE LLAMADA (5 min)',
+    text: 'Llama a las diferentes lineas para intentar descubrir quien es cada jugador. Tienes 5 minutos.',
+  },
+  {
+    title: 'FASE DE ADIVINANZA (30s)',
+    text: 'Asigna un nombre a cada linea. Cada nombre solo puede usarse una vez.',
+  },
+  {
+    title: 'RESULTADO',
+    items: [
+      'Cada adivinanza correcta suma 1 punto',
+      'El jugador con mas aciertos gana +1 punto global',
+    ],
+  },
+]
+
+const laBombaRules: RuleSection[] = [
+  {
+    title: 'OBJETIVO',
+    text: 'Evita que la bomba explote. Solo el jugador que la porta puede decidir entre desactivarla o pasarla.',
+  },
+  {
+    title: 'TEMPORIZADORES',
+    text: 'Hay dos relojes: el de partida (general) y el de la bomba por portador.',
+  },
+  {
+    title: 'TIMER DE BOMBA (50s)',
+    text: 'Cada portador tiene 50 segundos para decidir. Si se pasa la bomba, ese timer se reinicia para el nuevo portador.',
+  },
+  {
+    title: 'PROBABILIDAD DE DESACTIVACION',
+    items: [
+      'Inicia en 15%',
+      'Cada pase suma +10% acumulativo',
+      'A mayor cantidad de pases, mayor probabilidad',
+    ],
+  },
+  {
+    title: 'ACCIONES',
+    items: [
+      'DESACTIVAR: intenta desactivar con la probabilidad actual',
+      'PASAR BOMBA: entrega la bomba a otra cabina para subir la probabilidad',
+      'Solo el portador actual puede ejecutar estas acciones',
+    ],
+  },
+  {
+    title: 'RESULTADO',
+    items: [
+      'Si alguien desactiva: ese jugador gana +2 puntos globales',
+      'Si explota: el portador pierde -2 puntos globales',
+    ],
+  },
+]
+
+const rulesMap: Record<string, { title: string; rules: RuleSection[]; tagline: string }> = {
+  'cooperar-traicionar': {
+    title: 'COOPERAR O TRAICIONAR',
+    rules: cooperarTraicionarRules,
+    tagline: '"Tu saldo es tu vida. Confia en la linea."',
+  },
+  'votacion-sobra': {
+    title: 'QUIEN SOBRA?',
+    rules: votacionSobraRules,
+    tagline: '"El que mas brilla, mas sombra proyecta."',
+  },
+  'votacion-merece': {
+    title: 'QUIEN MERECE?',
+    rules: votacionMereceRules,
+    tagline: '"El reconocimiento es un arma de doble filo."',
+  },
+  'adivina-linea': {
+    title: 'ADIVINA LA LINEA',
+    rules: adivinaLineaRules,
+    tagline: '"Las voces mienten, pero las palabras revelan."',
+  },
+  'la-bomba': {
+    title: 'LA BOMBA',
+    rules: laBombaRules,
+    tagline: '"Cada segundo pesa. Cada pase decide."',
+  },
+}
+
+const defaultRulesData = {
+  title: 'REGLAS DEL PROTOCOLO',
+  rules: cooperarTraicionarRules,
+  tagline: '"Tu saldo es tu vida. Confia en la linea."',
+}
+
 export function GameRules({ onClose }: Props) {
+  const activeMinigameId = useGameStore(s => s.activeMinigameId)
+  const currentMinigameInfo = useGameStore(s => s.currentMinigameInfo)
+  const minigameId = activeMinigameId ?? currentMinigameInfo?.id ?? ''
+  const rulesData = rulesMap[minigameId] ?? defaultRulesData
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -84,10 +242,10 @@ export function GameRules({ onClose }: Props) {
           letterSpacing: 6,
           textAlign: 'center',
         }}>
-          REGLAS DEL PROTOCOLO
+          {rulesData.title}
         </div>
 
-        {rules.map((rule, i) => (
+        {rulesData.rules.map((rule, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, x: -10 }}
@@ -146,7 +304,7 @@ export function GameRules({ onClose }: Props) {
             letterSpacing: 2,
             textAlign: 'center',
           }}>
-            "Tu saldo es tu vida. Confia en la linea."
+            {rulesData.tagline}
           </div>
           <button className="btn btn-green" onClick={onClose}>
             ENTENDIDO

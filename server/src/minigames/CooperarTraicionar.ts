@@ -1,86 +1,46 @@
 import { Server } from 'socket.io'
-import { Player } from './Player'
-import { CallManager } from './CallManager'
+import { Player } from '../Player'
+import { CallManager } from '../CallManager'
 import {
-  GamePhase, PlayerState, Decision,
-  GameStateSnapshot, RoundResult, GameConfig, DEFAULT_CONFIG
-} from './types'
+  GamePhase, PlayerState, Decision, MiniGameInfo,
+  MinigameResult, RoundResult, GameStateSnapshot, GameConfig, DEFAULT_CONFIG
+} from '../types'
+import { MiniGame } from './MiniGame'
 
-export class Game {
-  id: string
-  phase: GamePhase = GamePhase.LOBBY
-  round: number = 0
-  players: Map<string, Player> = new Map()
-  decisions: Map<string, Decision> = new Map()
-  callManager: CallManager = new CallManager()
-  config: GameConfig
-  phaseEndTime: number = 0
-  phaseTimer: NodeJS.Timeout | null = null
-  hostId: string | null = null
-  private io: Server
+export class CooperarTraicionar extends MiniGame {
+  readonly info: MiniGameInfo = {
+    id: 'cooperar-traicionar',
+    name: 'Cooperar o Traicionar',
+    shortDescription: 'Negocia por telefono y decide: cooperar o traicionar. La mayoria define tu destino.'
+  }
 
-  constructor(id: string, io: Server, config?: Partial<GameConfig>) {
-    this.id = id
-    this.io = io
+  private phase: GamePhase = GamePhase.CALL_PHASE
+  private round: number = 0
+  private decisions: Map<string, Decision> = new Map()
+  private config: GameConfig
+  private gameId: string
+
+  constructor(
+    io: Server,
+    room: string,
+    players: Map<string, Player>,
+    callManager: CallManager,
+    gameId: string,
+    config?: Partial<GameConfig>
+  ) {
+    super(io, room, players, callManager)
     this.config = { ...DEFAULT_CONFIG, ...config }
+    this.gameId = gameId
   }
 
-  private get room(): string {
-    return `game:${this.id}`
+  getPhase(): GamePhase {
+    return this.phase
   }
 
-  addPlayer(player: Player): boolean {
-    if (this.players.size >= this.config.maxPlayers) return false
-    if (this.phase !== GamePhase.LOBBY) return false
-
-    this.players.set(player.id, player)
-    if (!this.hostId) this.hostId = player.id
-
-    this.io.to(player.socketId).socketsJoin(this.room)
-    this.broadcastState()
-    return true
-  }
-
-  removePlayer(playerId: string): void {
-    const player = this.players.get(playerId)
-    if (!player) return
-
-    player.state = PlayerState.DISCONNECTED
-    this.callManager.hangUp(playerId, this.players, this.io)
-
-    if (this.hostId === playerId) {
-      // Transfer host
-      for (const [id, p] of this.players) {
-        if (id !== playerId && p.state !== PlayerState.DISCONNECTED) {
-          this.hostId = id
-          break
-        }
-      }
-    }
-
-    this.broadcastState()
-    this.checkGameOver()
-  }
-
-  reconnectPlayer(playerId: string, newSocketId: string): boolean {
-    const player = this.players.get(playerId)
-    if (!player) return false
-
-    player.socketId = newSocketId
-    player.setActive()
-    this.io.to(newSocketId).socketsJoin(this.room)
-    this.broadcastState()
-    return true
-  }
-
-  startGame(): void {
-    if (this.players.size < this.config.minPlayers) return
-    if (this.phase !== GamePhase.LOBBY) return
-
+  start(): void {
     for (const player of this.players.values()) {
       player.state = PlayerState.ACTIVE
     }
-
     this.round = 1
     this.startPhase(GamePhase.CALL_PHASE)
   }
@@ -143,17 +103,13 @@ export class Game {
   }
 
   private onDecisionPhaseStart(): void {
-    // End all active calls
     this.callManager.endAllCalls(this.players, this.io)
-
-    // Set all alive players to DECIDING
     this.decisions.clear()
     for (const player of this.players.values()) {
       if (player.isAlive) {
         player.state = PlayerState.DECIDING
       }
     }
-
     this.io.to(this.room).emit('decision_requested')
   }
 
@@ -168,7 +124,6 @@ export class Game {
     const result = this.resolveRound()
     const rachaResults: Record<string, { type: 'bonus' | 'penalizacion' | null; amount: number; message: string }> = {}
 
-    // Apply balance changes and process rachas
     for (const [playerId, change] of Object.entries(result.balanceChanges)) {
       const player = this.players.get(playerId)
       if (!player) continue
@@ -186,10 +141,9 @@ export class Game {
         continue
       }
 
-      // Process rachas only for alive players (ACTIVE or AT_RISK)
       if (wasAlive && player.isAlive) {
         const decision = this.decisions.get(playerId)
-        
+
         if (decision === Decision.COOPERATE) {
           player.rachaCooperar += 1
           player.rachaTraicionar = 0
@@ -227,7 +181,6 @@ export class Game {
         rachaResults[playerId] = { type: null, amount: 0, message: '' }
       }
 
-      // Check if racha bonus/penalization caused player to become shadow
       if (player.isAlive && player.balance <= 0) {
         player.balance = 0
         const becameShadow = !player.isShadow
@@ -265,10 +218,8 @@ export class Game {
 
     for (const [playerId, decision] of this.decisions) {
       if (majorityDecision === Decision.COOPERATE) {
-        // Majority cooperated
         balanceChanges[playerId] = decision === Decision.COOPERATE ? 30 : 50
       } else {
-        // Majority betrayed
         balanceChanges[playerId] = decision === Decision.COOPERATE ? -40 : -10
       }
     }
@@ -286,7 +237,6 @@ export class Game {
     player.state = PlayerState.LOCKED
     this.broadcastState()
 
-    // Check if all alive players have decided
     const allDecided = Array.from(this.players.values())
       .filter(p => p.isAlive)
       .every(p => this.decisions.has(p.id))
@@ -297,40 +247,6 @@ export class Game {
     }
 
     return true
-  }
-
-  callPlayer(callerId: string, targetId: string): void {
-    if (this.phase !== GamePhase.CALL_PHASE) return
-    const caller = this.players.get(callerId)
-    if (!caller) return
-    // Block if caller is in an active call or already has a pending outgoing call
-    if (this.callManager.isPlayerInActiveCall(callerId) || this.callManager.isPlayerWaitingOutgoing(callerId)) return
-    if (!caller.isAlive && !caller.isShadow) return
-
-    const target = this.players.get(targetId)
-    if (!target) return
-    if (target.state === PlayerState.DISCONNECTED) return
-    // Only block if target is in an ACTIVE call (not pending)
-    if (this.callManager.isPlayerInActiveCall(targetId)) return
-    if (!target.isAlive && !target.isShadow) return
-    if (target.id === callerId) return
-
-    this.callManager.initiateCall(caller, target, this.io)
-    this.broadcastState()
-  }
-
-  useShadowInterference(shadowId: string, targetId: string): void {
-    if (this.phase !== GamePhase.CALL_PHASE) return
-    const shadow = this.players.get(shadowId)
-    if (!shadow || !shadow.isShadow) return
-    if (!shadow.useCharge()) return
-
-    const target = this.players.get(targetId)
-    if (!target) return
-
-    // Send interference effect to target
-    this.io.to(target.socketId).emit('shadow_interference', { duration: 10 })
-    this.broadcastState()
   }
 
   private checkGameOver(): boolean {
@@ -351,7 +267,6 @@ export class Game {
     this.phase = GamePhase.GAME_OVER
     if (this.phaseTimer) clearTimeout(this.phaseTimer)
 
-    // Winner = alive player with highest balance
     const allPlayers = Array.from(this.players.values())
       .filter(p => p.state !== PlayerState.DISCONNECTED)
     const sorted = [...allPlayers].sort((a, b) => b.balance - a.balance)
@@ -369,14 +284,23 @@ export class Game {
       reason,
       standings,
     })
+
+    this.emitComplete({
+      minigameId: this.info.id,
+      minigameName: this.info.name,
+      winnerId: winner?.id ?? '',
+      winnerName: winner?.name ?? 'Nadie',
+      standings,
+    })
+
     this.broadcastState()
     return true
   }
 
   getSnapshot(): GameStateSnapshot {
     return {
-      gameId: this.id,
-      minigameId: 'cooperar-traicionar',
+      gameId: this.gameId,
+      minigameId: this.info.id,
       phase: this.phase,
       round: this.round,
       maxRounds: this.config.maxRounds,
@@ -384,16 +308,5 @@ export class Game {
       phaseEndTime: this.phaseEndTime,
       activeCalls: this.callManager.getActiveCalls()
     }
-  }
-
-  broadcastState(): void {
-    this.io.to(this.room).emit('game_state_update', this.getSnapshot())
-  }
-
-  getPlayerBySocketId(socketId: string): Player | undefined {
-    for (const player of this.players.values()) {
-      if (player.socketId === socketId) return player
-    }
-    return undefined
   }
 }

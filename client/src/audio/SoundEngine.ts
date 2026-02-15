@@ -15,6 +15,15 @@ function getCtx(): AudioContext {
 // ── Background ambient drone ──────────────────────────────────
 
 let ambientNodes: { gain: GainNode; oscs: OscillatorNode[] } | null = null
+let ambientVolume = 0.35
+
+export function setAmbientVolume(volume: number) {
+  const normalized = Math.max(0, Math.min(1, volume))
+  ambientVolume = normalized
+  if (ambientNodes) {
+    ambientNodes.gain.gain.setTargetAtTime(ambientVolume, getCtx().currentTime, 0.08)
+  }
+}
 
 export function startAmbient() {
   if (ambientNodes) return
@@ -95,7 +104,7 @@ export function startAmbient() {
   oscs.push(sweepLfo)
 
   // Fade in
-  masterGain.gain.setTargetAtTime(1, ctx.currentTime, 2)
+  masterGain.gain.setTargetAtTime(ambientVolume, ctx.currentTime, 2)
 
   ambientNodes = { gain: masterGain, oscs }
 }
@@ -286,4 +295,57 @@ export function playShadowTransition() {
 
   noise.start(now)
   noise.stop(now + 1)
+}
+
+export function playBombExplosion() {
+  const ctx = getCtx()
+  const now = ctx.currentTime
+
+  // Noise burst body
+  const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 1.2, ctx.sampleRate)
+  const data = noiseBuffer.getChannelData(0)
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1)
+  const noise = ctx.createBufferSource()
+  noise.buffer = noiseBuffer
+  const lp = ctx.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.setValueAtTime(2800, now)
+  lp.frequency.exponentialRampToValueAtTime(120, now + 0.9)
+  const gain = ctx.createGain()
+  gain.gain.setValueAtTime(0.28, now)
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 1.1)
+  noise.connect(lp).connect(gain).connect(ctx.destination)
+  noise.start(now)
+  noise.stop(now + 1.2)
+
+  // Sub impact
+  const sub = ctx.createOscillator()
+  sub.type = 'sine'
+  sub.frequency.setValueAtTime(80, now)
+  sub.frequency.exponentialRampToValueAtTime(28, now + 0.7)
+  const subGain = ctx.createGain()
+  subGain.gain.setValueAtTime(0.2, now)
+  subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8)
+  sub.connect(subGain).connect(ctx.destination)
+  sub.start(now)
+  sub.stop(now + 0.85)
+}
+
+export function playBombDefused() {
+  const ctx = getCtx()
+  const now = ctx.currentTime
+  const tones = [440, 660, 880]
+  tones.forEach((freq, i) => {
+    const osc = ctx.createOscillator()
+    osc.type = 'triangle'
+    osc.frequency.value = freq
+    const gain = ctx.createGain()
+    const t = now + i * 0.08
+    gain.gain.setValueAtTime(0.001, t)
+    gain.gain.exponentialRampToValueAtTime(0.1, t + 0.03)
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2)
+    osc.connect(gain).connect(ctx.destination)
+    osc.start(t)
+    osc.stop(t + 0.22)
+  })
 }

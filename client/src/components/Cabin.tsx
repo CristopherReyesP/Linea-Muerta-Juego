@@ -5,9 +5,16 @@ import { PhaseTimer } from './PhaseTimer'
 import { PlayerList } from './PlayerList'
 import { CallPanel } from './CallPanel'
 import { DecisionPanel } from './DecisionPanel'
+import { VotingPanel } from './VotingPanel'
 import { ResultPanel } from './ResultPanel'
 import { ShadowPanel } from './ShadowPanel'
 import { GameOver } from './GameOver'
+import { GuessPanel } from './GuessPanel'
+import { MinigameHeader } from './MinigameHeader'
+import { BombPanel } from './BombPanel'
+import { BombSpectatorPanel } from './BombSpectatorPanel'
+import { AudioControls } from './AudioControls'
+import { BombOutcomeOverlay } from './BombOutcomeOverlay'
 
 interface Props {
   onCallPlayer: (targetId: string) => void
@@ -15,6 +22,11 @@ interface Props {
   onRejectCall: (callId: string) => void
   onHangUp: () => void
   onSubmitDecision: (decision: import('../types').Decision) => void
+  onVotePlayer: (targetId: string) => void
+  onSubmitLineGuesses: (guesses: Record<string, string>) => void
+  onPassBomb: (targetId: string) => void
+  onAttemptDefuse: () => void
+  onSkipToFinish: () => void
   onInterference: (targetId: string) => void
   audioData: Uint8Array
   isSpeaking: boolean
@@ -30,15 +42,20 @@ const phaseLabels: Record<string, string> = {
 
 export function Cabin({
   onCallPlayer, onAcceptCall, onRejectCall, onHangUp,
-  onSubmitDecision, onInterference, audioData, isSpeaking, onShowRules,
+  onSubmitDecision, onVotePlayer, onSubmitLineGuesses, onPassBomb, onAttemptDefuse, onSkipToFinish, onInterference, audioData, isSpeaking, onShowRules,
 }: Props) {
   const phase = useGameStore(s => s.phase)
   const round = useGameStore(s => s.round)
   const maxRounds = useGameStore(s => s.maxRounds)
   const players = useGameStore(s => s.players)
   const myPlayer = useGameStore(s => s.getMyPlayer())
+  const activeMinigameId = useGameStore(s => s.activeMinigameId)
+  const bombState = useGameStore(s => s.bombState)
 
   const activePlayers = players.filter(p => p.isAlive).length
+  const isVotingMinigame = activeMinigameId?.startsWith('votacion') ?? false
+  const isGuessMinigame = activeMinigameId === 'adivina-linea'
+  const isBombMinigame = activeMinigameId === 'la-bomba'
 
   if (phase === GamePhase.GAME_OVER) {
     return <GameOver />
@@ -55,7 +72,11 @@ export function Cabin({
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
+        position: 'relative',
       }}>
+        {/* Minigame header bar */}
+        <MinigameHeader />
+
         {/* Header */}
         <div style={{
           display: 'flex',
@@ -72,6 +93,8 @@ export function Cabin({
             gap: 32,
             alignItems: 'center',
           }}>
+            <AudioControls />
+
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2 }}>
                 JUGADORES ACTIVOS
@@ -108,6 +131,7 @@ export function Cabin({
               ?
             </button>
             </div>
+
           </div>
         </div>
 
@@ -154,23 +178,54 @@ export function Cabin({
             />
           )}
 
-          {phase === GamePhase.DECISION_PHASE && (
+          {phase === GamePhase.CALL_PHASE && isBombMinigame && bombState?.holderId === myPlayer?.id && (
+            <BombPanel
+              onPassBomb={onPassBomb}
+              onAttemptDefuse={onAttemptDefuse}
+            />
+          )}
+
+          {phase === GamePhase.CALL_PHASE && isBombMinigame && bombState?.holderId !== myPlayer?.id && (
+            <BombSpectatorPanel />
+          )}
+
+          {/* Show GuessPanel alongside CallPanel during call phase for adivina-linea */}
+          {phase === GamePhase.CALL_PHASE && isGuessMinigame && (
+            <GuessPanel onSubmitGuesses={onSubmitLineGuesses} />
+          )}
+
+          {phase === GamePhase.DECISION_PHASE && !isVotingMinigame && !isGuessMinigame && (
             <DecisionPanel onSubmitDecision={onSubmitDecision} />
           )}
 
-          {phase === GamePhase.RESULT_PHASE && <ResultPanel />}
+          {phase === GamePhase.DECISION_PHASE && isVotingMinigame && (
+            <VotingPanel onVotePlayer={onVotePlayer} />
+          )}
+
+          {phase === GamePhase.DECISION_PHASE && isGuessMinigame && (
+            <GuessPanel onSubmitGuesses={onSubmitLineGuesses} />
+          )}
+
+          {phase === GamePhase.RESULT_PHASE && !isVotingMinigame && !isGuessMinigame && <ResultPanel />}
+
+          {phase === GamePhase.RESULT_PHASE && isVotingMinigame && (
+            <VotingPanel onVotePlayer={onVotePlayer} />
+          )}
+
+          {phase === GamePhase.RESULT_PHASE && isGuessMinigame && (
+            <GuessPanel onSubmitGuesses={onSubmitLineGuesses} onSkipToFinish={onSkipToFinish} />
+          )}
 
           {myPlayer?.isShadow && (
             <ShadowPanel onInterference={onInterference} />
           )}
         </div>
+
+        {isBombMinigame && <BombOutcomeOverlay />}
       </div>
 
       {/* Player sidebar */}
       <PlayerList />
-
-      {/* Hidden audio element for WebRTC */}
-      <audio id="remote-audio" autoPlay style={{ display: 'none' }} />
     </div>
   )
 }

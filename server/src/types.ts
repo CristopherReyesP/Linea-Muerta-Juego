@@ -26,6 +26,9 @@ export interface PlayerData {
   id: string
   socketId: string
   name: string
+  avatarId: string
+  avatarColor: string
+  accessoryId: string
   balance: number
   state: PlayerState
   isAlive: boolean
@@ -112,13 +115,16 @@ export interface MetaPlayerData {
   id: string
   socketId: string
   name: string
+  avatarId: string
+  avatarColor: string
+  accessoryId: string
   globalScore: number
   isConnected: boolean
 }
 
 export interface DiscussionData {
   completedResult: MinigameResult
-  globalScoreboard: Array<{ playerId: string; name: string; globalScore: number }>
+  globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   nextMinigame: MiniGameInfo | null
   currentIndex: number
   totalMinigames: number
@@ -127,7 +133,7 @@ export interface DiscussionData {
 export interface SessionCompleteData {
   overallWinnerId: string
   overallWinnerName: string
-  globalScoreboard: Array<{ playerId: string; name: string; globalScore: number }>
+  globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   history: MinigameResult[]
 }
 
@@ -146,7 +152,7 @@ export interface MetaGameStateSnapshot {
   currentMinigameIndex: number
   totalMinigames: number
   currentMinigameInfo: MiniGameInfo | null
-  globalScoreboard: Array<{ playerId: string; name: string; globalScore: number }>
+  globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   hostId: string | null
   // When in MINIGAME_IN_PROGRESS, the minigame's own snapshot is sent separately
   minigameSnapshot: GameStateSnapshot | null
@@ -154,8 +160,8 @@ export interface MetaGameStateSnapshot {
 
 // Socket events
 export interface ClientToServerEvents {
-  create_game: (data: { name: string }) => void
-  join_game: (data: { name: string; gameId: string }) => void
+  create_game: (data: { name: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => void
+  join_game: (data: { name: string; gameId: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => void
   start_game: (data?: { selectedMinigameIds?: string[] }) => void
   call_player: (targetId: string) => void
   accept_call: (callId: string) => void

@@ -79,11 +79,17 @@ export class MetaGame {
 
   // --- Lobby ---
 
-  addPlayer(socketId: string, name: string): MetaPlayer | null {
+  addPlayer(
+    socketId: string,
+    name: string,
+    avatarId: string = 'neon-eyes',
+    avatarColor: string = '#00e5ff',
+    accessoryId: string = 'none'
+  ): MetaPlayer | null {
     if (this.metaPlayers.size >= DEFAULT_CONFIG.maxPlayers) return null
     if (this.metaPhase !== MetaGamePhase.LOBBY) return null
 
-    const player = new MetaPlayer(uuid(), socketId, name)
+    const player = new MetaPlayer(uuid(), socketId, name, avatarId, avatarColor, accessoryId)
     this.metaPlayers.set(player.id, player)
 
     if (!this.hostId) this.hostId = player.id
@@ -230,7 +236,7 @@ export class MetaGame {
     for (const [metaId, mp] of this.metaPlayers) {
       if (!mp.isConnected) continue
 
-      const player = new Player(mp.socketId, mp.name)
+      const player = new Player(mp.socketId, mp.name, mp.avatarId, mp.avatarColor, mp.accessoryId)
       // Override the auto-generated id with the metaPlayer id so they match
       ;(player as any).id = metaId
       player.balance = DEFAULT_CONFIG.initialBalance
@@ -375,10 +381,10 @@ export class MetaGame {
 
   // --- State ---
 
-  private getGlobalScoreboard(): Array<{ playerId: string; name: string; globalScore: number }> {
+  private getGlobalScoreboard(): Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }> {
     return Array.from(this.metaPlayers.values())
       .filter(p => p.isConnected)
-      .map(p => ({ playerId: p.id, name: p.name, globalScore: p.globalScore }))
+      .map(p => ({ playerId: p.id, name: p.name, avatarId: p.avatarId, avatarColor: p.avatarColor, accessoryId: p.accessoryId, globalScore: p.globalScore }))
       .sort((a, b) => b.globalScore - a.globalScore)
   }
 

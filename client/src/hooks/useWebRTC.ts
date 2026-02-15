@@ -12,22 +12,24 @@ const ICE_SERVERS: RTCConfiguration = {
 export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
   const peerRef = useRef<RTCPeerConnection | null>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
+  const localRawTrackRef = useRef<MediaStreamTrack | null>(null)
+  const localProcessedTrackRef = useRef<MediaStreamTrack | null>(null)
+  const localAudioSenderRef = useRef<RTCRtpSender | null>(null)
+  const outgoingFxCtxRef = useRef<AudioContext | null>(null)
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
   const [audioData, setAudioData] = useState<Uint8Array>(new Uint8Array(0))
   const [isSpeaking, setIsSpeaking] = useState(false)
+  const [remoteStreamVersion, setRemoteStreamVersion] = useState(0)
   const animFrameRef = useRef<number>(0)
+  const remoteStreamRef = useRef<MediaStream | null>(null)
 
   const activeCallPeerId = useGameStore(s => s.activeCallPeerId)
   const playerId = useGameStore(s => s.playerId)
   const shadowInterference = useGameStore(s => s.shadowInterference)
   const voiceDistortion = useGameStore(s => s.voiceDistortion)
+  const activeMinigameId = useGameStore(s => s.activeMinigameId)
   const playerVolume = useGameStore(s => s.playerVolume)
-
-  // Voice distortion nodes
-  const distortionCtxRef = useRef<AudioContext | null>(null)
-  const distortionSourceRef = useRef<MediaElementAudioSourceNode | null>(null)
-  const distortionOutputGainRef = useRef<GainNode | null>(null)
 
   const cleanup = useCallback(() => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
@@ -35,9 +37,20 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
     peerRef.current = null
     localStreamRef.current?.getTracks().forEach(t => t.stop())
     localStreamRef.current = null
+    localRawTrackRef.current = null
+    localProcessedTrackRef.current?.stop()
+    localProcessedTrackRef.current = null
+    localAudioSenderRef.current = null
+    if (outgoingFxCtxRef.current) {
+      void outgoingFxCtxRef.current.close()
+      outgoingFxCtxRef.current = null
+    }
     if (remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = null
+      remoteAudioRef.current.muted = false
+      remoteAudioRef.current.playbackRate = 1
     }
+    remoteStreamRef.current = null
     analyserRef.current = null
     setAudioData(new Uint8Array(0))
     setIsSpeaking(false)
@@ -71,21 +84,31 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
     cleanup()
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      })
       localStreamRef.current = stream
       startAudioAnalysis(stream)
 
       const pc = new RTCPeerConnection(ICE_SERVERS)
       peerRef.current = pc
 
-      stream.getTracks().forEach(track => pc.addTrack(track, stream))
+      const audioTrack = stream.getAudioTracks()[0]
+      localRawTrackRef.current = audioTrack
+      localAudioSenderRef.current = pc.addTrack(audioTrack, stream)
 
       pc.ontrack = (event) => {
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = event.streams[0]
-        remoteAudioRef.current.volume = playerVolume
-        remoteAudioRef.current.play().catch(() => {})
-      }
+        if (remoteAudioRef.current) {
+          remoteStreamRef.current = event.streams[0]
+          remoteAudioRef.current.srcObject = event.streams[0]
+          remoteAudioRef.current.volume = playerVolume
+          remoteAudioRef.current.play().catch(() => {})
+          setRemoteStreamVersion(v => v + 1)
+        }
       }
 
       pc.onicecandidate = (event) => {
@@ -166,127 +189,146 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
     }
   }, [activeCallPeerId, playerId, setupPeerConnection, cleanup])
 
-  // Apply heavy voice distortion for AdivinaLinea minigame
-  useEffect(() => {
-    const audioEl = remoteAudioRef.current
-    if (!audioEl) return
+  const buildProcessedOutgoingTrack = useCallback(async (inputStream: MediaStream): Promise<MediaStreamTrack | null> => {
+    const ctx = new AudioContext()
+    void ctx.resume()
+    outgoingFxCtxRef.current = ctx
 
-    if (voiceDistortion && audioEl.srcObject) {
-      const ctx = new AudioContext()
-      const source = ctx.createMediaElementSource(audioEl)
+    const source = ctx.createMediaStreamSource(inputStream)
 
-      // Ring modulator: multiply voice with a sine wave to make it completely unrecognizable
-      // This shifts all frequencies, destroying the natural voice timbre
-      const ringOscillator = ctx.createOscillator()
-      ringOscillator.type = 'sine'
-      ringOscillator.frequency.value = 180 // frequency shift amount
-      const ringGain = ctx.createGain()
-      ringGain.gain.value = 1.0
-      ringOscillator.connect(ringGain.gain) // modulate the gain
-      ringOscillator.start()
+    // Deep mask: low-heavy, narrow band, AM modulation + saturation.
+    const highpass = ctx.createBiquadFilter()
+    highpass.type = 'highpass'
+    highpass.frequency.value = 90
 
-      // Second ring mod at different frequency for extra mangling
-      const ringOsc2 = ctx.createOscillator()
-      ringOsc2.type = 'square'
-      ringOsc2.frequency.value = 35 // tremolo-like pulsing
-      const ringGain2 = ctx.createGain()
-      ringGain2.gain.value = 0.6
-      ringOsc2.connect(ringGain2.gain)
-      ringOsc2.start()
+    const lowpass = ctx.createBiquadFilter()
+    lowpass.type = 'lowpass'
+    lowpass.frequency.value = 2700
 
-      // Aggressive bandpass filter - removes identifying high and low frequencies
-      const bandpass = ctx.createBiquadFilter()
-      bandpass.type = 'bandpass'
-      bandpass.frequency.value = 1200
-      bandpass.Q.value = 0.8
+    const lowshelf = ctx.createBiquadFilter()
+    lowshelf.type = 'lowshelf'
+    lowshelf.frequency.value = 220
+    lowshelf.gain.value = 12
 
-      // Waveshaper for harsh distortion
-      const waveshaper = ctx.createWaveShaper()
-      const curve = new Float32Array(256)
-      for (let i = 0; i < 256; i++) {
-        const x = (i * 2) / 256 - 1
-        // Harsh clipping for robotic sound
-        curve[i] = Math.sign(x) * Math.pow(Math.abs(x), 0.3)
-      }
-      waveshaper.curve = curve
+    const peaking = ctx.createBiquadFilter()
+    peaking.type = 'peaking'
+    peaking.frequency.value = 1750
+    peaking.Q.value = 1.1
+    peaking.gain.value = 0
 
-      // Resonant notch filter to remove more voice characteristics
-      const notch = ctx.createBiquadFilter()
-      notch.type = 'notch'
-      notch.frequency.value = 800
-      notch.Q.value = 2
-
-      // Final output gain
-      const outputGain = ctx.createGain()
-      outputGain.gain.value = 0.7 * playerVolume
-
-      // Chain: source -> ringMod -> ringMod2 -> bandpass -> waveshaper -> notch -> output
-      source.connect(ringGain)
-      ringGain.connect(ringGain2)
-      ringGain2.connect(bandpass)
-      bandpass.connect(waveshaper)
-      waveshaper.connect(notch)
-      notch.connect(outputGain)
-      outputGain.connect(ctx.destination)
-
-      distortionCtxRef.current = ctx
-      distortionSourceRef.current = source
-      distortionOutputGainRef.current = outputGain
-
-      return () => {
-        try {
-          ringOscillator.stop()
-          ringOsc2.stop()
-          source.disconnect()
-          ringGain.disconnect()
-          ringGain2.disconnect()
-          bandpass.disconnect()
-          waveshaper.disconnect()
-          notch.disconnect()
-          outputGain.disconnect()
-          ctx.close()
-        } catch {}
-        distortionCtxRef.current = null
-        distortionSourceRef.current = null
-        distortionOutputGainRef.current = null
-      }
-    } else {
-      // Clean up distortion if it was active
-      if (distortionCtxRef.current) {
-        try {
-          distortionSourceRef.current?.disconnect()
-          distortionCtxRef.current.close()
-        } catch {}
-        distortionCtxRef.current = null
-        distortionSourceRef.current = null
-        distortionOutputGainRef.current = null
-      }
+    const waveshaper = ctx.createWaveShaper()
+    const curve = new Float32Array(512)
+    for (let i = 0; i < curve.length; i++) {
+      const x = (i * 2) / curve.length - 1
+      curve[i] = Math.tanh(3.6 * x)
     }
-  }, [voiceDistortion, activeCallPeerId, playerVolume])
+    waveshaper.curve = curve
+
+    const compressor = ctx.createDynamicsCompressor()
+    compressor.threshold.value = -28
+    compressor.ratio.value = 5
+    compressor.attack.value = 0.002
+    compressor.release.value = 0.2
+
+    let disguiseNode: AudioWorkletNode | null = null
+    try {
+      await ctx.audioWorklet.addModule('/audio/voice-disguise-worklet.js')
+      disguiseNode = new AudioWorkletNode(ctx, 'voice-disguise-processor', {
+        numberOfInputs: 1,
+        numberOfOutputs: 1,
+        outputChannelCount: [1],
+      })
+      disguiseNode.port.postMessage({ pitch: 0.7, grainSize: 1152 })
+    } catch (error) {
+      console.warn('AudioWorklet unavailable, using fallback disguise chain', error)
+    }
+
+    const amGain = ctx.createGain()
+    amGain.gain.value = 0.88
+    const amOsc = ctx.createOscillator()
+    amOsc.type = 'sine'
+    amOsc.frequency.value = 18
+    const amDepth = ctx.createGain()
+    amDepth.gain.value = 0.08
+    amOsc.connect(amDepth).connect(amGain.gain)
+    amOsc.start()
+
+    const destination = ctx.createMediaStreamDestination()
+
+    source.connect(highpass)
+    highpass.connect(lowpass)
+    lowpass.connect(lowshelf)
+    lowshelf.connect(peaking)
+    peaking.connect(waveshaper)
+    if (disguiseNode) {
+      waveshaper.connect(disguiseNode)
+      disguiseNode.connect(amGain)
+    } else {
+      waveshaper.connect(amGain)
+    }
+    amGain.connect(compressor)
+    compressor.connect(destination)
+
+    const track = destination.stream.getAudioTracks()[0] ?? null
+    if (!track) {
+      amOsc.stop()
+      void ctx.close()
+      outgoingFxCtxRef.current = null
+      return null
+    }
+    return track
+  }, [])
+
+  const applyOutgoingVoiceMode = useCallback(async (enabled: boolean) => {
+    const sender = localAudioSenderRef.current
+    const rawTrack = localRawTrackRef.current
+    if (!sender || !rawTrack) return
+
+    if (!enabled) {
+      await sender.replaceTrack(rawTrack)
+      if (localProcessedTrackRef.current) {
+        localProcessedTrackRef.current.stop()
+        localProcessedTrackRef.current = null
+      }
+      if (outgoingFxCtxRef.current) {
+        await outgoingFxCtxRef.current.close()
+        outgoingFxCtxRef.current = null
+      }
+      return
+    }
+
+    if (!localProcessedTrackRef.current && localStreamRef.current) {
+      localProcessedTrackRef.current = await buildProcessedOutgoingTrack(localStreamRef.current)
+    }
+    if (localProcessedTrackRef.current) {
+      await sender.replaceTrack(localProcessedTrackRef.current)
+    }
+  }, [buildProcessedOutgoingTrack])
+
+  // Distortion is applied on sender side before WebRTC transport.
+  // Guarded to only run during Adivina la Linea.
+  useEffect(() => {
+    const shouldDistort = voiceDistortion && activeMinigameId === 'adivina-linea'
+    void applyOutgoingVoiceMode(shouldDistort)
+  }, [voiceDistortion, activeMinigameId, activeCallPeerId, remoteStreamVersion, applyOutgoingVoiceMode])
 
   useEffect(() => {
     if (remoteAudioRef.current) {
       remoteAudioRef.current.volume = playerVolume
     }
-    if (distortionOutputGainRef.current && distortionCtxRef.current) {
-      distortionOutputGainRef.current.gain.setTargetAtTime(
-        0.7 * playerVolume,
-        distortionCtxRef.current.currentTime,
-        0.05
-      )
-    }
-  }, [playerVolume])
+  }, [playerVolume, voiceDistortion])
 
   // Apply audio distortion when shadow interference is active
   useEffect(() => {
     if (remoteAudioRef.current) {
+      const baseRate = 1
       if (shadowInterference) {
-        remoteAudioRef.current.playbackRate = 0.7 + Math.random() * 0.6
+        remoteAudioRef.current.playbackRate = Math.max(0.6, baseRate - 0.2) + Math.random() * 0.4
       } else {
-        remoteAudioRef.current.playbackRate = 1.0
+        remoteAudioRef.current.playbackRate = baseRate
       }
     }
-  }, [shadowInterference])
+  }, [shadowInterference, voiceDistortion])
 
   return {
     remoteAudioRef,

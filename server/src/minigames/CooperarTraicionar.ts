@@ -218,7 +218,7 @@ export class CooperarTraicionar extends MiniGame {
 
     for (const [playerId, decision] of this.decisions) {
       if (majorityDecision === Decision.COOPERATE) {
-        balanceChanges[playerId] = decision === Decision.COOPERATE ? 30 : 50
+        balanceChanges[playerId] = decision === Decision.COOPERATE ? 30 : 45
       } else {
         balanceChanges[playerId] = decision === Decision.COOPERATE ? -40 : -10
       }

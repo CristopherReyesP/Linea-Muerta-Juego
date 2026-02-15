@@ -9,8 +9,8 @@ import { PlayerState, type PlayerData } from '../types'
 type LobbyView = 'welcome' | 'create' | 'join'
 
 interface Props {
-  onCreateGame: (name: string) => void
-  onJoinGame: (name: string, code: string) => void
+  onCreateGame: (name: string, avatarId?: string, avatarColor?: string, accessoryId?: string) => void
+  onJoinGame: (name: string, code: string, avatarId?: string, avatarColor?: string, accessoryId?: string) => void
   onStart: (data?: { selectedMinigameIds?: string[] }) => void
   onShowRules: () => void
 }
@@ -21,6 +21,52 @@ const minigameOptions = [
   { id: 'votacion-merece', name: 'Quien Merece?' },
   { id: 'adivina-linea', name: 'Adivina la Linea' },
   { id: 'la-bomba', name: 'La Bomba' },
+]
+
+const avatarOptions = [
+  { id: 'neon-eyes', premium: false },
+  { id: 'x-glow', premium: false },
+  { id: 'heart-core', premium: false },
+  { id: 'circle-core', premium: false },
+  { id: 'square-core', premium: false },
+  { id: 'skull-mask', premium: false },
+  { id: 'mask-jason', premium: true },
+  { id: 'mask-anonymous', premium: true },
+  { id: 'emoji-devil', premium: false },
+  { id: 'emoji-robot', premium: false },
+  { id: 'emoji-ghost', premium: false },
+  { id: 'emoji-skull', premium: false },
+  { id: 'emoji-brain', premium: false },
+  { id: 'emoji-fire', premium: false },
+  { id: 'emoji-alien', premium: false },
+  { id: 'emoji-mask', premium: false },
+  { id: 'emoji-owl', premium: false },
+  { id: 'emoji-crow', premium: false },
+  { id: 'emoji-dog', premium: false },
+  { id: 'emoji-wizard', premium: false },
+  { id: 'emoji-vampire', premium: false },
+  { id: 'emoji-zombie', premium: false },
+  { id: 'emoji-ninja', premium: false },
+  { id: 'emoji-moon-face', premium: false },
+  { id: 'emoji-crystal', premium: false },
+  { id: 'icon-triangle', premium: false },
+  { id: 'icon-bolt', premium: false },
+  { id: 'icon-moon', premium: false },
+  { id: 'icon-crosshair', premium: false },
+  { id: 'icon-wand', premium: false },
+  { id: 'icon-star', premium: false },
+]
+
+const avatarColors = ['#00e5ff', '#00ff41', '#ff1744', '#ffab00', '#ff4dff', '#8b5a2b', '#a259ff', '#ffffff']
+const accessoryOptions = [
+  { id: 'none', premium: false },
+  { id: 'beanie', premium: false },
+  { id: 'visor', premium: false },
+  { id: 'horns', premium: false },
+  { id: 'pet-raven', premium: false },
+  { id: 'pet-cat', premium: false },
+  { id: 'angel-wings', premium: true },
+  { id: 'butterfly-wings', premium: true },
 ]
 
 const inputStyle: React.CSSProperties = {
@@ -36,10 +82,22 @@ const inputStyle: React.CSSProperties = {
   width: 280,
 }
 
+const avatarGridStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, 1fr)',
+  gap: 8,
+  maxHeight: 182, // 5 rows (15 options visibles) aprox
+  overflowY: 'auto',
+  paddingRight: 4,
+}
+
 export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
   const [view, setView] = useState<LobbyView>('welcome')
   const [name, setName] = useState('')
   const [roomCode, setRoomCode] = useState('')
+  const [selectedAvatarId, setSelectedAvatarId] = useState('neon-eyes')
+  const [selectedAvatarColor, setSelectedAvatarColor] = useState('#00e5ff')
+  const [selectedAccessoryId, setSelectedAccessoryId] = useState('none')
   const [devMode, setDevMode] = useState(false)
   const [selectedMinigameIds, setSelectedMinigameIds] = useState<string[]>([])
   const gameId = useGameStore(s => s.gameId)
@@ -60,12 +118,12 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
 
   const handleCreate = () => {
     if (!name.trim()) return
-    onCreateGame(name.trim())
+    onCreateGame(name.trim(), selectedAvatarId, selectedAvatarColor, selectedAccessoryId)
   }
 
   const handleJoin = () => {
     if (!name.trim() || !roomCode.trim()) return
-    onJoinGame(name.trim(), roomCode.trim())
+    onJoinGame(name.trim(), roomCode.trim(), selectedAvatarId, selectedAvatarColor, selectedAccessoryId)
   }
 
   const toggleMinigameSelection = (id: string) => {
@@ -75,10 +133,13 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
     })
   }
 
-  const toLobbyAvatarPlayer = (player: { playerId: string; name: string }): PlayerData => ({
+  const toLobbyAvatarPlayer = (player: { playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string }): PlayerData => ({
     id: player.playerId,
     socketId: '',
     name: player.name,
+    avatarId: player.avatarId,
+    avatarColor: player.avatarColor,
+    accessoryId: player.accessoryId ?? 'none',
     balance: 0,
     state: PlayerState.LOBBY,
     isAlive: true,
@@ -107,6 +168,26 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
     gap: 18,
     marginLeft: 'clamp(0px, 8vw, 140px)',
   }
+
+  const selectedAvatarPreview: PlayerData = {
+    id: 'preview',
+    socketId: '',
+    name: 'Preview',
+    avatarId: selectedAvatarId,
+    avatarColor: selectedAvatarColor,
+    accessoryId: selectedAccessoryId,
+    balance: 0,
+    state: PlayerState.LOBBY,
+    isAlive: true,
+    isShadow: false,
+    shadowCharges: 0,
+    rachaCooperar: 0,
+    rachaTraicionar: 0,
+  }
+  const selectedAccessory = accessoryOptions.find((a) => a.id === selectedAccessoryId)
+  const isSelectedAccessoryPremium = !!selectedAccessory?.premium
+  const selectedAvatar = avatarOptions.find((a) => a.id === selectedAvatarId)
+  const isSelectedAvatarPremium = !!selectedAvatar?.premium
 
   return (
     <div style={{
@@ -163,7 +244,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
             >
               LINEA MUERTA
             </motion.h1>
-            <WelcomeText />
+            {!hasJoined && view === 'welcome' && <WelcomeText />}
           </div>
 
           <AnimatePresence>
@@ -200,7 +281,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0, x: -20 }}
-                  transition={{ delay: 2.4 }}
+                  transition={{ duration: 0.18 }}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -257,6 +338,134 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                     autoFocus
                     style={inputStyle}
                   />
+
+                  <div style={{
+                    width: '100%',
+                    maxWidth: 360,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    border: `1px solid ${isSelectedAvatarPremium ? 'rgba(255, 214, 102, 0.78)' : '#223'}`,
+                    background: isSelectedAvatarPremium
+                      ? 'linear-gradient(180deg, rgba(52,34,8,0.33), rgba(10,12,20,0.48))'
+                      : 'rgba(0,0,0,0.35)',
+                    boxShadow: isSelectedAvatarPremium ? '0 0 16px rgba(255,214,102,0.22)' : undefined,
+                    padding: 10,
+                  }}>
+                    <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2, textAlign: 'center' }}>
+                      ELIGE TU AVATAR
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <PlayerAvatar player={selectedAvatarPreview} size={74} showName={false} showState={false} />
+                    </div>
+                    <div style={avatarGridStyle}>
+                      {avatarOptions.map((avatar) => (
+                        <button
+                          key={avatar.id}
+                          type="button"
+                          onClick={() => setSelectedAvatarId(avatar.id)}
+                          style={{
+                            border: `1px solid ${
+                              selectedAvatarId === avatar.id
+                                ? (avatar.premium ? '#ffd666' : 'var(--cyan)')
+                                : (avatar.premium ? 'rgba(255,214,102,0.5)' : '#333')
+                            }`,
+                            background: selectedAvatarId === avatar.id
+                              ? (avatar.premium ? 'rgba(255,214,102,0.18)' : 'rgba(0,229,255,0.12)')
+                              : (avatar.premium ? 'rgba(255,214,102,0.08)' : 'rgba(255,255,255,0.02)'),
+                            padding: '6px 4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <PlayerAvatar
+                            player={{ ...selectedAvatarPreview, id: `opt-${avatar.id}`, avatarId: avatar.id }}
+                            size={42}
+                            showName={false}
+                            showState={false}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    {isSelectedAvatarPremium && (
+                      <div style={{
+                        marginTop: 2,
+                        textAlign: 'center',
+                        fontSize: 10,
+                        letterSpacing: 2,
+                        color: '#ffd666',
+                        textShadow: '0 0 10px rgba(255,214,102,0.35)',
+                      }}>
+                        PREMIUM
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 4 }}>
+                      {avatarColors.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setSelectedAvatarColor(color)}
+                          title={color}
+                          style={{
+                            width: 18,
+                            height: 18,
+                            borderRadius: '50%',
+                            border: selectedAvatarColor === color ? '2px solid var(--white)' : '1px solid #333',
+                            background: color,
+                            cursor: 'pointer',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2, textAlign: 'center', marginTop: 4 }}>
+                      ACCESORIOS
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                      {accessoryOptions.map((accessory) => (
+                        <button
+                          key={accessory.id}
+                          type="button"
+                          onClick={() => setSelectedAccessoryId(accessory.id)}
+                          style={{
+                            border: `1px solid ${
+                              selectedAccessoryId === accessory.id
+                                ? (accessory.premium ? '#ffd666' : 'var(--cyan)')
+                                : (accessory.premium ? 'rgba(255,214,102,0.5)' : '#333')
+                            }`,
+                            background: selectedAccessoryId === accessory.id
+                              ? (accessory.premium ? 'rgba(255,214,102,0.18)' : 'rgba(0,229,255,0.12)')
+                              : (accessory.premium ? 'rgba(255,214,102,0.08)' : 'rgba(255,255,255,0.02)'),
+                            padding: '6px 4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <PlayerAvatar
+                            player={{ ...selectedAvatarPreview, id: `acc-opt-${accessory.id}`, accessoryId: accessory.id }}
+                            size={44}
+                            showName={false}
+                            showState={false}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    {isSelectedAccessoryPremium && (
+                      <div style={{
+                        marginTop: 2,
+                        textAlign: 'center',
+                        fontSize: 10,
+                        letterSpacing: 2,
+                        color: '#ffd666',
+                        textShadow: '0 0 10px rgba(255,214,102,0.35)',
+                      }}>
+                        PREMIUM
+                      </div>
+                    )}
+                  </div>
 
                   <div style={{ display: 'flex', gap: 12 }}>
                     <button
@@ -323,6 +532,134 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                       color: 'var(--cyan)',
                     }}
                   />
+
+                  <div style={{
+                    width: '100%',
+                    maxWidth: 360,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    border: `1px solid ${isSelectedAvatarPremium ? 'rgba(255, 214, 102, 0.78)' : '#223'}`,
+                    background: isSelectedAvatarPremium
+                      ? 'linear-gradient(180deg, rgba(52,34,8,0.33), rgba(10,12,20,0.48))'
+                      : 'rgba(0,0,0,0.35)',
+                    boxShadow: isSelectedAvatarPremium ? '0 0 16px rgba(255,214,102,0.22)' : undefined,
+                    padding: 10,
+                  }}>
+                    <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2, textAlign: 'center' }}>
+                      ELIGE TU AVATAR
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <PlayerAvatar player={selectedAvatarPreview} size={74} showName={false} showState={false} />
+                    </div>
+                    <div style={avatarGridStyle}>
+                      {avatarOptions.map((avatar) => (
+                        <button
+                          key={avatar.id}
+                          type="button"
+                          onClick={() => setSelectedAvatarId(avatar.id)}
+                          style={{
+                            border: `1px solid ${
+                              selectedAvatarId === avatar.id
+                                ? (avatar.premium ? '#ffd666' : 'var(--cyan)')
+                                : (avatar.premium ? 'rgba(255,214,102,0.5)' : '#333')
+                            }`,
+                            background: selectedAvatarId === avatar.id
+                              ? (avatar.premium ? 'rgba(255,214,102,0.18)' : 'rgba(0,229,255,0.12)')
+                              : (avatar.premium ? 'rgba(255,214,102,0.08)' : 'rgba(255,255,255,0.02)'),
+                            padding: '6px 4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <PlayerAvatar
+                            player={{ ...selectedAvatarPreview, id: `join-opt-${avatar.id}`, avatarId: avatar.id }}
+                            size={42}
+                            showName={false}
+                            showState={false}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    {isSelectedAvatarPremium && (
+                      <div style={{
+                        marginTop: 2,
+                        textAlign: 'center',
+                        fontSize: 10,
+                        letterSpacing: 2,
+                        color: '#ffd666',
+                        textShadow: '0 0 10px rgba(255,214,102,0.35)',
+                      }}>
+                        PREMIUM
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 4 }}>
+                      {avatarColors.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setSelectedAvatarColor(color)}
+                          title={color}
+                          style={{
+                            width: 18,
+                            height: 18,
+                            borderRadius: '50%',
+                            border: selectedAvatarColor === color ? '2px solid var(--white)' : '1px solid #333',
+                            background: color,
+                            cursor: 'pointer',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2, textAlign: 'center', marginTop: 4 }}>
+                      ACCESORIOS
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                      {accessoryOptions.map((accessory) => (
+                        <button
+                          key={accessory.id}
+                          type="button"
+                          onClick={() => setSelectedAccessoryId(accessory.id)}
+                          style={{
+                            border: `1px solid ${
+                              selectedAccessoryId === accessory.id
+                                ? (accessory.premium ? '#ffd666' : 'var(--cyan)')
+                                : (accessory.premium ? 'rgba(255,214,102,0.5)' : '#333')
+                            }`,
+                            background: selectedAccessoryId === accessory.id
+                              ? (accessory.premium ? 'rgba(255,214,102,0.18)' : 'rgba(0,229,255,0.12)')
+                              : (accessory.premium ? 'rgba(255,214,102,0.08)' : 'rgba(255,255,255,0.02)'),
+                            padding: '6px 4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <PlayerAvatar
+                            player={{ ...selectedAvatarPreview, id: `join-acc-opt-${accessory.id}`, accessoryId: accessory.id }}
+                            size={44}
+                            showName={false}
+                            showState={false}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    {isSelectedAccessoryPremium && (
+                      <div style={{
+                        marginTop: 2,
+                        textAlign: 'center',
+                        fontSize: 10,
+                        letterSpacing: 2,
+                        color: '#ffd666',
+                        textShadow: '0 0 10px rgba(255,214,102,0.35)',
+                      }}>
+                        PREMIUM
+                      </div>
+                    )}
+                  </div>
 
                   <div style={{ display: 'flex', gap: 12 }}>
                     <button
@@ -435,7 +772,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                         HOST
                       </span>
                     )}
-                    <PlayerAvatar player={toLobbyAvatarPlayer(p)} size={44} showName={false} showState={false} />
+                    <PlayerAvatar player={toLobbyAvatarPlayer(p)} size={52} showName={false} showState={false} />
                     <div style={{
                       fontSize: 12,
                       color: p.playerId === playerId ? 'var(--green-neon)' : 'var(--white)',

@@ -27,6 +27,9 @@ export interface PlayerData {
   id: string
   socketId: string
   name: string
+  avatarId: string
+  avatarColor: string
+  accessoryId: string
   balance: number
   state: PlayerState
   isAlive: boolean
@@ -89,13 +92,16 @@ export interface MetaPlayerData {
   id: string
   socketId: string
   name: string
+  avatarId: string
+  avatarColor: string
+  accessoryId: string
   globalScore: number
   isConnected: boolean
 }
 
 export interface DiscussionData {
   completedResult: MinigameResult
-  globalScoreboard: Array<{ playerId: string; name: string; globalScore: number }>
+  globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   nextMinigame: MiniGameInfo | null
   currentIndex: number
   totalMinigames: number
@@ -104,7 +110,7 @@ export interface DiscussionData {
 export interface SessionCompleteData {
   overallWinnerId: string
   overallWinnerName: string
-  globalScoreboard: Array<{ playerId: string; name: string; globalScore: number }>
+  globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   history: MinigameResult[]
 }
 
@@ -130,7 +136,7 @@ export interface MetaGameStateSnapshot {
   currentMinigameIndex: number
   totalMinigames: number
   currentMinigameInfo: MiniGameInfo | null
-  globalScoreboard: Array<{ playerId: string; name: string; globalScore: number }>
+  globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   hostId: string | null
   minigameSnapshot: GameStateSnapshot | null
 }

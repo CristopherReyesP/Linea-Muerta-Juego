@@ -27,7 +27,7 @@ const cooperarTraicionarRules: RuleSection[] = [
   {
     title: 'RESULTADOS',
     items: [
-      'Si la mayoria COOPERA: cooperadores +30, traidores +50',
+      'Si la mayoria COOPERA: cooperadores +30, traidores +45',
       'Si la mayoria TRAICIONA: cooperadores -40, traidores -10',
     ],
   },

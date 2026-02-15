@@ -58,7 +58,7 @@ interface GameStore {
   currentMinigameIndex: number
   totalMinigames: number
   currentMinigameInfo: MiniGameInfo | null
-  globalScoreboard: Array<{ playerId: string; name: string; globalScore: number }>
+  globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   hostId: string | null
   discussionData: DiscussionData | null
   sessionComplete: SessionCompleteData | null

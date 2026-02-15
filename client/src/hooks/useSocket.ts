@@ -199,12 +199,12 @@ export function useSocket() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const createGame = useCallback((name: string) => {
-    socketRef.current?.emit('create_game', { name })
+  const createGame = useCallback((name: string, avatarId?: string, avatarColor?: string, accessoryId?: string) => {
+    socketRef.current?.emit('create_game', { name, avatarId, avatarColor, accessoryId })
   }, [])
 
-  const joinGame = useCallback((name: string, gameId: string) => {
-    socketRef.current?.emit('join_game', { name, gameId })
+  const joinGame = useCallback((name: string, gameId: string, avatarId?: string, avatarColor?: string, accessoryId?: string) => {
+    socketRef.current?.emit('join_game', { name, gameId, avatarId, avatarColor, accessoryId })
   }, [])
 
   const startGame = useCallback((data?: { selectedMinigameIds?: string[] }) => {

@@ -5,6 +5,9 @@ export class Player implements PlayerData {
   id: string
   socketId: string
   name: string
+  avatarId: string
+  avatarColor: string
+  accessoryId: string
   balance: number
   state: PlayerState
   isAlive: boolean
@@ -13,10 +16,13 @@ export class Player implements PlayerData {
   rachaCooperar: number
   rachaTraicionar: number
 
-  constructor(socketId: string, name: string) {
+  constructor(socketId: string, name: string, avatarId: string, avatarColor: string, accessoryId: string) {
     this.id = uuid()
     this.socketId = socketId
     this.name = name
+    this.avatarId = avatarId
+    this.avatarColor = avatarColor
+    this.accessoryId = accessoryId
     this.balance = DEFAULT_CONFIG.initialBalance
     this.state = PlayerState.LOBBY
     this.isAlive = true
@@ -70,6 +76,9 @@ export class Player implements PlayerData {
       id: this.id,
       socketId: this.socketId,
       name: this.name,
+      avatarId: this.avatarId,
+      avatarColor: this.avatarColor,
+      accessoryId: this.accessoryId,
       balance: this.balance,
       state: this.state,
       isAlive: this.isAlive,

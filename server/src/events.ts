@@ -8,9 +8,9 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
   io.on('connection', (socket: Socket) => {
     console.log(`[Connect] ${socket.id}`)
 
-    socket.on('create_game', ({ name }: { name: string }) => {
+    socket.on('create_game', ({ name, avatarId, avatarColor, accessoryId }: { name: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => {
       const game = gameManager.createGame()
-      const metaPlayer = game.addPlayer(socket.id, name)
+      const metaPlayer = game.addPlayer(socket.id, name, avatarId ?? 'neon-eyes', avatarColor ?? '#00e5ff', accessoryId ?? 'none')
 
       if (!metaPlayer) {
         socket.emit('error', 'No se pudo crear la partida')
@@ -21,7 +21,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
       game.broadcastMetaState()
     })
 
-    socket.on('join_game', ({ name, gameId }: { name: string; gameId: string }) => {
+    socket.on('join_game', ({ name, gameId, avatarId, avatarColor, accessoryId }: { name: string; gameId: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => {
       const code = gameId.toUpperCase().trim()
       const game = gameManager.getGame(code)
 
@@ -35,7 +35,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
         return
       }
 
-      const metaPlayer = game.addPlayer(socket.id, name)
+      const metaPlayer = game.addPlayer(socket.id, name, avatarId ?? 'neon-eyes', avatarColor ?? '#00e5ff', accessoryId ?? 'none')
 
       if (!metaPlayer) {
         socket.emit('error', 'La sala esta llena.')

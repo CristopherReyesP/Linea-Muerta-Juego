@@ -101,6 +101,7 @@ export interface MiniGameInfo {
   id: string
   name: string
   shortDescription: string
+  minPlayers?: number
 }
 
 export interface MinigameResult {
@@ -158,6 +159,40 @@ export interface MetaGameStateSnapshot {
   minigameSnapshot: GameStateSnapshot | null
 }
 
+// Central de Emergencias types
+export interface EmergencyStateData {
+  internalPhase: 'ROLES' | 'SABOTAGE' | 'TRANSMISSION' | 'OPERATOR_RESPONSE' | 'RESULT'
+  operatorIds: string[]
+  operatorNames: string[]
+  myRole: 'operator' | 'saboteur' | 'technician'
+  saboteurId: string | null
+  realMessage: string | null
+  myClue: {
+    field: string
+    label: string
+    value: string
+    realValue?: string
+    fakeValue?: string
+    recommendedValue?: 'real' | 'fake'
+  } | null
+  sabotageInfo: {
+    field: string
+    label: string
+    realValue: string
+    options?: string[]
+    currentFake?: string | null
+    fakeValue?: string
+  } | null
+  reports: Array<{ playerId: string; playerName: string; text: string }>
+  responseOptions: string[] | null
+  correctOptionIndex: number | null
+  myChoice: number | null
+  operatorChoices: Record<string, number> | null
+  operatorVoteCount: number | null
+  operatorTotal: number
+  success: boolean | null
+}
+
 // Socket events
 export interface ClientToServerEvents {
   create_game: (data: { name: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => void
@@ -174,6 +209,9 @@ export interface ClientToServerEvents {
   submit_line_guesses: (guesses: Record<string, string>) => void // lineNumber -> guessedPlayerId
   pass_bomb: (targetPlayerId: string) => void
   attempt_defuse: () => void
+  submit_sabotage: (data: { field: string; value: string }) => void
+  submit_report: (text: string) => void
+  submit_emergency_response: (optionIndex: number) => void
   // WebRTC signaling
   webrtc_offer: (data: { targetId: string; offer: unknown }) => void
   webrtc_answer: (data: { targetId: string; answer: unknown }) => void
@@ -208,6 +246,7 @@ export interface ServerToClientEvents {
   bomb_exploded: (data: { playerId: string; playerName: string }) => void
   bomb_defused: (data: { playerId: string; playerName: string; chance: number }) => void
   voice_distortion: (data: { enabled: boolean }) => void
+  emergency_state: (data: EmergencyStateData) => void
   error: (message: string) => void
   shadow_interference: (data: { duration: number }) => void
   // WebRTC signaling

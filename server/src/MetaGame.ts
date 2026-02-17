@@ -8,6 +8,7 @@ import { VotacionSobra } from './minigames/VotacionSobra'
 import { VotacionMerece } from './minigames/VotacionMerece'
 import { AdivinaLinea } from './minigames/AdivinaLinea'
 import { LaBomba } from './minigames/LaBomba'
+import { CentralDeEmergencias } from './minigames/CentralDeEmergencias'
 import { v4 as uuid } from 'uuid'
 import {
   MetaGamePhase, PlayerState, MiniGameInfo, MinigameResult,
@@ -40,6 +41,12 @@ const MINIGAME_REGISTRY: MiniGameInfo[] = [
     id: 'la-bomba',
     name: 'La Bomba',
     shortDescription: 'La bomba corre durante 30s. Desactiva o pasala a otro jugador para aumentar la probabilidad.'
+  },
+  {
+    id: 'central-emergencias',
+    name: 'Central de Emergencias',
+    shortDescription: '2 tecnicos y 1 saboteador transmiten pistas al operador. Todos tienen una opcion real y una falsa.',
+    minPlayers: 4,
   },
 ]
 
@@ -145,6 +152,7 @@ export class MetaGame {
     if (this.metaPlayers.size < DEFAULT_CONFIG.minPlayers) return
     if (this.metaPhase !== MetaGamePhase.LOBBY) return
 
+    const playerCount = this.metaPlayers.size
     const requestedIds = options?.selectedMinigameIds ?? []
     const hasDevSelection = requestedIds.length > 0
 
@@ -152,6 +160,7 @@ export class MetaGame {
       const selected = requestedIds
         .map((id) => MINIGAME_REGISTRY.find((minigame) => minigame.id === id))
         .filter((minigame): minigame is MiniGameInfo => Boolean(minigame))
+        .filter((minigame) => !minigame.minPlayers || playerCount >= minigame.minPlayers)
 
       if (selected.length === 0) return
 
@@ -162,7 +171,9 @@ export class MetaGame {
     } else {
       // Select minigames: shuffle registry and pick up to TOTAL_MINIGAMES
       // If registry has fewer, repeat some
-      const shuffled = shuffleArray(MINIGAME_REGISTRY)
+      const available = MINIGAME_REGISTRY.filter((m) => !m.minPlayers || playerCount >= m.minPlayers)
+      if (available.length === 0) return
+      const shuffled = shuffleArray(available)
       this.selectedMinigames = []
       for (let i = 0; i < this.TOTAL_MINIGAMES; i++) {
         this.selectedMinigames.push(shuffled[i % shuffled.length])
@@ -225,6 +236,8 @@ export class MetaGame {
         return new AdivinaLinea(this.io, this.room, players, this.callManager, this.id)
       case 'la-bomba':
         return new LaBomba(this.io, this.room, players, this.callManager, this.id)
+      case 'central-emergencias':
+        return new CentralDeEmergencias(this.io, this.room, players, this.callManager, this.id)
       default:
         return null
     }
@@ -318,6 +331,21 @@ export class MetaGame {
           const mp = this.metaPlayers.get(explodedHolderId)
           if (mp) mp.adjustScore(-2)
         }
+      }
+    } else if (info.id === 'central-emergencias') {
+      // Success (majority correct): everyone except saboteur +1. Failure: saboteur +1.
+      const emergencyGame = this.currentMinigame as CentralDeEmergencias
+      const saboteurId = emergencyGame.getSaboteurId()
+      if (emergencyGame.getSuccess()) {
+        for (const [id] of this.metaPlayers) {
+          if (id !== saboteurId) {
+            const mp = this.metaPlayers.get(id)
+            if (mp) mp.adjustScore(1)
+          }
+        }
+      } else {
+        const mp = this.metaPlayers.get(saboteurId)
+        if (mp) mp.adjustScore(1)
       }
     }
 

@@ -33,6 +33,9 @@ export default function App() {
     skipToFinish,
     useShadowInterference,
     continueToNext,
+    submitSabotage,
+    submitReport,
+    submitEmergencyResponse,
   } = useSocket()
 
   const { remoteAudioRef, audioData, isSpeaking } = useWebRTC(socket)
@@ -126,6 +129,9 @@ export default function App() {
           onAttemptDefuse={attemptDefuse}
           onSkipToFinish={skipToFinish}
           onInterference={useShadowInterference}
+          onSubmitSabotage={submitSabotage}
+          onSubmitReport={submitReport}
+          onSubmitEmergencyResponse={submitEmergencyResponse}
           audioData={audioData}
           isSpeaking={isSpeaking}
           onShowRules={() => setShowRules(true)}

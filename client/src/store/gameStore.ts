@@ -3,7 +3,7 @@ import {
   GamePhase, MetaGamePhase, Decision,
   PlayerData, CallData, RoundResult, GameStateSnapshot,
   MiniGameInfo, MinigameResult, DiscussionData, SessionCompleteData,
-  MetaGameStateSnapshot, BombStateData, BombOutcomeData
+  MetaGameStateSnapshot, BombStateData, BombOutcomeData, EmergencyStateData
 } from '../types'
 
 interface IncomingCall {
@@ -105,6 +105,9 @@ interface GameStore {
   bombLastDefuseResult: BombDefuseResult | null
   bombOutcome: BombOutcomeData | null
 
+  // Central de Emergencias
+  emergencyState: EmergencyStateData | null
+
   // Error
   error: string | null
   ambientVolume: number
@@ -142,6 +145,7 @@ interface GameStore {
   setBombLastPass: (data: BombPassData | null) => void
   setBombDefuseResult: (data: BombDefuseResult | null) => void
   setBombOutcome: (data: BombOutcomeData | null) => void
+  setEmergencyState: (data: EmergencyStateData | null) => void
   setError: (error: string | null) => void
   setAmbientVolume: (volume: number) => void
   setPlayerVolume: (volume: number) => void
@@ -190,6 +194,7 @@ const initialState = {
   bombLastPass: null,
   bombLastDefuseResult: null,
   bombOutcome: null,
+  emergencyState: null,
   error: null,
   ambientVolume: 0.35,
   playerVolume: 1,
@@ -284,6 +289,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setBombLastPass: (data) => set({ bombLastPass: data }),
   setBombDefuseResult: (data) => set({ bombLastDefuseResult: data }),
   setBombOutcome: (data) => set({ bombOutcome: data }),
+  setEmergencyState: (data) => set({ emergencyState: data }),
   setError: (error) => set({ error }),
   setAmbientVolume: (volume) => set({ ambientVolume: Math.max(0, Math.min(1, volume)) }),
   setPlayerVolume: (volume) => set({ playerVolume: Math.max(0, Math.min(1, volume)) }),

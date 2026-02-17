@@ -17,11 +17,12 @@ interface Props {
 }
 
 const minigameOptions = [
-  { id: 'cooperar-traicionar', name: 'Cooperar o Traicionar' },
-  { id: 'votacion-sobra', name: 'Quien Sobra?' },
-  { id: 'votacion-merece', name: 'Quien Merece?' },
-  { id: 'adivina-linea', name: 'Adivina la Linea' },
-  { id: 'la-bomba', name: 'La Bomba' },
+  { id: 'cooperar-traicionar', name: 'Cooperar o Traicionar', minPlayers: 2 },
+  { id: 'votacion-sobra', name: 'Quien Sobra?', minPlayers: 2 },
+  { id: 'votacion-merece', name: 'Quien Merece?', minPlayers: 2 },
+  { id: 'adivina-linea', name: 'Adivina la Linea', minPlayers: 2 },
+  { id: 'la-bomba', name: 'La Bomba', minPlayers: 2 },
+  { id: 'central-emergencias', name: 'Central de Emergencias', minPlayers: 4 },
 ]
 
 const avatarOptions = [
@@ -890,16 +891,21 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                       <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 2 }}>
                         SELECCIONA MINIJUEGOS A PROBAR
                       </div>
-                      {minigameOptions.map((minigame) => (
-                        <label key={minigame.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--white)' }}>
-                          <input
-                            type="checkbox"
-                            checked={selectedMinigameIds.includes(minigame.id)}
-                            onChange={() => toggleMinigameSelection(minigame.id)}
-                          />
-                          {minigame.name}
-                        </label>
-                      ))}
+                      {minigameOptions.map((minigame) => {
+                        const disabled = globalScoreboard.length < minigame.minPlayers
+                        return (
+                          <label key={minigame.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: disabled ? 'var(--gray-shadow)' : 'var(--white)', cursor: disabled ? 'not-allowed' : 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedMinigameIds.includes(minigame.id)}
+                              onChange={() => toggleMinigameSelection(minigame.id)}
+                              disabled={disabled}
+                            />
+                            {minigame.name}
+                            {disabled && <span style={{ fontSize: 9, color: 'var(--gray-shadow)' }}>(min {minigame.minPlayers})</span>}
+                          </label>
+                        )
+                      })}
                     </div>
                   )}
 

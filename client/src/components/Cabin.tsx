@@ -15,6 +15,7 @@ import { BombPanel } from './BombPanel'
 import { BombSpectatorPanel } from './BombSpectatorPanel'
 import { AudioControls } from './AudioControls'
 import { BombOutcomeOverlay } from './BombOutcomeOverlay'
+import { EmergencyPanel } from './EmergencyPanel'
 
 interface Props {
   onCallPlayer: (targetId: string) => void
@@ -28,6 +29,9 @@ interface Props {
   onAttemptDefuse: () => void
   onSkipToFinish: () => void
   onInterference: (targetId: string) => void
+  onSubmitSabotage: (data: { field: string; value: string }) => void
+  onSubmitReport: (text: string) => void
+  onSubmitEmergencyResponse: (optionIndex: number) => void
   audioData: Uint8Array
   isSpeaking: boolean
   onShowRules: () => void
@@ -42,7 +46,9 @@ const phaseLabels: Record<string, string> = {
 
 export function Cabin({
   onCallPlayer, onAcceptCall, onRejectCall, onHangUp,
-  onSubmitDecision, onVotePlayer, onSubmitLineGuesses, onPassBomb, onAttemptDefuse, onSkipToFinish, onInterference, audioData, isSpeaking, onShowRules,
+  onSubmitDecision, onVotePlayer, onSubmitLineGuesses, onPassBomb, onAttemptDefuse, onSkipToFinish, onInterference,
+  onSubmitSabotage, onSubmitReport, onSubmitEmergencyResponse,
+  audioData, isSpeaking, onShowRules,
 }: Props) {
   const phase = useGameStore(s => s.phase)
   const round = useGameStore(s => s.round)
@@ -51,11 +57,13 @@ export function Cabin({
   const myPlayer = useGameStore(s => s.getMyPlayer())
   const activeMinigameId = useGameStore(s => s.activeMinigameId)
   const bombState = useGameStore(s => s.bombState)
+  const emergencyState = useGameStore(s => s.emergencyState)
 
   const activePlayers = players.filter(p => p.isAlive).length
   const isVotingMinigame = activeMinigameId?.startsWith('votacion') ?? false
   const isGuessMinigame = activeMinigameId === 'adivina-linea'
   const isBombMinigame = activeMinigameId === 'la-bomba'
+  const isEmergencyMinigame = activeMinigameId === 'central-emergencias'
 
   if (phase === GamePhase.GAME_OVER) {
     return <GameOver />
@@ -207,7 +215,27 @@ export function Cabin({
           position: 'relative',
           zIndex: 1,
         }}>
-          {phase === GamePhase.CALL_PHASE && (
+          {phase === GamePhase.CALL_PHASE && !isEmergencyMinigame && (
+            <CallPanel
+              onCallPlayer={onCallPlayer}
+              onAcceptCall={onAcceptCall}
+              onRejectCall={onRejectCall}
+              onHangUp={onHangUp}
+              audioData={audioData}
+              isSpeaking={isSpeaking}
+            />
+          )}
+
+          {/* Emergency minigame: show panel + CallPanel only during TRANSMISSION for technicians */}
+          {isEmergencyMinigame && (
+            <EmergencyPanel
+              onSubmitSabotage={onSubmitSabotage}
+              onSubmitReport={onSubmitReport}
+              onSubmitEmergencyResponse={onSubmitEmergencyResponse}
+            />
+          )}
+
+          {phase === GamePhase.CALL_PHASE && isEmergencyMinigame && emergencyState?.internalPhase === 'TRANSMISSION' && emergencyState?.myRole !== 'operator' && (
             <CallPanel
               onCallPlayer={onCallPlayer}
               onAcceptCall={onAcceptCall}
@@ -234,7 +262,7 @@ export function Cabin({
             <GuessPanel onSubmitGuesses={onSubmitLineGuesses} />
           )}
 
-          {phase === GamePhase.DECISION_PHASE && !isVotingMinigame && !isGuessMinigame && (
+          {phase === GamePhase.DECISION_PHASE && !isVotingMinigame && !isGuessMinigame && !isEmergencyMinigame && (
             <DecisionPanel onSubmitDecision={onSubmitDecision} />
           )}
 
@@ -246,7 +274,7 @@ export function Cabin({
             <GuessPanel onSubmitGuesses={onSubmitLineGuesses} />
           )}
 
-          {phase === GamePhase.RESULT_PHASE && !isVotingMinigame && !isGuessMinigame && <ResultPanel />}
+          {phase === GamePhase.RESULT_PHASE && !isVotingMinigame && !isGuessMinigame && !isEmergencyMinigame && <ResultPanel />}
 
           {phase === GamePhase.RESULT_PHASE && isVotingMinigame && (
             <VotingPanel onVotePlayer={onVotePlayer} />

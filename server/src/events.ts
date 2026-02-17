@@ -3,6 +3,7 @@ import { GameManager } from './GameManager'
 import { Decision, MetaGamePhase } from './types'
 import { AdivinaLinea } from './minigames/AdivinaLinea'
 import { LaBomba } from './minigames/LaBomba'
+import { CentralDeEmergencias } from './minigames/CentralDeEmergencias'
 
 export function registerEvents(io: Server, gameManager: GameManager): void {
   io.on('connection', (socket: Socket) => {
@@ -173,6 +174,36 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
       if (!(minigame instanceof LaBomba)) return
 
       minigame.attemptDefuse(result.metaPlayer.id)
+    })
+
+    socket.on('submit_sabotage', (data: { field: string; value: string }) => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) return
+
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame || !(minigame instanceof CentralDeEmergencias)) return
+
+      minigame.submitSabotage(result.metaPlayer.id, data)
+    })
+
+    socket.on('submit_report', (text: string) => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) return
+
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame || !(minigame instanceof CentralDeEmergencias)) return
+
+      minigame.submitReport(result.metaPlayer.id, text)
+    })
+
+    socket.on('submit_emergency_response', (optionIndex: number) => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) return
+
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame || !(minigame instanceof CentralDeEmergencias)) return
+
+      minigame.submitEmergencyResponse(result.metaPlayer.id, optionIndex)
     })
 
     socket.on('continue_to_next', () => {

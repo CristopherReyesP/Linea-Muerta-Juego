@@ -130,6 +130,39 @@ export interface BombOutcomeData {
   chance?: number
 }
 
+export interface EmergencyStateData {
+  internalPhase: 'ROLES' | 'SABOTAGE' | 'TRANSMISSION' | 'OPERATOR_RESPONSE' | 'RESULT'
+  operatorIds: string[]
+  operatorNames: string[]
+  myRole: 'operator' | 'saboteur' | 'technician'
+  saboteurId: string | null
+  realMessage: string | null
+  myClue: {
+    field: string
+    label: string
+    value: string
+    realValue?: string
+    fakeValue?: string
+    recommendedValue?: 'real' | 'fake'
+  } | null
+  sabotageInfo: {
+    field: string
+    label: string
+    realValue: string
+    options?: string[]
+    currentFake?: string | null
+    fakeValue?: string
+  } | null
+  reports: Array<{ playerId: string; playerName: string; text: string }>
+  responseOptions: string[] | null
+  correctOptionIndex: number | null
+  myChoice: number | null
+  operatorChoices: Record<string, number> | null
+  operatorVoteCount: number | null
+  operatorTotal: number
+  success: boolean | null
+}
+
 export interface MetaGameStateSnapshot {
   gameId: string
   metaPhase: MetaGamePhase

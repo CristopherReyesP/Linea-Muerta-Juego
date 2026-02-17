@@ -161,6 +161,57 @@ const laBombaRules: RuleSection[] = [
   },
 ]
 
+const centralEmergenciasRules: RuleSection[] = [
+  {
+    title: 'OBJETIVO',
+    text: 'Los Operadores deben identificar la emergencia correcta con reportes de 2 Tecnicos y 1 Saboteador.',
+  },
+  {
+    title: 'FORMATO DEL MENSAJE',
+    items: [
+      'El mensaje siempre tiene 3 campos: EMERGENCIA, UBICACION, ACCESO',
+      'No existe campo LUGAR en esta version',
+    ],
+  },
+  {
+    title: 'ROLES',
+    items: [
+      'OPERADOR(ES): reciben reportes y eligen la emergencia correcta entre 4 opciones (mayoria)',
+      '2 TECNICOS: cada uno recibe 1 campo con opcion REAL y FALSA; deben empujar la REAL',
+      '1 SABOTEADOR: recibe 1 campo con opcion REAL y FALSA, pero debe colar la FALSA',
+    ],
+  },
+  {
+    title: 'FASE 1: ASIGNACION (10s)',
+    text: 'Se asignan roles al azar. Cada no-operador recibe una pista parcial con dos valores: uno real y uno falso.',
+  },
+  {
+    title: 'FASE 2: PREPARACION (10s)',
+    text: 'Todos revisan su dupla REAL/FALSA. El Saboteador prepara su estrategia para defender la falsa.',
+  },
+  {
+    title: 'FASE 3: TRANSMISION (90s)',
+    items: [
+      'Cada emisor (2 tecnicos + 1 saboteador) puede llamarse para discutir',
+      'Todos comparan sus opciones reales/falsas para detectar inconsistencias',
+      'Cada emisor envia un reporte de max 3 palabras al Operador',
+      'Los tecnicos NO pueden llamar al Operador',
+      'Total de combinaciones de reporte: 8 (2^3)',
+    ],
+  },
+  {
+    title: 'FASE 4: RESPUESTA DE OPERADORES (60s)',
+    text: 'Cada Operador elige la emergencia correcta entre 4 opciones. La mayoria decide el resultado.',
+  },
+  {
+    title: 'PUNTUACION',
+    items: [
+      'Mayoria de operadores acierta: Operadores y Tecnicos leales +1 pt, Saboteador 0 pts',
+      'Mayoria falla: Saboteador +1 pt, todos los demas 0 pts',
+    ],
+  },
+]
+
 const rulesMap: Record<string, { title: string; rules: RuleSection[]; tagline: string }> = {
   'cooperar-traicionar': {
     title: 'COOPERAR O TRAICIONAR',
@@ -186,6 +237,11 @@ const rulesMap: Record<string, { title: string; rules: RuleSection[]; tagline: s
     title: 'LA BOMBA',
     rules: laBombaRules,
     tagline: '"Cada segundo pesa. Cada pase decide."',
+  },
+  'central-emergencias': {
+    title: 'CENTRAL DE EMERGENCIAS',
+    rules: centralEmergenciasRules,
+    tagline: '"La informacion es fragmentada. La verdad, tambien."',
   },
 }
 

@@ -183,6 +183,10 @@ export function useSocket() {
       playBombDefused()
     })
 
+    socket.on('emergency_state', (data) => {
+      store.setEmergencyState(data)
+    })
+
     socket.on('shadow_interference', ({ duration }) => {
       store.setShadowInterference(true)
       setTimeout(() => store.setShadowInterference(false), duration * 1000)
@@ -274,6 +278,18 @@ export function useSocket() {
     socketRef.current?.emit('continue_to_next')
   }, [])
 
+  const submitSabotage = useCallback((data: { field: string; value: string }) => {
+    socketRef.current?.emit('submit_sabotage', data)
+  }, [])
+
+  const submitReport = useCallback((text: string) => {
+    socketRef.current?.emit('submit_report', text)
+  }, [])
+
+  const submitEmergencyResponse = useCallback((optionIndex: number) => {
+    socketRef.current?.emit('submit_emergency_response', optionIndex)
+  }, [])
+
   return {
     socket: socketRef,
     createGame,
@@ -291,5 +307,8 @@ export function useSocket() {
     skipToFinish,
     useShadowInterference,
     continueToNext,
+    submitSabotage,
+    submitReport,
+    submitEmergencyResponse,
   }
 }

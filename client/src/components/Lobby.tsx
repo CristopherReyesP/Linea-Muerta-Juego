@@ -23,6 +23,7 @@ const minigameOptions = [
   { id: 'adivina-linea', name: 'Adivina la Linea', minPlayers: 2 },
   { id: 'la-bomba', name: 'La Bomba', minPlayers: 2 },
   { id: 'central-emergencias', name: 'Central de Emergencias', minPlayers: 4 },
+  { id: 'emoji-diferente', name: 'Emoji Diferente', minPlayers: 3 },
 ]
 
 const avatarOptions = [

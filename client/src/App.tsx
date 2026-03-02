@@ -36,6 +36,7 @@ export default function App() {
     submitSabotage,
     submitReport,
     submitEmergencyResponse,
+    voteEmoji,
   } = useSocket()
 
   const { remoteAudioRef, audioData, isSpeaking } = useWebRTC(socket)
@@ -132,6 +133,7 @@ export default function App() {
           onSubmitSabotage={submitSabotage}
           onSubmitReport={submitReport}
           onSubmitEmergencyResponse={submitEmergencyResponse}
+          onVoteEmoji={voteEmoji}
           audioData={audioData}
           isSpeaking={isSpeaking}
           onShowRules={() => setShowRules(true)}

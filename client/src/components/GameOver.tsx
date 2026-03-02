@@ -1,5 +1,11 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
+import { PlayerAvatar } from './PlayerAvatar'
+
+function PlayerDataWithAvatar({ name, avatarId, avatarColor, accessoryId, isShadow }: { name: string; avatarId: string; avatarColor: string; accessoryId: string; isShadow?: boolean }) {
+  const player = { name, avatarId, avatarColor, accessoryId, isShadow: isShadow ?? false } as any
+  return <PlayerAvatar player={player} size={28} showName={false} showState={false} />
+}
 
 export function GameOver() {
   const gameOver = useGameStore(s => s.gameOver)
@@ -163,7 +169,7 @@ export function GameOver() {
                 background: i === 0 ? 'rgba(0,255,65,0.05)' : 'var(--bg-panel)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{
                   fontSize: 16,
                   fontWeight: 'bold',
@@ -172,6 +178,7 @@ export function GameOver() {
                 }}>
                   #{i + 1}
                 </span>
+                <PlayerDataWithAvatar name={p.name} avatarId={p.avatarId} avatarColor={p.avatarColor} accessoryId={p.accessoryId} isShadow={p.isShadow} />
                 <span style={{
                   fontSize: 13,
                   color: p.isShadow ? 'var(--gray-shadow)' : 'var(--white)',

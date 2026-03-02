@@ -4,6 +4,7 @@ import { Decision, MetaGamePhase } from './types'
 import { AdivinaLinea } from './minigames/AdivinaLinea'
 import { LaBomba } from './minigames/LaBomba'
 import { CentralDeEmergencias } from './minigames/CentralDeEmergencias'
+import { EmojiDiferente } from './minigames/EmojiDiferente'
 
 export function registerEvents(io: Server, gameManager: GameManager): void {
   io.on('connection', (socket: Socket) => {
@@ -194,6 +195,16 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
       if (!minigame || !(minigame instanceof CentralDeEmergencias)) return
 
       minigame.submitReport(result.metaPlayer.id, text)
+    })
+
+    socket.on('vote_emoji', (targetPlayerId: string) => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) return
+
+      const minigame = result.game.getCurrentMinigame()
+      if (!minigame || !(minigame instanceof EmojiDiferente)) return
+
+      minigame.voteEmoji(result.metaPlayer.id, targetPlayerId)
     })
 
     socket.on('submit_emergency_response', (optionIndex: number) => {

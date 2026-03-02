@@ -296,6 +296,9 @@ export class CentralDeEmergencias extends MiniGame {
         name: p.name,
         balance: this.getPlayerScore(p.id),
         isShadow: false,
+        avatarId: p.avatarId,
+        avatarColor: p.avatarColor,
+        accessoryId: p.accessoryId,
       })),
     })
 
@@ -308,6 +311,9 @@ export class CentralDeEmergencias extends MiniGame {
         name: p.name,
         balance: this.getPlayerScore(p.id),
         isShadow: false,
+        avatarId: p.avatarId,
+        avatarColor: p.avatarColor,
+        accessoryId: p.accessoryId,
       })),
     })
   }

@@ -85,7 +85,7 @@ export interface MinigameResult {
   minigameName: string
   winnerId: string
   winnerName: string
-  standings: Array<{ name: string; balance: number; isShadow: boolean }>
+  standings: Array<{ name: string; balance: number; isShadow: boolean; avatarId: string; avatarColor: string; accessoryId: string }>
 }
 
 export interface MetaPlayerData {
@@ -160,6 +160,20 @@ export interface EmergencyStateData {
   operatorChoices: Record<string, number> | null
   operatorVoteCount: number | null
   operatorTotal: number
+  success: boolean | null
+}
+
+export interface EmojiStateData {
+  internalPhase: 'REVEAL' | 'DISCUSSION' | 'VOTING' | 'RESULT'
+  myEmoji: string
+  isDifferent: boolean
+  baseEmoji: string | null
+  differentEmoji: string | null
+  differentPlayerId: string | null
+  differentPlayerName: string | null
+  votes: Record<string, string> | null
+  voteCount: number
+  totalVoters: number
   success: boolean | null
 }
 

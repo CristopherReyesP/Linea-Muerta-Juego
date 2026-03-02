@@ -161,7 +161,10 @@ export class VotacionSobra extends MiniGame {
     const standings = allPlayers.map(p => ({
       name: p.name,
       balance: -(voteCounts.get(p.id) ?? 0), // Negative votes as "balance"
-      isShadow: mostVotedIds.includes(p.id)
+      isShadow: mostVotedIds.includes(p.id),
+      avatarId: p.avatarId,
+      avatarColor: p.avatarColor,
+      accessoryId: p.accessoryId,
     }))
 
     this.io.to(this.room).emit('game_over', {

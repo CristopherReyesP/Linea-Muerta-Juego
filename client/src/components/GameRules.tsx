@@ -212,6 +212,32 @@ const centralEmergenciasRules: RuleSection[] = [
   },
 ]
 
+const emojiDiferenteRules: RuleSection[] = [
+  {
+    title: 'OBJETIVO',
+    text: 'Todos reciben el mismo emoji en su pantalla, excepto uno que recibe uno diferente. Nadie sabe si es el diferente. Descubrelo hablando.',
+  },
+  {
+    title: 'FASE DE REVELACION (8s)',
+    text: 'Ves tu emoji grande en pantalla. Memorizalo bien. No puedes llamar a nadie todavia.',
+  },
+  {
+    title: 'FASE DE DISCUSION (45s)',
+    text: 'Llama a otros jugadores y describe tu emoji para deducir quien tiene uno diferente. Cuidado: tu podrias ser el diferente sin saberlo.',
+  },
+  {
+    title: 'FASE DE VOTACION (20s)',
+    text: 'Vota por quien crees que tiene el emoji diferente. No puedes votarte a ti mismo.',
+  },
+  {
+    title: 'RESULTADO',
+    items: [
+      'Si la mayoria vota correctamente al diferente: todos ganan +1 pt excepto el diferente',
+      'Si la mayoria falla: el diferente gana +1 pt, los demas 0',
+    ],
+  },
+]
+
 const rulesMap: Record<string, { title: string; rules: RuleSection[]; tagline: string }> = {
   'cooperar-traicionar': {
     title: 'COOPERAR O TRAICIONAR',
@@ -242,6 +268,11 @@ const rulesMap: Record<string, { title: string; rules: RuleSection[]; tagline: s
     title: 'CENTRAL DE EMERGENCIAS',
     rules: centralEmergenciasRules,
     tagline: '"La informacion es fragmentada. La verdad, tambien."',
+  },
+  'emoji-diferente': {
+    title: 'EMOJI DIFERENTE',
+    rules: emojiDiferenteRules,
+    tagline: '"Las apariencias engannan. Solo uno es distinto."',
   },
 }
 

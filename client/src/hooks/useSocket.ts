@@ -187,6 +187,10 @@ export function useSocket() {
       store.setEmergencyState(data)
     })
 
+    socket.on('emoji_state', (data) => {
+      store.setEmojiState(data)
+    })
+
     socket.on('shadow_interference', ({ duration }) => {
       store.setShadowInterference(true)
       setTimeout(() => store.setShadowInterference(false), duration * 1000)
@@ -290,6 +294,10 @@ export function useSocket() {
     socketRef.current?.emit('submit_emergency_response', optionIndex)
   }, [])
 
+  const voteEmoji = useCallback((targetPlayerId: string) => {
+    socketRef.current?.emit('vote_emoji', targetPlayerId)
+  }, [])
+
   return {
     socket: socketRef,
     createGame,
@@ -310,5 +318,6 @@ export function useSocket() {
     submitSabotage,
     submitReport,
     submitEmergencyResponse,
+    voteEmoji,
   }
 }

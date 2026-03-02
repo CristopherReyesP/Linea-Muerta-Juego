@@ -276,6 +276,9 @@ export class CooperarTraicionar extends MiniGame {
       name: p.name,
       balance: p.balance,
       isShadow: p.isShadow,
+      avatarId: p.avatarId,
+      avatarColor: p.avatarColor,
+      accessoryId: p.accessoryId,
     }))
 
     this.io.to(this.room).emit('game_over', {

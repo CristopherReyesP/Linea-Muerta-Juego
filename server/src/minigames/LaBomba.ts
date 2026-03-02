@@ -252,6 +252,9 @@ export class LaBomba extends MiniGame {
       name: player.name,
       balance: player.id === winnerId && defused ? 1 : 0,
       isShadow: !defused && player.id === this.bombHolderId,
+      avatarId: player.avatarId,
+      avatarColor: player.avatarColor,
+      accessoryId: player.accessoryId,
     }))
 
     this.io.to(this.room).emit('phase_changed', {

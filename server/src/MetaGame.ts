@@ -9,6 +9,7 @@ import { VotacionMerece } from './minigames/VotacionMerece'
 import { AdivinaLinea } from './minigames/AdivinaLinea'
 import { LaBomba } from './minigames/LaBomba'
 import { CentralDeEmergencias } from './minigames/CentralDeEmergencias'
+import { EmojiDiferente } from './minigames/EmojiDiferente'
 import { v4 as uuid } from 'uuid'
 import {
   MetaGamePhase, PlayerState, MiniGameInfo, MinigameResult,
@@ -47,6 +48,12 @@ const MINIGAME_REGISTRY: MiniGameInfo[] = [
     name: 'Central de Emergencias',
     shortDescription: '2 tecnicos y 1 saboteador transmiten pistas al operador. Todos tienen una opcion real y una falsa.',
     minPlayers: 4,
+  },
+  {
+    id: 'emoji-diferente',
+    name: 'Emoji Diferente',
+    shortDescription: 'Todos reciben el mismo emoji menos uno. Descubre quien es el diferente.',
+    minPlayers: 3,
   },
 ]
 
@@ -238,6 +245,8 @@ export class MetaGame {
         return new LaBomba(this.io, this.room, players, this.callManager, this.id)
       case 'central-emergencias':
         return new CentralDeEmergencias(this.io, this.room, players, this.callManager, this.id)
+      case 'emoji-diferente':
+        return new EmojiDiferente(this.io, this.room, players, this.callManager, this.id)
       default:
         return null
     }
@@ -345,6 +354,22 @@ export class MetaGame {
         }
       } else {
         const mp = this.metaPlayers.get(saboteurId)
+        if (mp) mp.adjustScore(1)
+      }
+    } else if (info.id === 'emoji-diferente') {
+      const emojiGame = this.currentMinigame as EmojiDiferente
+      const differentPlayerId = emojiGame.getDifferentPlayerId()
+      if (emojiGame.getSuccess()) {
+        // Majority found the different player: everyone except different +1
+        for (const [id] of this.metaPlayers) {
+          if (id !== differentPlayerId) {
+            const mp = this.metaPlayers.get(id)
+            if (mp) mp.adjustScore(1)
+          }
+        }
+      } else {
+        // Different player wins
+        const mp = this.metaPlayers.get(differentPlayerId)
         if (mp) mp.adjustScore(1)
       }
     }

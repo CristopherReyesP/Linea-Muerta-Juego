@@ -1,5 +1,11 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
+import { PlayerAvatar } from './PlayerAvatar'
+
+function PlayerDataWithAvatar({ name, avatarId, avatarColor, accessoryId, isShadow }: { name: string; avatarId: string; avatarColor: string; accessoryId: string; isShadow?: boolean }) {
+  const player = { name, avatarId, avatarColor, accessoryId, isShadow: isShadow ?? false } as any
+  return <PlayerAvatar player={player} size={28} showName={false} showState={false} />
+}
 
 export function SessionComplete() {
   const sessionComplete = useGameStore(s => s.sessionComplete)
@@ -99,15 +105,8 @@ export function SessionComplete() {
               background: i === 0 ? 'rgba(0,255,65,0.05)' : 'var(--bg-panel)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{
-                fontSize: 16,
-                fontWeight: 'bold',
-                color: i === 0 ? 'var(--green-neon)' : 'var(--gray-text)',
-                width: 24,
-              }}>
-                #{i + 1}
-              </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <PlayerDataWithAvatar name={p.name} avatarId={p.avatarId} avatarColor={p.avatarColor} accessoryId={p.accessoryId} />
               <span style={{
                 fontSize: 13,
                 color: 'var(--white)',

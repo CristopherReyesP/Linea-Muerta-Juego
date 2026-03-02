@@ -109,7 +109,7 @@ export interface MinigameResult {
   minigameName: string
   winnerId: string
   winnerName: string
-  standings: Array<{ name: string; balance: number; isShadow: boolean }>
+  standings: Array<{ name: string; balance: number; isShadow: boolean; avatarId: string; avatarColor: string; accessoryId: string }>
 }
 
 export interface MetaPlayerData {
@@ -193,6 +193,21 @@ export interface EmergencyStateData {
   success: boolean | null
 }
 
+// Emoji Diferente types
+export interface EmojiStateData {
+  internalPhase: 'REVEAL' | 'DISCUSSION' | 'VOTING' | 'RESULT'
+  myEmoji: string
+  isDifferent: boolean
+  baseEmoji: string | null
+  differentEmoji: string | null
+  differentPlayerId: string | null
+  differentPlayerName: string | null
+  votes: Record<string, string> | null
+  voteCount: number
+  totalVoters: number
+  success: boolean | null
+}
+
 // Socket events
 export interface ClientToServerEvents {
   create_game: (data: { name: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => void
@@ -212,6 +227,7 @@ export interface ClientToServerEvents {
   submit_sabotage: (data: { field: string; value: string }) => void
   submit_report: (text: string) => void
   submit_emergency_response: (optionIndex: number) => void
+  vote_emoji: (targetPlayerId: string) => void
   // WebRTC signaling
   webrtc_offer: (data: { targetId: string; offer: unknown }) => void
   webrtc_answer: (data: { targetId: string; answer: unknown }) => void
@@ -247,6 +263,7 @@ export interface ServerToClientEvents {
   bomb_defused: (data: { playerId: string; playerName: string; chance: number }) => void
   voice_distortion: (data: { enabled: boolean }) => void
   emergency_state: (data: EmergencyStateData) => void
+  emoji_state: (data: EmojiStateData) => void
   error: (message: string) => void
   shadow_interference: (data: { duration: number }) => void
   // WebRTC signaling

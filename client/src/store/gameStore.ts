@@ -3,7 +3,8 @@ import {
   GamePhase, MetaGamePhase, Decision,
   PlayerData, CallData, RoundResult, GameStateSnapshot,
   MiniGameInfo, MinigameResult, DiscussionData, SessionCompleteData,
-  MetaGameStateSnapshot, BombStateData, BombOutcomeData, EmergencyStateData
+  MetaGameStateSnapshot, BombStateData, BombOutcomeData, EmergencyStateData,
+  EmojiStateData
 } from '../types'
 
 interface IncomingCall {
@@ -22,7 +23,7 @@ interface GameOverData {
   winnerId: string
   winnerName: string
   reason: string
-  standings: Array<{ name: string; balance: number; isShadow: boolean }>
+  standings: Array<{ name: string; balance: number; isShadow: boolean; avatarId: string; avatarColor: string; accessoryId: string }>
 }
 
 interface VoteResult {
@@ -108,6 +109,9 @@ interface GameStore {
   // Central de Emergencias
   emergencyState: EmergencyStateData | null
 
+  // Emoji Diferente
+  emojiState: EmojiStateData | null
+
   // Error
   error: string | null
   ambientVolume: number
@@ -146,6 +150,7 @@ interface GameStore {
   setBombDefuseResult: (data: BombDefuseResult | null) => void
   setBombOutcome: (data: BombOutcomeData | null) => void
   setEmergencyState: (data: EmergencyStateData | null) => void
+  setEmojiState: (data: EmojiStateData | null) => void
   setError: (error: string | null) => void
   setAmbientVolume: (volume: number) => void
   setPlayerVolume: (volume: number) => void
@@ -195,6 +200,7 @@ const initialState = {
   bombLastDefuseResult: null,
   bombOutcome: null,
   emergencyState: null,
+  emojiState: null,
   error: null,
   ambientVolume: 0.35,
   playerVolume: 1,
@@ -276,6 +282,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     bombLastPass: null,
     bombLastDefuseResult: null,
     bombOutcome: null,
+    emojiState: null,
   }),
 
   setOpenVoicePlayerIds: (ids) => set({ openVoicePlayerIds: ids, micMuted: false }),
@@ -290,6 +297,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setBombDefuseResult: (data) => set({ bombLastDefuseResult: data }),
   setBombOutcome: (data) => set({ bombOutcome: data }),
   setEmergencyState: (data) => set({ emergencyState: data }),
+  setEmojiState: (data) => set({ emojiState: data }),
   setError: (error) => set({ error }),
   setAmbientVolume: (volume) => set({ ambientVolume: Math.max(0, Math.min(1, volume)) }),
   setPlayerVolume: (volume) => set({ playerVolume: Math.max(0, Math.min(1, volume)) }),

@@ -512,7 +512,9 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                       textAlign: 'center',
                       lineHeight: 1.6,
                     }}>
-                      {globalStats.totalLobbyRooms} sala{globalStats.totalLobbyRooms !== 1 ? 's' : ''} en lobby · {globalStats.totalLobbyPlayers} jugador{globalStats.totalLobbyPlayers !== 1 ? 'es' : ''} esperando
+                      {globalStats.totalLobbyRooms} sala{globalStats.totalLobbyRooms !== 1 ? 's' : ''} en lobby · {globalStats.totalLobbyPlayers} jugador{globalStats.totalLobbyPlayers !== 1 ? 'es' : ''} en espera
+                      <br />
+                      {globalStats.totalMenuPlayers} jugador{globalStats.totalMenuPlayers !== 1 ? 'es' : ''} en menu principal
                       <br />
                       {globalStats.totalActiveRooms} sala{globalStats.totalActiveRooms !== 1 ? 's' : ''} en partida · {globalStats.totalActivePlayers} jugador{globalStats.totalActivePlayers !== 1 ? 'es' : ''} jugando
                     </div>

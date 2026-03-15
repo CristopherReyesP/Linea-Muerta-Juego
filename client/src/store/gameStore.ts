@@ -123,6 +123,7 @@ interface GameStore {
     totalLobbyPlayers: number
     totalActiveRooms: number
     totalActivePlayers: number
+    totalMenuPlayers: number
   } | null
   globalNotifications: Array<{ id: number; playerName: string; action: string }>
   publicRooms: PublicRoomSummary[]
@@ -173,6 +174,7 @@ interface GameStore {
     totalLobbyPlayers: number
     totalActiveRooms: number
     totalActivePlayers: number
+    totalMenuPlayers: number
   }) => void
   setPublicRooms: (rooms: PublicRoomSummary[]) => void
   addGlobalNotification: (notification: { playerName: string; action: string }) => void

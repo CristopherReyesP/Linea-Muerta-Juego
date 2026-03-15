@@ -208,6 +208,7 @@ export function useSocket() {
       totalLobbyPlayers: number
       totalActiveRooms: number
       totalActivePlayers: number
+      totalMenuPlayers: number
       notification?: { playerName: string; action: string }
     }) => {
       store.setGlobalStats({
@@ -217,6 +218,7 @@ export function useSocket() {
         totalLobbyPlayers: data.totalLobbyPlayers,
         totalActiveRooms: data.totalActiveRooms,
         totalActivePlayers: data.totalActivePlayers,
+        totalMenuPlayers: data.totalMenuPlayers,
       })
       if (data.notification) {
         store.addGlobalNotification(data.notification)

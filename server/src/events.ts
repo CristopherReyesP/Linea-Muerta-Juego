@@ -16,6 +16,7 @@ function getCreatorKey(socket: Socket): string {
 export function registerEvents(io: Server, gameManager: GameManager): void {
   io.on('connection', (socket: Socket) => {
     console.log(`[Connect] ${socket.id}`)
+    gameManager.registerConnection(socket.id)
 
     // Send current global stats to the newly connected socket
     const initialStats = gameManager.getGlobalStats()
@@ -103,6 +104,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
         selectedMinigameIds: data?.selectedMinigameIds,
       })
       gameManager.broadcastPublicRooms()
+      gameManager.broadcastGlobalActivity()
     })
 
     socket.on('call_player', (targetId: string) => {

@@ -8,6 +8,7 @@ export class GameManager {
   private static readonly GENERAL_PUBLIC_CREATOR_KEY = '__general_public_room__'
 
   private games: Map<string, MetaGame> = new Map()
+  private connectedSockets: Set<string> = new Set()
   private io: Server
   private cleanupTimer: NodeJS.Timeout
   private nextPublicColorVariant: number = 0
@@ -67,7 +68,16 @@ export class GameManager {
     return null
   }
 
+  registerConnection(socketId: string): void {
+    this.connectedSockets.add(socketId)
+  }
+
+  unregisterConnection(socketId: string): void {
+    this.connectedSockets.delete(socketId)
+  }
+
   handleDisconnect(socketId: string): void {
+    this.unregisterConnection(socketId)
     const result = this.getGameBySocket(socketId)
     if (!result) return
     result.game.removePlayer(result.metaPlayer.id)
@@ -104,6 +114,7 @@ export class GameManager {
     totalLobbyPlayers: number
     totalActiveRooms: number
     totalActivePlayers: number
+    totalMenuPlayers: number
   } {
     let totalRooms = 0
     let totalPlayers = 0
@@ -111,11 +122,15 @@ export class GameManager {
     let totalLobbyPlayers = 0
     let totalActiveRooms = 0
     let totalActivePlayers = 0
+    const playersInGames = new Set<string>()
 
     for (const game of this.games.values()) {
       let connectedInGame = 0
       for (const mp of game.players.values()) {
-        if (mp.isConnected) connectedInGame++
+        if (mp.isConnected) {
+          connectedInGame++
+          playersInGames.add(mp.socketId)
+        }
       }
       if (connectedInGame > 0) {
         totalRooms++
@@ -130,6 +145,10 @@ export class GameManager {
       }
     }
 
+    const totalMenuPlayers = Array.from(this.connectedSockets).filter((socketId) => !playersInGames.has(socketId)).length
+    totalLobbyPlayers += totalMenuPlayers
+    totalPlayers += totalMenuPlayers
+
     return {
       totalRooms,
       totalPlayers,
@@ -137,6 +156,7 @@ export class GameManager {
       totalLobbyPlayers,
       totalActiveRooms,
       totalActivePlayers,
+      totalMenuPlayers,
     }
   }
 

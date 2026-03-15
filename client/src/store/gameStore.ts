@@ -112,6 +112,10 @@ interface GameStore {
   // Emoji Diferente
   emojiState: EmojiStateData | null
 
+  // Global activity (welcome screen)
+  globalStats: { totalRooms: number; totalPlayers: number } | null
+  globalNotifications: Array<{ id: number; playerName: string; action: string }>
+
   // Error
   error: string | null
   ambientVolume: number
@@ -151,6 +155,9 @@ interface GameStore {
   setBombOutcome: (data: BombOutcomeData | null) => void
   setEmergencyState: (data: EmergencyStateData | null) => void
   setEmojiState: (data: EmojiStateData | null) => void
+  setGlobalStats: (stats: { totalRooms: number; totalPlayers: number }) => void
+  addGlobalNotification: (notification: { playerName: string; action: string }) => void
+  removeGlobalNotification: (id: number) => void
   setError: (error: string | null) => void
   setAmbientVolume: (volume: number) => void
   setPlayerVolume: (volume: number) => void
@@ -201,6 +208,8 @@ const initialState = {
   bombOutcome: null,
   emergencyState: null,
   emojiState: null,
+  globalStats: null,
+  globalNotifications: [],
   error: null,
   ambientVolume: 0.35,
   playerVolume: 1,
@@ -298,6 +307,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setBombOutcome: (data) => set({ bombOutcome: data }),
   setEmergencyState: (data) => set({ emergencyState: data }),
   setEmojiState: (data) => set({ emojiState: data }),
+  setGlobalStats: (stats) => set({ globalStats: stats }),
+  addGlobalNotification: (notification) => set((s) => ({
+    globalNotifications: [{ ...notification, id: Date.now() }, ...s.globalNotifications].slice(0, 5),
+  })),
+  removeGlobalNotification: (id) => set((s) => ({
+    globalNotifications: s.globalNotifications.filter((n) => n.id !== id),
+  })),
   setError: (error) => set({ error }),
   setAmbientVolume: (volume) => set({ ambientVolume: Math.max(0, Math.min(1, volume)) }),
   setPlayerVolume: (volume) => set({ playerVolume: Math.max(0, Math.min(1, volume)) }),

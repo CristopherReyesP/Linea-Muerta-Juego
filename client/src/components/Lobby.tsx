@@ -116,6 +116,9 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
   const micMuted = useGameStore(s => s.micMuted)
   const toggleMic = useGameStore(s => s.toggleMic)
   const openVoicePlayerIds = useGameStore(s => s.openVoicePlayerIds)
+  const globalStats = useGameStore(s => s.globalStats)
+  const globalNotifications = useGameStore(s => s.globalNotifications)
+  const removeGlobalNotification = useGameStore(s => s.removeGlobalNotification)
   const isHost = playerId === hostId
   const hasJoined = !!playerId
 
@@ -123,6 +126,15 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
   useEffect(() => {
     setError(null)
   }, [view, setError])
+
+  // Auto-remove notifications after 8 seconds
+  useEffect(() => {
+    if (globalNotifications.length === 0) return
+    const timers = globalNotifications.map((n) =>
+      setTimeout(() => removeGlobalNotification(n.id), 8000)
+    )
+    return () => timers.forEach(clearTimeout)
+  }, [globalNotifications, removeGlobalNotification])
 
   const handleCreate = () => {
     if (!name.trim()) return
@@ -313,6 +325,44 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                   >
                     UNIRSE A SALA
                   </button>
+
+                  {globalStats && (globalStats.totalRooms > 0 || globalStats.totalPlayers > 0) && (
+                    <div style={{
+                      fontSize: 10,
+                      color: 'var(--gray-shadow)',
+                      letterSpacing: 1,
+                    }}>
+                      {globalStats.totalRooms} sala{globalStats.totalRooms !== 1 ? 's' : ''} activa{globalStats.totalRooms !== 1 ? 's' : ''} · {globalStats.totalPlayers} jugador{globalStats.totalPlayers !== 1 ? 'es' : ''} en linea
+                    </div>
+                  )}
+
+                  {globalNotifications.length > 0 && (
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                      width: 280,
+                    }}>
+                      {globalNotifications.map((n) => (
+                        <motion.div
+                          key={n.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0 }}
+                          style={{
+                            fontSize: 9,
+                            color: 'var(--green-dim)',
+                            padding: '3px 8px',
+                            border: '1px solid rgba(0,255,65,0.1)',
+                            background: 'rgba(0,255,65,0.03)',
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          <span style={{ color: 'var(--green-neon)' }}>{n.playerName}</span> {n.action}
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
               )}
 

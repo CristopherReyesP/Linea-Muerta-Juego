@@ -10,6 +10,10 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
   io.on('connection', (socket: Socket) => {
     console.log(`[Connect] ${socket.id}`)
 
+    // Send current global stats to the newly connected socket
+    const initialStats = gameManager.getGlobalStats()
+    socket.emit('global_activity', { ...initialStats })
+
     socket.on('create_game', ({ name, avatarId, avatarColor, accessoryId }: { name: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => {
       const game = gameManager.createGame()
       const metaPlayer = game.addPlayer(socket.id, name, avatarId ?? 'neon-eyes', avatarColor ?? '#00e5ff', accessoryId ?? 'none')
@@ -21,6 +25,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
 
       socket.emit('game_joined', { gameId: game.id, playerId: metaPlayer.id })
       game.broadcastMetaState()
+      gameManager.broadcastGlobalActivity({ playerName: name, action: 'creo una sala' })
     })
 
     socket.on('join_game', ({ name, gameId, avatarId, avatarColor, accessoryId }: { name: string; gameId: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => {
@@ -46,6 +51,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
 
       socket.emit('game_joined', { gameId: game.id, playerId: metaPlayer.id })
       game.broadcastMetaState()
+      gameManager.broadcastGlobalActivity({ playerName: name, action: 'se unio a una sala' })
     })
 
     socket.on('start_game', (data?: { selectedMinigameIds?: string[] }) => {
@@ -280,6 +286,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
     socket.on('disconnect', () => {
       console.log(`[Disconnect] ${socket.id}`)
       gameManager.handleDisconnect(socket.id)
+      gameManager.broadcastGlobalActivity()
     })
   })
 }

@@ -43,4 +43,22 @@ export class GameManager {
       }
     }
   }
+
+  getGlobalStats(): { totalRooms: number; totalPlayers: number } {
+    let totalPlayers = 0
+    for (const game of this.games.values()) {
+      for (const mp of game.players.values()) {
+        if (mp.isConnected) totalPlayers++
+      }
+    }
+    return { totalRooms: this.games.size, totalPlayers }
+  }
+
+  broadcastGlobalActivity(notification?: { playerName: string; action: string }): void {
+    const stats = this.getGlobalStats()
+    this.io.emit('global_activity', {
+      ...stats,
+      notification,
+    })
+  }
 }

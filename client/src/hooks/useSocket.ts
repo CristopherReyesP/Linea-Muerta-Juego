@@ -197,6 +197,13 @@ export function useSocket() {
       setTimeout(() => store.setShadowInterference(false), duration * 1000)
     })
 
+    socket.on('global_activity', (data: { totalRooms: number; totalPlayers: number; notification?: { playerName: string; action: string } }) => {
+      store.setGlobalStats({ totalRooms: data.totalRooms, totalPlayers: data.totalPlayers })
+      if (data.notification) {
+        store.addGlobalNotification(data.notification)
+      }
+    })
+
     socket.on('error', (msg: string) => {
       console.error('[Server Error]', msg)
       store.setError(msg)

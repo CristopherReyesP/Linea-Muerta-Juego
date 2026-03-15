@@ -228,15 +228,17 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
         alignItems: 'initial',
         gap: 8,
         flex: 1,
-      }} contentStyle={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      }} contentStyle={{ display: 'flex', flexDirection: 'column', gap: 10, paddingRight: 2 }}>
         <div style={{
           fontSize: 10,
           color: 'var(--gray-text)',
           letterSpacing: 2,
           textTransform: 'uppercase',
-          marginBottom: 4,
+          marginBottom: 2,
           minWidth: 'auto',
           paddingTop: 0,
+          paddingBottom: 6,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}>
           JUGADORES
         </div>
@@ -244,9 +246,9 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
         {myPlayer && (
           <div
             style={{
-              padding: mobile ? 6 : 8,
+              padding: mobile ? 6 : 10,
               border: '1px solid var(--cyan)',
-              background: 'rgba(0,229,255,0.08)',
+              background: 'linear-gradient(180deg, rgba(0,229,255,0.11), rgba(0,229,255,0.05))',
               display: 'flex',
               flexDirection: mobile ? 'column' : 'row',
               alignItems: 'center',
@@ -309,9 +311,9 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
           <div
             key={player.id}
             style={{
-              padding: mobile ? 6 : 8,
+              padding: mobile ? 6 : 10,
               border: `1px solid ${player.state === PlayerState.AT_RISK ? 'var(--red-danger)' : player.isShadow ? 'var(--gray-shadow)' : '#222'}`,
-              background: 'var(--bg-panel)',
+              background: 'linear-gradient(180deg, rgba(26,26,26,0.92), rgba(18,18,18,0.9))',
               display: 'flex',
               flexDirection: mobile ? 'column' : 'row',
               alignItems: 'center',
@@ -375,7 +377,7 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
       {!mobile && (
       <div style={{
         borderTop: mobile ? 'none' : '1px solid rgba(0,229,255,0.14)',
-        paddingTop: mobile ? 6 : 10,
+        paddingTop: mobile ? 6 : 12,
         marginTop: mobile ? 0 : 'auto',
         minWidth: mobile ? 220 : 'auto',
         flexShrink: 0,
@@ -384,7 +386,7 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
           fontSize: 10,
           color: 'var(--cyan)',
           letterSpacing: 2.2,
-          marginBottom: 6,
+          marginBottom: 8,
         }}>
           CANAL GLOBAL
         </div>

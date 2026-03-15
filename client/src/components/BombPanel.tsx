@@ -63,6 +63,23 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
 
   if (!bombState) return null
 
+  const sectionCardStyle = {
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'linear-gradient(180deg, rgba(8,14,22,0.9), rgba(5,9,15,0.82))',
+    padding: isMobile ? '10px 12px' : '12px 14px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 8,
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+  }
+
+  const sectionLabelStyle = {
+    fontSize: isMobile ? 9 : 10,
+    color: 'var(--gray-text)',
+    letterSpacing: 2,
+    textTransform: 'uppercase' as const,
+  }
+
   return (
     <div
       style={{
@@ -78,13 +95,14 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
       }}
       className={isUrgent ? 'pulse-red' : ''}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
-          paddingBottom: 6,
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          ...sectionCardStyle,
+          gap: 10,
+          borderColor: isUrgent ? 'rgba(255,23,68,0.28)' : 'rgba(0,229,255,0.18)',
+          background: isUrgent
+            ? 'linear-gradient(180deg, rgba(42,8,14,0.92), rgba(18,7,10,0.84))'
+            : 'linear-gradient(180deg, rgba(9,15,23,0.92), rgba(6,10,16,0.84))',
         }}>
           <div style={{ fontSize: isMobile ? 9 : 11, color: 'var(--red-danger)', letterSpacing: isMobile ? 2.6 : 4 }}>
             {language === 'en' ? 'CRITICAL ALERT' : 'ALERTA CRITICA'}
@@ -97,32 +115,51 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
               ? (language === 'en' ? 'You can risk it now or doom another cabin with a pass.' : 'Puedes jugartela ahora o condenar a otra cabina con un pase.')
               : (language === 'en' ? 'Every second brings the explosion or an unexpected transfer closer.' : 'Cada segundo que pasa acerca la explosion o una transferencia inesperada.')}
           </div>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
-            {language === 'en' ? 'BOMB TIMER' : 'TEMPORIZADOR DE BOMBA'}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+            <div style={{
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.02)',
+              padding: '8px 10px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+            }}>
+              <div style={sectionLabelStyle}>{language === 'en' ? 'BOMB TIMER' : 'TEMPORIZADOR DE BOMBA'}</div>
+              <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 'bold', color: isUrgent ? 'var(--red-danger)' : 'var(--green-neon)' }}>
+                {remainingSeconds}s
+              </div>
+            </div>
+            <div style={{
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.02)',
+              padding: '8px 10px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+            }}>
+              <div style={sectionLabelStyle}>{language === 'en' ? 'DEFUSE CHANCE' : 'PROB. DESACTIVACION'}</div>
+              <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 'bold', color: 'var(--cyan)' }}>
+                {bombState.disarmChance}%
+              </div>
+            </div>
+            <div style={{
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.02)',
+              padding: '8px 10px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+            }}>
+              <div style={sectionLabelStyle}>{language === 'en' ? 'ACTIVE CALLS' : 'LLAMADAS ACTIVAS'}</div>
+              <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 'bold', color: 'var(--white)' }}>
+                {activeCalls.length}
+              </div>
+            </div>
           </div>
-          <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
-            {language === 'en' ? 'ACTIVE CALLS' : 'LLAMADAS ACTIVAS'}: {activeCalls.length}
-          </div>
-        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: isMobile ? 12 : 18, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
           <BombIllustration urgent={isUrgent} compact={isMobile} />
-          <div
-            style={{
-              fontSize: isMobile ? 40 : 56,
-              fontWeight: 'bold',
-              letterSpacing: isMobile ? 2 : 5,
-              color: isUrgent ? 'var(--red-danger)' : 'var(--green-neon)',
-              textShadow: isUrgent ? '0 0 20px rgba(255,23,68,0.5)' : '0 0 20px rgba(0,255,65,0.3)',
-              textAlign: isMobile ? 'center' : 'left',
-            }}
-            className={isUrgent ? 'flicker' : ''}
-          >
-            {remainingSeconds}s
-          </div>
+        </div>
         </div>
 
         <motion.div
@@ -145,21 +182,12 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
           <span style={{ fontSize: isMobile ? 12 : 14, color: 'var(--red-danger)', fontWeight: 'bold' }}>{bombState.holderName}</span>
         </motion.div>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
-            {language === 'en' ? 'DEFUSE CHANCE' : 'PROB. DESACTIVACION'}
-          </span>
-          <span style={{ fontSize: isMobile ? 20 : 24, color: 'var(--cyan)', fontWeight: 'bold' }}>
-            {bombState.disarmChance}%
-          </span>
-          <span style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)' }}>
-            ({bombState.passCount} {language === 'en' ? 'passes' : 'pases'})
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ fontSize: isMobile ? 9 : 10, color: 'var(--gray-text)', letterSpacing: 2 }}>
+        <div style={sectionCardStyle}>
+          <div style={{ ...sectionLabelStyle, marginBottom: 2 }}>
             {language === 'en' ? 'PASS HISTORY' : 'HISTORIAL DE PASES'}
+          </div>
+          <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)' }}>
+            {bombState.passCount} {language === 'en' ? 'passes registered' : 'pases registrados'}
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {bombState.passHistory.map((name, index) => (
@@ -180,72 +208,87 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
         </div>
 
         {bombLastPass && (
-          <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--cyan)', lineHeight: 1.4 }}>
-            {language === 'en' ? 'Recent pass' : 'Pase reciente'}: {bombLastPass.fromName} {'->'} {bombLastPass.toName}
+          <div style={{ ...sectionCardStyle, color: 'var(--cyan)', lineHeight: 1.45 }}>
+            <div style={sectionLabelStyle}>{language === 'en' ? 'Recent pass' : 'Pase reciente'}</div>
+            <div style={{ fontSize: isMobile ? 11 : 12 }}>
+              {bombLastPass.fromName} {'->'} {bombLastPass.toName}
+            </div>
           </div>
         )}
 
         {bombLastDefuseResult && (
-          <div style={{ fontSize: isMobile ? 10 : 11, color: bombLastDefuseResult.success ? 'var(--green-neon)' : 'var(--red-danger)', lineHeight: 1.4 }}>
-            {bombLastDefuseResult.playerName} {language === 'en' ? 'tried to defuse' : 'intento desactivar'} ({bombLastDefuseResult.chance}%):{' '}
-            {bombLastDefuseResult.success ? (language === 'en' ? 'SUCCESS' : 'EXITO') : (language === 'en' ? 'FAIL' : 'FALLO')}
+          <div style={{
+            ...sectionCardStyle,
+            borderColor: bombLastDefuseResult.success ? 'rgba(0,255,65,0.22)' : 'rgba(255,23,68,0.22)',
+          }}>
+            <div style={sectionLabelStyle}>{language === 'en' ? 'Latest defuse attempt' : 'Ultimo intento de desactivacion'}</div>
+            <div style={{ fontSize: isMobile ? 11 : 12, color: bombLastDefuseResult.success ? 'var(--green-neon)' : 'var(--red-danger)', lineHeight: 1.45 }}>
+              {bombLastDefuseResult.playerName} {language === 'en' ? 'tried to defuse' : 'intento desactivar'} ({bombLastDefuseResult.chance}%):{' '}
+              {bombLastDefuseResult.success ? (language === 'en' ? 'SUCCESS' : 'EXITO') : (language === 'en' ? 'FAIL' : 'FALLO')}
+            </div>
           </div>
         )}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{
+          ...sectionCardStyle,
+          position: 'sticky',
+          top: 0,
+        }}>
         <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
           {language === 'en' ? 'ACTIONS' : 'ACCIONES'}
         </div>
 
-        <button
-          className="btn btn-red"
-          onClick={onAttemptDefuse}
-          disabled={!isHolder}
-          style={isMobile ? { width: '100%', padding: '10px 14px', fontSize: 12 } : undefined}
-        >
-          {language === 'en' ? 'DEFUSE' : 'DESACTIVAR'}
-        </button>
+          <button
+            className="btn btn-red"
+            onClick={onAttemptDefuse}
+            disabled={!isHolder}
+            style={{ width: '100%', padding: isMobile ? '10px 14px' : '12px 14px', fontSize: 12 }}
+          >
+            {language === 'en' ? 'DEFUSE' : 'DESACTIVAR'}
+          </button>
 
-        <select
-          value={selectedTargetId}
-          onChange={(event) => setSelectedTargetId(event.target.value)}
-          disabled={!isHolder}
-          style={{
-            background: 'var(--bg-panel)',
-            color: 'var(--white)',
-            border: '1px solid #333',
-            padding: isMobile ? 12 : 10,
-            fontFamily: 'var(--font-mono)',
-            fontSize: isMobile ? 12 : 14,
-            width: '100%',
-          }}
-        >
-          <option value="">{language === 'en' ? 'Select target' : 'Seleccionar destino'}</option>
-          {passTargets.map((player) => (
-            <option key={player.id} value={player.id}>
-              {player.name}
-            </option>
-          ))}
-        </select>
+          <select
+            value={selectedTargetId}
+            onChange={(event) => setSelectedTargetId(event.target.value)}
+            disabled={!isHolder}
+            style={{
+              background: 'rgba(255,255,255,0.02)',
+              color: 'var(--white)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              padding: isMobile ? 12 : 10,
+              fontFamily: 'var(--font-mono)',
+              fontSize: isMobile ? 12 : 14,
+              width: '100%',
+            }}
+          >
+            <option value="">{language === 'en' ? 'Select target' : 'Seleccionar destino'}</option>
+            {passTargets.map((player) => (
+              <option key={player.id} value={player.id}>
+                {player.name}
+              </option>
+            ))}
+          </select>
 
-        <button
-          className="btn btn-cyan"
-          onClick={() => {
-            if (!selectedTargetId) return
-            onPassBomb(selectedTargetId)
-            setSelectedTargetId('')
-          }}
-          disabled={!isHolder || !selectedTargetId}
-          style={isMobile ? { width: '100%', padding: '10px 14px', fontSize: 12 } : undefined}
-        >
-          {language === 'en' ? 'PASS BOMB' : 'PASAR BOMBA'}
-        </button>
+          <button
+            className="btn btn-cyan"
+            onClick={() => {
+              if (!selectedTargetId) return
+              onPassBomb(selectedTargetId)
+              setSelectedTargetId('')
+            }}
+            disabled={!isHolder || !selectedTargetId}
+            style={{ width: '100%', padding: isMobile ? '10px 14px' : '12px 14px', fontSize: 12 }}
+          >
+            {language === 'en' ? 'PASS BOMB' : 'PASAR BOMBA'}
+          </button>
 
-        <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', lineHeight: 1.5 }}>
-          {isHolder
-            ? (language === 'en' ? 'Each action changes your odds. One failure explodes immediately.' : 'Cada accion cambia tus probabilidades. Una falla explota de inmediato.')
-            : (language === 'en' ? `Waiting for ${bombState.holderName}'s decision. No one knows if they will risk it or pass it.` : `Esperando decision de ${bombState.holderName}. Nadie sabe si arriesgara o pasara.`)}
+          <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', lineHeight: 1.5 }}>
+            {isHolder
+              ? (language === 'en' ? 'Each action changes your odds. One failure explodes immediately.' : 'Cada accion cambia tus probabilidades. Una falla explota de inmediato.')
+              : (language === 'en' ? `Waiting for ${bombState.holderName}'s decision. No one knows if they will risk it or pass it.` : `Esperando decision de ${bombState.holderName}. Nadie sabe si arriesgara o pasara.`)}
+          </div>
         </div>
       </div>
     </div>

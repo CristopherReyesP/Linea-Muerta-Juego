@@ -22,6 +22,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
     const initialStats = gameManager.getGlobalStats()
     socket.emit('global_activity', { ...initialStats })
     socket.emit('public_rooms_update', { rooms: gameManager.getPublicRooms() })
+    gameManager.broadcastGlobalActivity()
 
     socket.on('create_game', ({ name, isPublic, avatarId, avatarColor, accessoryId }: { name: string; isPublic?: boolean; avatarId?: string; avatarColor?: string; accessoryId?: string }) => {
       const creatorKey = getCreatorKey(socket)

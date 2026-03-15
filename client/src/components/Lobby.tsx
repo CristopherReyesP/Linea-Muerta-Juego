@@ -484,6 +484,17 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
             >
               LINEA MUERTA
             </motion.h1>
+            {!hasJoined && view === 'welcome' && (
+              <div style={{
+                fontSize: 11,
+                color: 'var(--green-dim)',
+                letterSpacing: 4,
+                textAlign: 'center',
+                textTransform: 'uppercase',
+              }}>
+                Confia en la linea.
+              </div>
+            )}
           </div>
 
           <AnimatePresence>
@@ -1700,6 +1711,25 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
           )}
         </motion.div>
       </div>
+
+      {!hasJoined && connected && globalStats && (
+        <div style={{
+          position: 'absolute',
+          top: 18,
+          right: 18,
+          zIndex: 8,
+          padding: '5px 10px',
+          border: '1px solid rgba(140,155,176,0.16)',
+          background: 'rgba(5,10,16,0.46)',
+          color: 'var(--gray-text)',
+          fontSize: 9,
+          letterSpacing: 1.4,
+          textTransform: 'uppercase',
+          backdropFilter: 'blur(6px)',
+        }}>
+          {globalStats.totalPlayers} conectado{globalStats.totalPlayers !== 1 ? 's' : ''}
+        </div>
+      )}
 
       {/* Global activity notifications - fixed at bottom */}
       {!hasJoined && globalNotifications.length > 0 && (

@@ -98,7 +98,7 @@ interface GameStore {
 
   // Adivina la Linea
   voiceDistortion: boolean
-  lineAssignments: { myLineNumber: number; lines: Array<{ lineNumber: number; playerId: string }>; playerNames: Array<{ playerId: string; name: string }> } | null
+  lineAssignments: { myLineNumber: number; lines: Array<{ lineNumber: number }>; playerNames: Array<{ playerId: string; name: string }> } | null
   lineGuessResults: { assignments: Array<{ lineNumber: number; playerId: string; playerName: string }>; scores: Record<string, number>; winnerId: string; winnerName: string } | null
   myLineGuesses: Record<string, string> | null // submitted guesses
   bombState: BombStateData | null

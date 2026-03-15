@@ -11,7 +11,8 @@ import {
   playBombExplosion, playBombDefused,
 } from '../audio/SoundEngine'
 
-const SOCKET_URL = 'http://localhost:3001'
+// In production, connect to same origin. In dev, connect to local server.
+const SOCKET_URL = import.meta.env.PROD ? '' : 'http://localhost:3001'
 
 export function useSocket() {
   const socketRef = useRef<Socket | null>(null)

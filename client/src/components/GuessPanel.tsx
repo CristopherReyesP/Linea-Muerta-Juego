@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
 import { GamePhase } from '../types'
@@ -20,6 +20,14 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
   // Local state for guesses before submitting
   const [guesses, setGuesses] = useState<Record<string, string>>({})
   const [submitted, setSubmitted] = useState(false)
+
+  // Restore previously submitted guesses when component mounts (e.g. after phase transition)
+  useEffect(() => {
+    if (myLineGuesses && Object.keys(guesses).length === 0) {
+      setGuesses(myLineGuesses)
+      setSubmitted(true)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Result phase - show results
   if (phase === GamePhase.RESULT_PHASE && lineGuessResults) {

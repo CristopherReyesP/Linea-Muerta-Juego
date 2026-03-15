@@ -84,9 +84,9 @@ export class AdivinaLinea extends MiniGame {
   }
 
   private sendLineAssignments(): void {
-    const lines = Array.from(this.lineAssignments.entries()).map(([lineNumber, playerId]) => ({
+    // Only send line numbers - do NOT reveal which playerId is behind each line
+    const lines = Array.from(this.lineAssignments.keys()).map(lineNumber => ({
       lineNumber: parseInt(lineNumber),
-      playerId
     }))
 
     const playerNames = Array.from(this.players.values())
@@ -114,6 +114,8 @@ export class AdivinaLinea extends MiniGame {
       case AdivinaPhase.GUESSING_PHASE:
         duration = this.guessDuration
         this.onGuessingPhaseStart()
+        // If onGuessingPhaseStart already advanced to the next phase, bail out
+        if (this.phase !== AdivinaPhase.GUESSING_PHASE) return
         break
       case AdivinaPhase.RESULT_PHASE:
         duration = this.resultDuration
@@ -294,6 +296,8 @@ export class AdivinaLinea extends MiniGame {
     for (const score of Object.values(scores)) {
       if (score > maxScore) maxScore = score
     }
+    // Only award winners if someone actually guessed correctly
+    if (maxScore === 0) return []
     return Object.entries(scores)
       .filter(([, score]) => score === maxScore)
       .map(([playerId]) => playerId)

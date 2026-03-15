@@ -254,7 +254,7 @@ export interface ServerToClientEvents {
   session_complete: (data: SessionCompleteData) => void
   open_voice: (data: { playerIds: string[] }) => void
   vote_result: (data: { targetId: string; targetName: string; voteCount: number; effect: string }) => void
-  line_assignments: (data: { myLineNumber: number; lines: Array<{ lineNumber: number; playerId: string }>; playerNames: Array<{ playerId: string; name: string }> }) => void
+  line_assignments: (data: { myLineNumber: number; lines: Array<{ lineNumber: number }>; playerNames: Array<{ playerId: string; name: string }> }) => void
   line_guess_results: (data: { assignments: Array<{ lineNumber: number; playerId: string; playerName: string }>; scores: Record<string, number>; winnerId: string; winnerName: string }) => void
   bomb_state_update: (data: BombStateData) => void
   bomb_passed: (data: { fromId: string; fromName: string; toId: string; toName: string }) => void

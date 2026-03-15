@@ -573,6 +573,8 @@ export class MetaGame {
       currentMinigameInfo: this.selectedMinigames[this.currentMinigameIndex] ?? null,
       globalScoreboard: this.getGlobalScoreboard(),
       hostId: this.hostId,
+      isPublicRoom: this.isPublic,
+      isGeneralPublicRoom: this.isGeneralPublic,
       minigameSnapshot: this.currentMinigame?.getSnapshot() ?? null
     }
   }

@@ -201,8 +201,23 @@ export function useSocket() {
       setTimeout(() => store.setShadowInterference(false), duration * 1000)
     })
 
-    socket.on('global_activity', (data: { totalRooms: number; totalPlayers: number; notification?: { playerName: string; action: string } }) => {
-      store.setGlobalStats({ totalRooms: data.totalRooms, totalPlayers: data.totalPlayers })
+    socket.on('global_activity', (data: {
+      totalRooms: number
+      totalPlayers: number
+      totalLobbyRooms: number
+      totalLobbyPlayers: number
+      totalActiveRooms: number
+      totalActivePlayers: number
+      notification?: { playerName: string; action: string }
+    }) => {
+      store.setGlobalStats({
+        totalRooms: data.totalRooms,
+        totalPlayers: data.totalPlayers,
+        totalLobbyRooms: data.totalLobbyRooms,
+        totalLobbyPlayers: data.totalLobbyPlayers,
+        totalActiveRooms: data.totalActiveRooms,
+        totalActivePlayers: data.totalActivePlayers,
+      })
       if (data.notification) {
         store.addGlobalNotification(data.notification)
       }

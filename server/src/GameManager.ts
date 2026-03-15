@@ -97,9 +97,21 @@ export class GameManager {
     return removedAny
   }
 
-  getGlobalStats(): { totalRooms: number; totalPlayers: number } {
+  getGlobalStats(): {
+    totalRooms: number
+    totalPlayers: number
+    totalLobbyRooms: number
+    totalLobbyPlayers: number
+    totalActiveRooms: number
+    totalActivePlayers: number
+  } {
     let totalRooms = 0
     let totalPlayers = 0
+    let totalLobbyRooms = 0
+    let totalLobbyPlayers = 0
+    let totalActiveRooms = 0
+    let totalActivePlayers = 0
+
     for (const game of this.games.values()) {
       let connectedInGame = 0
       for (const mp of game.players.values()) {
@@ -108,9 +120,24 @@ export class GameManager {
       if (connectedInGame > 0) {
         totalRooms++
         totalPlayers += connectedInGame
+        if (game.metaPhase === MetaGamePhase.LOBBY) {
+          totalLobbyRooms++
+          totalLobbyPlayers += connectedInGame
+        } else {
+          totalActiveRooms++
+          totalActivePlayers += connectedInGame
+        }
       }
     }
-    return { totalRooms, totalPlayers }
+
+    return {
+      totalRooms,
+      totalPlayers,
+      totalLobbyRooms,
+      totalLobbyPlayers,
+      totalActiveRooms,
+      totalActivePlayers,
+    }
   }
 
   getPublicRooms(): PublicRoomSummary[] {

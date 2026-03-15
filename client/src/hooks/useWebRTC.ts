@@ -9,13 +9,17 @@ const ICE_SERVERS: RTCConfiguration = {
   ]
 }
 
+type VoiceMode = 'none' | 'soft' | 'strong'
+
 export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
   const peerRef = useRef<RTCPeerConnection | null>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
   const localRawTrackRef = useRef<MediaStreamTrack | null>(null)
   const localProcessedTrackRef = useRef<MediaStreamTrack | null>(null)
+  const localProcessedModeRef = useRef<VoiceMode>('none')
   const localAudioSenderRef = useRef<RTCRtpSender | null>(null)
   const outgoingFxCtxRef = useRef<AudioContext | null>(null)
+  const multiOutgoingFxCtxRef = useRef<AudioContext | null>(null)
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
   const [audioData, setAudioData] = useState<Uint8Array>(new Uint8Array(0))
@@ -28,12 +32,18 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
   const multiPeerRef = useRef<Map<string, RTCPeerConnection>>(new Map())
   const multiAudioRef = useRef<Map<string, HTMLAudioElement>>(new Map())
   const multiStreamRef = useRef<MediaStream | null>(null)
+  const multiRawTrackRef = useRef<MediaStreamTrack | null>(null)
+  const multiProcessedTrackRef = useRef<MediaStreamTrack | null>(null)
+  const multiProcessedModeRef = useRef<VoiceMode>('none')
+  const outgoingVoiceModeRef = useRef<VoiceMode>('none')
 
   const activeCallPeerId = useGameStore(s => s.activeCallPeerId)
   const playerId = useGameStore(s => s.playerId)
   const shadowInterference = useGameStore(s => s.shadowInterference)
   const voiceDistortion = useGameStore(s => s.voiceDistortion)
   const activeMinigameId = useGameStore(s => s.activeMinigameId)
+  const metaPhase = useGameStore(s => s.metaPhase)
+  const isGeneralPublicRoom = useGameStore(s => s.isGeneralPublicRoom)
   const playerVolume = useGameStore(s => s.playerVolume)
   const openVoicePlayerIds = useGameStore(s => s.openVoicePlayerIds)
   const micMuted = useGameStore(s => s.micMuted)
@@ -47,11 +57,20 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
     localRawTrackRef.current = null
     localProcessedTrackRef.current?.stop()
     localProcessedTrackRef.current = null
+    localProcessedModeRef.current = 'none'
     localAudioSenderRef.current = null
     if (outgoingFxCtxRef.current) {
       void outgoingFxCtxRef.current.close()
       outgoingFxCtxRef.current = null
     }
+    if (multiOutgoingFxCtxRef.current) {
+      void multiOutgoingFxCtxRef.current.close()
+      multiOutgoingFxCtxRef.current = null
+    }
+    multiProcessedTrackRef.current?.stop()
+    multiProcessedTrackRef.current = null
+    multiProcessedModeRef.current = 'none'
+    multiRawTrackRef.current = null
     if (remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = null
       remoteAudioRef.current.muted = false
@@ -75,6 +94,14 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
       multiStreamRef.current.getTracks().forEach(t => t.stop())
       multiStreamRef.current = null
     }
+    if (multiOutgoingFxCtxRef.current) {
+      void multiOutgoingFxCtxRef.current.close()
+      multiOutgoingFxCtxRef.current = null
+    }
+    multiProcessedTrackRef.current?.stop()
+    multiProcessedTrackRef.current = null
+    multiProcessedModeRef.current = 'none'
+    multiRawTrackRef.current = null
   }, [])
 
   const startAudioAnalysis = useCallback((stream: MediaStream) => {
@@ -247,6 +274,18 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
 
         const stream = multiStreamRef.current!
         const audioTrack = stream.getAudioTracks()[0]
+        multiRawTrackRef.current = audioTrack
+        let outgoingTrack = audioTrack
+
+        if (outgoingVoiceModeRef.current !== 'none') {
+          const processedTrack = multiProcessedTrackRef.current
+            ?? await buildProcessedOutgoingTrack(stream, outgoingVoiceModeRef.current, multiOutgoingFxCtxRef)
+          if (processedTrack) {
+            multiProcessedTrackRef.current = processedTrack
+            multiProcessedModeRef.current = outgoingVoiceModeRef.current
+            outgoingTrack = processedTrack
+          }
+        }
 
         for (const peerId of otherPeers) {
           if (cancelled) return
@@ -255,7 +294,7 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
           const pc = new RTCPeerConnection(ICE_SERVERS)
           multiPeerRef.current.set(peerId, pc)
 
-          pc.addTrack(audioTrack, stream)
+          pc.addTrack(outgoingTrack, stream)
 
           pc.ontrack = (event) => {
             const audio = new Audio()
@@ -314,38 +353,41 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
     }
   }, [micMuted])
 
-  const buildProcessedOutgoingTrack = useCallback(async (inputStream: MediaStream): Promise<MediaStreamTrack | null> => {
+  const buildProcessedOutgoingTrack = useCallback(async (
+    inputStream: MediaStream,
+    mode: VoiceMode,
+    fxContextRef: React.MutableRefObject<AudioContext | null>
+  ): Promise<MediaStreamTrack | null> => {
     const ctx = new AudioContext()
     void ctx.resume()
-    outgoingFxCtxRef.current = ctx
+    fxContextRef.current = ctx
 
     const source = ctx.createMediaStreamSource(inputStream)
 
-    // Deep mask: low-heavy, narrow band, AM modulation + saturation.
     const highpass = ctx.createBiquadFilter()
     highpass.type = 'highpass'
-    highpass.frequency.value = 90
+    highpass.frequency.value = mode === 'strong' ? 90 : 180
 
     const lowpass = ctx.createBiquadFilter()
     lowpass.type = 'lowpass'
-    lowpass.frequency.value = 2700
+    lowpass.frequency.value = mode === 'strong' ? 2700 : 3200
 
     const lowshelf = ctx.createBiquadFilter()
     lowshelf.type = 'lowshelf'
     lowshelf.frequency.value = 220
-    lowshelf.gain.value = 12
+    lowshelf.gain.value = mode === 'strong' ? 12 : 3
 
     const peaking = ctx.createBiquadFilter()
     peaking.type = 'peaking'
-    peaking.frequency.value = 1750
-    peaking.Q.value = 1.1
-    peaking.gain.value = 0
+    peaking.frequency.value = mode === 'strong' ? 1750 : 1400
+    peaking.Q.value = mode === 'strong' ? 1.1 : 0.8
+    peaking.gain.value = mode === 'strong' ? 0 : -1.5
 
     const waveshaper = ctx.createWaveShaper()
     const curve = new Float32Array(512)
     for (let i = 0; i < curve.length; i++) {
       const x = (i * 2) / curve.length - 1
-      curve[i] = Math.tanh(3.6 * x)
+      curve[i] = Math.tanh((mode === 'strong' ? 3.6 : 1.4) * x)
     }
     waveshaper.curve = curve
 
@@ -357,28 +399,30 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
 
     // Makeup gain to avoid near-silent processed voice in some devices/browsers.
     const postGain = ctx.createGain()
-    postGain.gain.value = 1.8
+    postGain.gain.value = mode === 'strong' ? 1.8 : 1.08
 
     let disguiseNode: AudioWorkletNode | null = null
-    try {
-      await ctx.audioWorklet.addModule('/audio/voice-disguise-worklet.js')
-      disguiseNode = new AudioWorkletNode(ctx, 'voice-disguise-processor', {
-        numberOfInputs: 1,
-        numberOfOutputs: 1,
-        outputChannelCount: [1],
-      })
-      disguiseNode.port.postMessage({ pitch: 0.7, grainSize: 1152 })
-    } catch (error) {
-      console.warn('AudioWorklet unavailable, using fallback disguise chain', error)
+    if (mode === 'strong') {
+      try {
+        await ctx.audioWorklet.addModule('/audio/voice-disguise-worklet.js')
+        disguiseNode = new AudioWorkletNode(ctx, 'voice-disguise-processor', {
+          numberOfInputs: 1,
+          numberOfOutputs: 1,
+          outputChannelCount: [1],
+        })
+        disguiseNode.port.postMessage({ pitch: 0.7, grainSize: 1152 })
+      } catch (error) {
+        console.warn('AudioWorklet unavailable, using fallback disguise chain', error)
+      }
     }
 
     const amGain = ctx.createGain()
-    amGain.gain.value = 0.88
+    amGain.gain.value = mode === 'strong' ? 0.88 : 0.96
     const amOsc = ctx.createOscillator()
     amOsc.type = 'sine'
-    amOsc.frequency.value = 18
+    amOsc.frequency.value = mode === 'strong' ? 18 : 8
     const amDepth = ctx.createGain()
-    amDepth.gain.value = 0.08
+    amDepth.gain.value = mode === 'strong' ? 0.08 : 0.025
     amOsc.connect(amDepth).connect(amGain.gain)
     amOsc.start()
 
@@ -403,19 +447,20 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
     if (!track) {
       amOsc.stop()
       void ctx.close()
-      outgoingFxCtxRef.current = null
+      fxContextRef.current = null
       return null
     }
     track.enabled = true
     return track
   }, [])
 
-  const applyOutgoingVoiceMode = useCallback(async (enabled: boolean) => {
+  const applyOutgoingVoiceMode = useCallback(async (mode: VoiceMode) => {
     const sender = localAudioSenderRef.current
     const rawTrack = localRawTrackRef.current
     if (!sender || !rawTrack) return
+    outgoingVoiceModeRef.current = mode
 
-    if (!enabled) {
+    if (mode === 'none') {
       try {
         await sender.replaceTrack(rawTrack)
       } catch {
@@ -424,6 +469,7 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
       if (localProcessedTrackRef.current) {
         localProcessedTrackRef.current.stop()
         localProcessedTrackRef.current = null
+        localProcessedModeRef.current = 'none'
       }
       if (outgoingFxCtxRef.current) {
         await outgoingFxCtxRef.current.close()
@@ -432,8 +478,13 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
       return
     }
 
+    if (localProcessedTrackRef.current && localProcessedModeRef.current !== mode) {
+      localProcessedTrackRef.current.stop()
+      localProcessedTrackRef.current = null
+    }
     if (!localProcessedTrackRef.current && localStreamRef.current) {
-      localProcessedTrackRef.current = await buildProcessedOutgoingTrack(localStreamRef.current)
+      localProcessedTrackRef.current = await buildProcessedOutgoingTrack(localStreamRef.current, mode, outgoingFxCtxRef)
+      localProcessedModeRef.current = mode
     }
     if (localProcessedTrackRef.current) {
       try {
@@ -451,12 +502,62 @@ export function useWebRTC(socketRef: React.MutableRefObject<Socket | null>) {
     }
   }, [buildProcessedOutgoingTrack])
 
-  // Distortion is applied on sender side before WebRTC transport.
-  // Guarded to only run during Adivina la Linea.
+  const applyMultiOutgoingVoiceMode = useCallback(async (mode: VoiceMode) => {
+    outgoingVoiceModeRef.current = mode
+    const rawTrack = multiRawTrackRef.current
+    if (!rawTrack) return
+
+    let nextTrack: MediaStreamTrack | null = rawTrack
+    if (mode !== 'none') {
+      if (multiProcessedTrackRef.current && multiProcessedModeRef.current !== mode) {
+        multiProcessedTrackRef.current.stop()
+        multiProcessedTrackRef.current = null
+      }
+      if (!multiProcessedTrackRef.current && multiStreamRef.current) {
+        multiProcessedTrackRef.current = await buildProcessedOutgoingTrack(multiStreamRef.current, mode, multiOutgoingFxCtxRef)
+        multiProcessedModeRef.current = mode
+      }
+      nextTrack = multiProcessedTrackRef.current ?? rawTrack
+    } else {
+      if (multiProcessedTrackRef.current) {
+        multiProcessedTrackRef.current.stop()
+        multiProcessedTrackRef.current = null
+        multiProcessedModeRef.current = 'none'
+      }
+      if (multiOutgoingFxCtxRef.current) {
+        await multiOutgoingFxCtxRef.current.close()
+        multiOutgoingFxCtxRef.current = null
+      }
+    }
+
+    for (const pc of multiPeerRef.current.values()) {
+      const sender = pc.getSenders().find((currentSender) => currentSender.track?.kind === 'audio')
+      if (!sender) continue
+      try {
+        await sender.replaceTrack(nextTrack)
+      } catch {
+        // keep current track if replace fails
+      }
+    }
+  }, [buildProcessedOutgoingTrack])
+
   useEffect(() => {
-    const shouldDistort = voiceDistortion && activeMinigameId === 'adivina-linea'
-    void applyOutgoingVoiceMode(shouldDistort)
-  }, [voiceDistortion, activeMinigameId, activeCallPeerId, remoteStreamVersion, applyOutgoingVoiceMode])
+    const mode: VoiceMode = voiceDistortion && activeMinigameId === 'adivina-linea'
+      ? 'strong'
+      : (isGeneralPublicRoom && metaPhase === 'LOBBY' ? 'soft' : 'none')
+
+    void applyOutgoingVoiceMode(mode)
+    void applyMultiOutgoingVoiceMode(mode)
+  }, [
+    voiceDistortion,
+    activeMinigameId,
+    isGeneralPublicRoom,
+    metaPhase,
+    activeCallPeerId,
+    remoteStreamVersion,
+    applyOutgoingVoiceMode,
+    applyMultiOutgoingVoiceMode,
+  ])
 
   useEffect(() => {
     if (remoteAudioRef.current) {

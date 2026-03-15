@@ -165,6 +165,8 @@ export interface MetaGameStateSnapshot {
   currentMinigameInfo: MiniGameInfo | null
   globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   hostId: string | null
+  isPublicRoom: boolean
+  isGeneralPublicRoom: boolean
   // When in MINIGAME_IN_PROGRESS, the minigame's own snapshot is sent separately
   minigameSnapshot: GameStateSnapshot | null
 }

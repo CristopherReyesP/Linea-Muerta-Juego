@@ -62,6 +62,8 @@ interface GameStore {
   currentMinigameInfo: MiniGameInfo | null
   globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   hostId: string | null
+  isPublicRoom: boolean
+  isGeneralPublicRoom: boolean
   discussionData: DiscussionData | null
   sessionComplete: SessionCompleteData | null
   minigameHistory: MinigameResult[]
@@ -114,7 +116,14 @@ interface GameStore {
   emojiState: EmojiStateData | null
 
   // Global activity (welcome screen)
-  globalStats: { totalRooms: number; totalPlayers: number } | null
+  globalStats: {
+    totalRooms: number
+    totalPlayers: number
+    totalLobbyRooms: number
+    totalLobbyPlayers: number
+    totalActiveRooms: number
+    totalActivePlayers: number
+  } | null
   globalNotifications: Array<{ id: number; playerName: string; action: string }>
   publicRooms: PublicRoomSummary[]
 
@@ -157,7 +166,14 @@ interface GameStore {
   setBombOutcome: (data: BombOutcomeData | null) => void
   setEmergencyState: (data: EmergencyStateData | null) => void
   setEmojiState: (data: EmojiStateData | null) => void
-  setGlobalStats: (stats: { totalRooms: number; totalPlayers: number }) => void
+  setGlobalStats: (stats: {
+    totalRooms: number
+    totalPlayers: number
+    totalLobbyRooms: number
+    totalLobbyPlayers: number
+    totalActiveRooms: number
+    totalActivePlayers: number
+  }) => void
   setPublicRooms: (rooms: PublicRoomSummary[]) => void
   addGlobalNotification: (notification: { playerName: string; action: string }) => void
   removeGlobalNotification: (id: number) => void
@@ -179,6 +195,8 @@ const initialState = {
   currentMinigameInfo: null,
   globalScoreboard: [],
   hostId: null,
+  isPublicRoom: false,
+  isGeneralPublicRoom: false,
   discussionData: null,
   sessionComplete: null,
   minigameHistory: [],
@@ -233,6 +251,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     currentMinigameInfo: state.currentMinigameInfo,
     globalScoreboard: state.globalScoreboard,
     hostId: state.hostId,
+    isPublicRoom: state.isPublicRoom,
+    isGeneralPublicRoom: state.isGeneralPublicRoom,
     ...(state.minigameSnapshot ? {
       activeMinigameId: state.minigameSnapshot.minigameId,
       phase: state.minigameSnapshot.phase,

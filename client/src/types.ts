@@ -195,5 +195,7 @@ export interface MetaGameStateSnapshot {
   currentMinigameInfo: MiniGameInfo | null
   globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   hostId: string | null
+  isPublicRoom: boolean
+  isGeneralPublicRoom: boolean
   minigameSnapshot: GameStateSnapshot | null
 }

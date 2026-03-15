@@ -1021,13 +1021,14 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
         <div style={{
           position: 'absolute',
           bottom: 20,
-          left: '50%',
-          transform: 'translateX(-50%)',
+          left: 0,
+          right: 0,
           zIndex: 10,
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
+          alignItems: 'stretch',
           gap: 6,
+          padding: '0 12px',
           pointerEvents: 'none',
         }}>
           <AnimatePresence>
@@ -1045,7 +1046,10 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                   border: '1px solid rgba(0,255,65,0.15)',
                   background: 'rgba(6,10,16,0.85)',
                   letterSpacing: 0.5,
-                  whiteSpace: 'nowrap',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  textAlign: 'center',
+                  whiteSpace: 'normal',
                 }}
               >
                 <span style={{ color: 'var(--green-neon)' }}>{n.playerName}</span> {n.action}

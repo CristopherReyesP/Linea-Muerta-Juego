@@ -1,3 +1,4 @@
+# Linea Muerta crawl rules
 User-agent: *
 Allow: /
 

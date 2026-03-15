@@ -141,6 +141,8 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
   const [lobbyChatDraft, setLobbyChatDraft] = useState('')
   const [menuChatDraft, setMenuChatDraft] = useState('')
   const [showMenuChatModal, setShowMenuChatModal] = useState(false)
+  const [unreadMenuChatCount, setUnreadMenuChatCount] = useState(0)
+  const [menuChatNotifications, setMenuChatNotifications] = useState<Array<{ id: string; playerName: string; text: string }>>([])
   const [menuEmojiRound, setMenuEmojiRound] = useState<MenuEmojiMemoryRound>(() => createMenuEmojiRound(1))
   const [menuEmojiPhase, setMenuEmojiPhase] = useState<'showing' | 'guessing' | 'result'>('showing')
   const [menuEmojiResult, setMenuEmojiResult] = useState<{ correct: boolean; guessed: string } | null>(null)
@@ -169,6 +171,8 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
   const connectedLobbyPlayers = lobbyPlayers.length > 0 ? lobbyPlayers : globalScoreboard
   const chatListRef = useRef<HTMLDivElement | null>(null)
   const menuChatListRef = useRef<HTMLDivElement | null>(null)
+  const lastSeenMenuChatIdRef = useRef<string | null>(null)
+  const initializedMenuChatRef = useRef(false)
 
   const playerNameById = useMemo(() => {
     return new Map(connectedLobbyPlayers.map((player) => [player.playerId, player.name]))
@@ -212,6 +216,44 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
       setShowMenuChatModal(false)
     }
   }, [hasJoined, view])
+
+  useEffect(() => {
+    if (showMenuChatModal) {
+      lastSeenMenuChatIdRef.current = menuChat[menuChat.length - 1]?.id ?? null
+      setUnreadMenuChatCount(0)
+      return
+    }
+
+    const latestMessage = menuChat[menuChat.length - 1]
+    if (!latestMessage) return
+
+    if (!initializedMenuChatRef.current) {
+      initializedMenuChatRef.current = true
+      lastSeenMenuChatIdRef.current = latestMessage.id
+      return
+    }
+
+    if (latestMessage.id === lastSeenMenuChatIdRef.current) return
+    setUnreadMenuChatCount((count) => count + 1)
+    setMenuChatNotifications((items) => [
+      {
+        id: latestMessage.id,
+        playerName: latestMessage.playerName,
+        text: 'escribio en el chat',
+      },
+      ...items,
+    ].slice(0, 3))
+  }, [menuChat, showMenuChatModal])
+
+  useEffect(() => {
+    if (menuChatNotifications.length === 0) return
+    const timers = menuChatNotifications.map((notification) =>
+      setTimeout(() => {
+        setMenuChatNotifications((items) => items.filter((item) => item.id !== notification.id))
+      }, 5000)
+    )
+    return () => timers.forEach(clearTimeout)
+  }, [menuChatNotifications])
 
   useEffect(() => {
     const element = chatListRef.current
@@ -684,9 +726,34 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       type="button"
                       className="btn btn-cyan"
                       onClick={() => setShowMenuChatModal(true)}
-                      style={{ width: '100%', fontSize: 12, minHeight: 38 }}
+                      style={{
+                        width: '100%',
+                        fontSize: 12,
+                        minHeight: 38,
+                        position: 'relative',
+                      }}
                     >
                       ABRIR CHAT PRINCIPAL
+                      {unreadMenuChatCount > 0 && (
+                        <span style={{
+                          position: 'absolute',
+                          top: 6,
+                          right: 8,
+                          minWidth: 16,
+                          height: 16,
+                          borderRadius: 999,
+                          padding: '0 4px',
+                          background: 'var(--red-danger)',
+                          color: 'var(--white)',
+                          fontSize: 9,
+                          lineHeight: '16px',
+                          textAlign: 'center',
+                          letterSpacing: 0,
+                          boxShadow: '0 0 10px rgba(255,23,68,0.35)',
+                        }}>
+                          {unreadMenuChatCount > 9 ? '9+' : unreadMenuChatCount}
+                        </span>
+                      )}
                     </button>
                   </div>
                 </motion.div>
@@ -1199,6 +1266,16 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                 <div style={{ fontSize: 10, color: 'var(--gray-text)', lineHeight: 1.5 }}>
                   Los mensajes aparecen aqui. Puedes pedir codigo, avisar que vas a crear sala o decir a cual entraran.
                 </div>
+
+                {globalStats && (
+                  <div style={{
+                    fontSize: 10,
+                    color: 'var(--gray-shadow)',
+                    lineHeight: 1.5,
+                  }}>
+                    {globalStats.totalActivePlayers} activo{globalStats.totalActivePlayers !== 1 ? 's' : ''} en partida · {globalStats.totalLobbyPlayers} en lobby
+                  </div>
+                )}
 
                 <input
                   type="text"
@@ -1768,6 +1845,48 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                 }}
               >
                 <span style={{ color: 'var(--green-neon)' }}>{n.playerName}</span> {n.action}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {!hasJoined && menuChatNotifications.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          bottom: 96,
+          left: 0,
+          right: 0,
+          zIndex: 11,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          gap: 6,
+          padding: '0 12px',
+          pointerEvents: 'none',
+        }}>
+          <AnimatePresence>
+            {menuChatNotifications.map((notification) => (
+              <motion.div
+                key={notification.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -14 }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  fontSize: 10,
+                  color: 'var(--cyan)',
+                  padding: '4px 14px',
+                  border: '1px solid rgba(0,229,255,0.16)',
+                  background: 'rgba(6,10,16,0.86)',
+                  letterSpacing: 0.5,
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  textAlign: 'center',
+                  whiteSpace: 'normal',
+                }}
+              >
+                <span style={{ color: 'var(--white)' }}>{notification.playerName}</span> {notification.text}
               </motion.div>
             ))}
           </AnimatePresence>

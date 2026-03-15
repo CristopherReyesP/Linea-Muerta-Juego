@@ -147,7 +147,10 @@ export class MetaGame {
     const player = new MetaPlayer(uuid(), socketId, name, avatarId, avatarColor, accessoryId)
     this.metaPlayers.set(player.id, player)
 
-    if (!this.hostId) this.hostId = player.id
+    const currentHost = this.hostId ? this.metaPlayers.get(this.hostId) : null
+    if (!currentHost?.isConnected) {
+      this.hostId = player.id
+    }
 
     this.io.to(socketId).socketsJoin(this.room)
     this.markActivity()
@@ -174,6 +177,7 @@ export class MetaGame {
 
     // Transfer host
     if (this.hostId === playerId) {
+      this.hostId = null
       for (const [id, p] of this.metaPlayers) {
         if (id !== playerId && p.isConnected) {
           this.hostId = id

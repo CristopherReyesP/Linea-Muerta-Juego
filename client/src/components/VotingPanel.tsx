@@ -2,12 +2,14 @@ import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
 import { GamePhase, PlayerState } from '../types'
 import { PlayerAvatar } from './PlayerAvatar'
+import { useI18n } from '../i18n'
 
 interface Props {
   onVotePlayer: (targetId: string) => void
 }
 
 export function VotingPanel({ onVotePlayer }: Props) {
+  const { tr, trMinigameName, trMinigameDescription } = useI18n()
   const phase = useGameStore(s => s.phase)
   const myVote = useGameStore(s => s.myVote)
   const voteResult = useGameStore(s => s.voteResult)
@@ -40,7 +42,7 @@ export function VotingPanel({ onVotePlayer }: Props) {
           color: isRewardVote ? 'var(--green-neon)' : 'var(--red-danger)',
           letterSpacing: 4,
         }}>
-          VEREDICTO
+          {tr('VEREDICTO')}
         </div>
 
         <div style={{
@@ -61,15 +63,15 @@ export function VotingPanel({ onVotePlayer }: Props) {
           lineHeight: 1.6,
         }}>
           {isRewardVote
-            ? 'La sala decidio a quien elevar.'
-            : 'La sala ya decidio quien quedo bajo sospecha.'}
+            ? tr('La sala decidio a quien elevar.')
+            : tr('La sala ya decidio quien quedo bajo sospecha.')}
         </div>
 
         <div style={{
           fontSize: 12,
           color: 'var(--gray-text)',
         }}>
-          {voteResult.voteCount} voto{voteResult.voteCount !== 1 ? 's' : ''}
+          {voteResult.voteCount} {voteResult.voteCount !== 1 ? tr('votos') : tr('voto')}
         </div>
 
         <div style={{
@@ -114,7 +116,7 @@ export function VotingPanel({ onVotePlayer }: Props) {
         color: isRewardVote ? 'var(--green-neon)' : 'var(--red-danger)',
         letterSpacing: 4,
       }}>
-        {currentMinigameInfo?.name?.toUpperCase() ?? 'VOTACION'}
+          {(currentMinigameInfo ? trMinigameName(activeMinigameId, currentMinigameInfo.name) : 'VOTACION').toUpperCase()}
       </div>
 
       <div style={{
@@ -125,7 +127,7 @@ export function VotingPanel({ onVotePlayer }: Props) {
         textTransform: 'uppercase',
         maxWidth: 460,
       }}>
-        {isRewardVote ? 'Solo un nombre deberia salir fortalecido' : 'Solo un nombre cargara con la sospecha'}
+        {isRewardVote ? tr('Solo un nombre deberia salir fortalecido') : tr('Solo un nombre cargara con la sospecha')}
       </div>
 
       <div style={{
@@ -135,7 +137,7 @@ export function VotingPanel({ onVotePlayer }: Props) {
         maxWidth: 360,
         lineHeight: 1.6,
       }}>
-        {currentMinigameInfo?.shortDescription ?? 'Vota por un jugador'}
+        {currentMinigameInfo ? trMinigameDescription(activeMinigameId, currentMinigameInfo.shortDescription) : tr('Vota por un jugador')}
       </div>
 
       {!myVote ? (
@@ -178,7 +180,7 @@ export function VotingPanel({ onVotePlayer }: Props) {
                 color: 'var(--cyan)',
                 letterSpacing: 2,
               }}>
-                VOTAR
+                {tr('VOTAR')}
               </span>
             </motion.button>
           ))}
@@ -190,13 +192,13 @@ export function VotingPanel({ onVotePlayer }: Props) {
           letterSpacing: 2,
           textAlign: 'center',
         }}>
-          TU VOTO YA FUE CONTADO
+          {tr('TU VOTO YA FUE CONTADO')}
           <div style={{
             fontSize: 10,
             color: 'var(--gray-text)',
             marginTop: 8,
           }}>
-            Esperando a los demas para revelar el veredicto...
+            {tr('Esperando a los demas para revelar el veredicto...')}
           </div>
         </div>
       )}

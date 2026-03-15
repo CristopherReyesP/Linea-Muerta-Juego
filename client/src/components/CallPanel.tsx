@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore'
 import { GamePhase, PlayerState } from '../types'
 import { PlayerAvatar } from './PlayerAvatar'
 import { Waveform } from './animations/Waveform'
+import { useI18n } from '../i18n'
 
 interface Props {
   onCallPlayer: (targetId: string) => void
@@ -17,6 +18,7 @@ export function CallPanel({
   onCallPlayer, onAcceptCall, onRejectCall, onHangUp,
   audioData, isSpeaking,
 }: Props) {
+  const { tr } = useI18n()
   const phase = useGameStore(s => s.phase)
   const incomingCalls = useGameStore(s => s.incomingCalls)
   const pendingCall = useGameStore(s => s.pendingCall)
@@ -43,12 +45,12 @@ export function CallPanel({
 
   const getCallStatus = (player: typeof players[number]): { key: 'available' | 'in_call' | 'unavailable'; label: string; color: string } => {
     if (player.state === PlayerState.IN_CALL) {
-      return { key: 'in_call', label: 'En llamada', color: '#ffab00' }
+      return { key: 'in_call', label: tr('En llamada'), color: '#ffab00' }
     }
     if (!player.isAlive && !player.isShadow) {
-      return { key: 'unavailable', label: 'No disponible', color: '#7a7a7a' }
+      return { key: 'unavailable', label: tr('No disponible'), color: '#7a7a7a' }
     }
-    return { key: 'available', label: 'Disponible', color: '#00ff41' }
+    return { key: 'available', label: tr('Disponible'), color: '#00ff41' }
   }
 
   return (
@@ -106,7 +108,7 @@ export function CallPanel({
             }}
             className="pulse"
             >
-              LLAMANDO...
+              {tr('LLAMANDO...')}
             </div>
 
             <PhoneWaves color="var(--green-neon)" />
@@ -118,11 +120,11 @@ export function CallPanel({
               color: 'var(--gray-text)',
               letterSpacing: 1,
             }}>
-              Esperando respuesta
+              {tr('Esperando respuesta')}
             </div>
 
             <button className="btn btn-red" onClick={onHangUp} style={{ fontSize: 11 }}>
-              CANCELAR
+              {tr('CANCELAR')}
             </button>
           </motion.div>
         )}
@@ -150,7 +152,7 @@ export function CallPanel({
             }}
             className="flicker"
             >
-              {incomingCalls.length === 1 ? 'LLAMADA ENTRANTE...' : `${incomingCalls.length} LLAMADAS ENTRANTES...`}
+              {incomingCalls.length === 1 ? tr('LLAMADA ENTRANTE...') : `${incomingCalls.length} ${tr('LLAMADAS ENTRANTES...')}`}
             </div>
 
             <div style={{
@@ -190,14 +192,14 @@ export function CallPanel({
                         onClick={() => onAcceptCall(call.callId)}
                         style={{ fontSize: 11, padding: '6px 12px' }}
                       >
-                        CONTESTAR
+                        {tr('CONTESTAR')}
                       </button>
                       <button
                         className="btn btn-red"
                         onClick={() => onRejectCall(call.callId)}
                         style={{ fontSize: 11, padding: '6px 12px' }}
                       >
-                        RECHAZAR
+                        {tr('RECHAZAR')}
                       </button>
                     </div>
                   </motion.div>
@@ -230,7 +232,7 @@ export function CallPanel({
               color: 'var(--cyan)',
               letterSpacing: 3,
             }}>
-              EN LLAMADA
+              {tr('EN LLAMADA')}
             </div>
 
             <div style={{
@@ -247,7 +249,7 @@ export function CallPanel({
               color: 'var(--cyan)',
             }}
             className="pulse"
-            title="Llamada activa"
+            title={tr('Llamada activa')}
             >
               📞
             </div>
@@ -269,7 +271,7 @@ export function CallPanel({
             />
 
             <button className="btn btn-red" onClick={onHangUp}>
-              COLGAR
+              {tr('COLGAR')}
             </button>
           </motion.div>
         )}
@@ -294,7 +296,7 @@ export function CallPanel({
             color: 'var(--gray-text)',
             letterSpacing: 2,
           }}>
-            SELECCIONA A QUIEN LLAMAR
+            {tr('SELECCIONA A QUIEN LLAMAR')}
           </div>
 
           {callTargets.length > 0 ? (
@@ -367,9 +369,9 @@ export function CallPanel({
               lineHeight: 1.6,
               textAlign: 'center',
             }}>
-              No hay jugadores disponibles.
+              {tr('No hay jugadores disponibles.')}
               <br />
-              La cabina esta en silencio por ahora.
+              {tr('La cabina esta en silencio por ahora.')}
             </div>
           )}
         </motion.div>

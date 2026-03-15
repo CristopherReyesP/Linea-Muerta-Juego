@@ -9,12 +9,14 @@ import { Cabin } from './components/Cabin'
 import { DiscussionPhase } from './components/DiscussionPhase'
 import { SessionComplete } from './components/SessionComplete'
 import { GameRules } from './components/GameRules'
+import { LanguageProvider, useI18n } from './i18n'
 
-export default function App() {
+function AppContent() {
   const metaPhase = useGameStore(s => s.metaPhase)
   const playerId = useGameStore(s => s.playerId)
   const currentMinigameInfo = useGameStore(s => s.currentMinigameInfo)
   const [showRules, setShowRules] = useState(false)
+  const { tr, trMinigameDescription, trMinigameName } = useI18n()
 
   const {
     socket,
@@ -97,7 +99,7 @@ export default function App() {
               color: 'var(--gray-text)',
               letterSpacing: 4,
             }}>
-              SIGUIENTE MINIJUEGO
+              {tr('SIGUIENTE MINIJUEGO')}
             </div>
             <div style={{
               fontSize: 28,
@@ -106,7 +108,7 @@ export default function App() {
               letterSpacing: 4,
               textShadow: '0 0 20px rgba(0,229,255,0.3)',
             }}>
-              {currentMinigameInfo.name}
+              {trMinigameName(currentMinigameInfo.id, currentMinigameInfo.name)}
             </div>
             <div style={{
               fontSize: 12,
@@ -115,7 +117,7 @@ export default function App() {
               maxWidth: 360,
               lineHeight: 1.6,
             }}>
-              {currentMinigameInfo.shortDescription}
+              {trMinigameDescription(currentMinigameInfo.id, currentMinigameInfo.shortDescription)}
             </div>
           </motion.div>
         </div>
@@ -163,5 +165,13 @@ export default function App() {
       {/* Hidden audio element for WebRTC */}
       <audio id="remote-audio" autoPlay style={{ display: 'none' }} />
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   )
 }

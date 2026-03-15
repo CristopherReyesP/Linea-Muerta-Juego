@@ -24,6 +24,7 @@ import { MobileToolsDrawer } from './MobileToolsDrawer'
 import { ScrollHintBox } from './ScrollHintBox'
 import { SystemToasts } from './SystemToasts'
 import type { EmergencyStateData, EmojiStateData, PlayerData } from '../types'
+import { useI18n } from '../i18n'
 
 interface Props {
   onCallPlayer: (targetId: string) => void
@@ -158,6 +159,7 @@ export function Cabin({
   onSendSignal,
   audioData, isSpeaking, onShowRules,
 }: Props) {
+  const { tr } = useI18n()
   const phase = useGameStore(s => s.phase)
   const round = useGameStore(s => s.round)
   const maxRounds = useGameStore(s => s.maxRounds)
@@ -294,8 +296,8 @@ export function Cabin({
             {!isMobile && <AudioControls />}
 
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2 }}>
-                JUGADORES ACTIVOS
+            <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2 }}>
+                {tr('JUGADORES ACTIVOS')}
               </div>
               <div style={{ fontSize: isMobile ? 18 : 24, color: 'var(--green-neon)' }}>
                 {activePlayers}
@@ -304,7 +306,7 @@ export function Cabin({
 
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2 }}>
-                RONDA
+                {tr('RONDA')}
               </div>
               <div style={{ fontSize: isMobile ? 18 : 24, color: 'var(--white)' }}>
                 {round}<span style={{ fontSize: 14, color: 'var(--gray-text)' }}>/{maxRounds}</span>
@@ -324,7 +326,7 @@ export function Cabin({
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
-              title="Reglas del juego"
+              title={tr('Reglas del juego')}
             >
               ?
             </button>
@@ -367,7 +369,7 @@ export function Cabin({
           }}
           className={phase === GamePhase.DECISION_PHASE ? 'pulse' : ''}
           >
-            {phaseLabels[phase] ?? phase}
+            {tr(phaseLabels[phase] ?? phase)}
           </div>
           <PhaseTimer />
         </div>
@@ -403,8 +405,8 @@ export function Cabin({
                 background: 'rgba(255,255,255,0.03)',
               }}>
                 <div>
-                  <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2 }}>TIP RAPIDO</div>
-                  <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--white)', marginTop: 4, lineHeight: 1.45 }}>{tutorialCopy}</div>
+                  <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2 }}>{tr('TIP RAPIDO')}</div>
+                  <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--white)', marginTop: 4, lineHeight: 1.45 }}>{tr(tutorialCopy)}</div>
                 </div>
                 <button
                   onClick={() => setShowTutorial(false)}
@@ -442,14 +444,14 @@ export function Cabin({
                 }}
               >
                 <div style={{ fontSize: isMobile ? 9 : 10, color: 'var(--cyan)', letterSpacing: isMobile ? 2 : 3, marginBottom: 6 }}>
-                  {phaseInstruction.label}
+                  {tr(phaseInstruction.label)}
                 </div>
                 <div style={{ fontSize: isMobile ? 13 : 15, color: 'var(--white)', lineHeight: 1.45 }}>
-                  {phaseInstruction.text}
+                  {tr(phaseInstruction.text)}
                 </div>
                 {!isMobile && (
                   <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 1.4, marginTop: 8 }}>
-                  Reglas completas en el icono `?`
+                  {tr('Reglas completas en el icono `?`')}
                   </div>
                 )}
               </div>

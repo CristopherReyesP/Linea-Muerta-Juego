@@ -1,7 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
+import { useI18n } from '../i18n'
 
 export function BombOutcomeOverlay() {
+  const { tr } = useI18n()
   const bombOutcome = useGameStore((s) => s.bombOutcome)
   const playerId = useGameStore((s) => s.playerId)
 
@@ -11,8 +13,8 @@ export function BombOutcomeOverlay() {
   const exploded = bombOutcome.type === 'exploded'
 
   const title = exploded
-    ? (isMe ? 'TE EXPLOTO LA BOMBA' : `A ${bombOutcome.playerName} LE EXPLOTO LA BOMBA`)
-    : (isMe ? 'DESACTIVASTE LA BOMBA' : `${bombOutcome.playerName} DESACTIVO LA BOMBA`)
+    ? (isMe ? 'THE BOMB EXPLODED ON YOU' : `THE BOMB EXPLODED ON ${bombOutcome.playerName}`)
+    : (isMe ? 'YOU DEFUSED THE BOMB' : `${bombOutcome.playerName} ${tr('DESACTIVO LA BOMBA')}`)
 
   return (
     <AnimatePresence>
@@ -74,7 +76,7 @@ export function BombOutcomeOverlay() {
             )}
           </div>
           <div style={{ fontSize: 12, color: 'var(--gray-text)', letterSpacing: 3, marginBottom: 8 }}>
-            EVENTO CRITICO
+            CRITICAL EVENT
           </div>
           <div style={{
             fontSize: 28,
@@ -89,7 +91,7 @@ export function BombOutcomeOverlay() {
           </div>
           {!exploded && bombOutcome.chance !== undefined && (
             <div style={{ marginTop: 8, fontSize: 12, color: 'var(--cyan)' }}>
-              Probabilidad usada: {bombOutcome.chance}%
+              Chance used: {bombOutcome.chance}%
             </div>
           )}
         </motion.div>

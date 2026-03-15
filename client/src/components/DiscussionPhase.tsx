@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
+import { useI18n } from '../i18n'
 
 interface Props {
   onContinue: (data?: { selectedMinigameIds?: string[] }) => void
@@ -20,6 +21,7 @@ const minigameOptions = [
 ]
 
 export function DiscussionPhase({ onContinue }: Props) {
+  const { tr, trMinigameDescription, trMinigameName } = useI18n()
   const discussionData = useGameStore(s => s.discussionData)
   const globalScoreboard = useGameStore(s => s.globalScoreboard)
   const playerId = useGameStore(s => s.playerId)
@@ -73,20 +75,20 @@ export function DiscussionPhase({ onContinue }: Props) {
           color: 'var(--gray-text)',
           letterSpacing: 3,
         }}>
-          MINIJUEGO {currentIndex + 1}/{totalMinigames} COMPLETADO
+          {tr('MINIJUEGO')} {currentIndex + 1}/{totalMinigames} {tr('COMPLETADO')}
         </div>
         <div style={{
           fontSize: 16,
           color: 'var(--cyan)',
           letterSpacing: 2,
         }}>
-          {completedResult.minigameName}
+          {trMinigameName(completedResult.minigameId, completedResult.minigameName)}
         </div>
         <div style={{
           fontSize: 12,
           color: 'var(--green-neon)',
         }}>
-          Ganador: {completedResult.winnerName}
+          {tr('Ganador')}: {completedResult.winnerName}
         </div>
       </motion.div>
 
@@ -110,7 +112,7 @@ export function DiscussionPhase({ onContinue }: Props) {
           textAlign: 'center',
           marginBottom: 8,
         }}>
-          SCOREBOARD GLOBAL
+          {tr('SCOREBOARD GLOBAL')}
         </div>
 
         {globalScoreboard.map((p, i) => (
@@ -185,7 +187,7 @@ export function DiscussionPhase({ onContinue }: Props) {
           className="pulse"
           />
           <span style={{ fontSize: 11, color: 'var(--green-dim)', letterSpacing: 1 }}>
-            VOZ ABIERTA - TODOS PUEDEN HABLAR
+            {tr('VOZ ABIERTA - TODOS PUEDEN HABLAR')}
           </span>
         </div>
 
@@ -206,7 +208,7 @@ export function DiscussionPhase({ onContinue }: Props) {
           }}
         >
           <span style={{ fontSize: 16 }}>{micMuted ? '\u{1F507}' : '\u{1F3A4}'}</span>
-          {micMuted ? 'MICROFONO APAGADO' : 'MICROFONO ENCENDIDO'}
+          {micMuted ? tr('MICROFONO APAGADO') : tr('MICROFONO ENCENDIDO')}
         </button>
       </motion.div>
 
@@ -227,13 +229,13 @@ export function DiscussionPhase({ onContinue }: Props) {
           }}
         >
           <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 2 }}>
-            SIGUIENTE MINIJUEGO
+            {tr('SIGUIENTE MINIJUEGO')}
           </div>
           <div style={{ fontSize: 14, color: 'var(--cyan)', letterSpacing: 1 }}>
-            {nextMinigame.name}
+            {trMinigameName(nextMinigame.id, nextMinigame.name)}
           </div>
           <div style={{ fontSize: 10, color: 'var(--gray-text)', textAlign: 'center', maxWidth: 280 }}>
-            {nextMinigame.shortDescription}
+            {trMinigameDescription(nextMinigame.id, nextMinigame.shortDescription)}
           </div>
         </motion.div>
       )}
@@ -254,10 +256,10 @@ export function DiscussionPhase({ onContinue }: Props) {
           }}
         >
           <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 2, textAlign: 'center' }}>
-            MODO DESARROLLADOR LOCAL
+            {tr('MODO DESARROLLADOR LOCAL')}
           </div>
           <div style={{ fontSize: 11, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.5 }}>
-            Antes de continuar puedes elegir manualmente el siguiente minijuego.
+            {tr('Antes de continuar puedes elegir manualmente el siguiente minijuego.')}
           </div>
           {availableMinigames.map((minigame) => (
             <label
@@ -277,7 +279,7 @@ export function DiscussionPhase({ onContinue }: Props) {
                 checked={selectedNextMinigameId === minigame.id}
                 onChange={() => setSelectedNextMinigameId(minigame.id)}
               />
-              {minigame.name}
+              {trMinigameName(minigame.id, minigame.name)}
             </label>
           ))}
         </motion.div>
@@ -299,7 +301,7 @@ export function DiscussionPhase({ onContinue }: Props) {
             )}
             style={{ fontSize: 14 }}
           >
-            CONTINUAR
+            {tr('CONTINUAR')}
           </button>
         ) : (
           <div style={{
@@ -309,7 +311,7 @@ export function DiscussionPhase({ onContinue }: Props) {
           }}
           className="pulse"
           >
-            Esperando al anfitrion...
+            {tr('Esperando al anfitrion...')}
           </div>
         )}
       </motion.div>

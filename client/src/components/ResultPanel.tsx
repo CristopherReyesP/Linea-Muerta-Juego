@@ -2,8 +2,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { Decision, GamePhase } from '../types'
+import { useI18n } from '../i18n'
 
 export function ResultPanel() {
+  const { tr } = useI18n()
   const phase = useGameStore(s => s.phase)
   const lastResult = useGameStore(s => s.lastResult)
   const playerId = useGameStore(s => s.playerId)
@@ -22,11 +24,11 @@ export function ResultPanel() {
   const isPositive = totalChange > 0
   const matchedMajority = myDecision === lastResult.majorityDecision
   const revealCopy = matchedMajority
-    ? 'Tu decision camino con la multitud.'
-    : 'Quedaste del lado equivocado de la mayoria.'
+    ? tr('Tu decision camino con la multitud.')
+    : tr('Quedaste del lado equivocado de la mayoria.')
   const impactCopy = isPositive
-    ? 'La ronda jugo a tu favor.'
-    : 'La ronda te dejo expuesto.'
+    ? tr('La ronda jugo a tu favor.')
+    : tr('La ronda te dejo expuesto.')
 
   useEffect(() => {
     setRevealStep(0)
@@ -66,7 +68,7 @@ export function ResultPanel() {
           color: 'var(--gray-text)',
           letterSpacing: 4,
         }}>
-          REVELACION RONDA {lastResult.round}
+          {tr('REVELACION RONDA')} {lastResult.round}
         </div>
 
         {revealStep >= 1 && (
@@ -97,14 +99,14 @@ export function ResultPanel() {
         <div style={{ display: 'flex', gap: 40, alignItems: 'center' }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 10, color: 'var(--gray-text)', marginBottom: 4 }}>
-              TU DECISION
+              {tr('TU DECISION')}
             </div>
             <div style={{
               fontSize: 16,
               fontWeight: 'bold',
               color: myDecision === Decision.COOPERATE ? 'var(--green-neon)' : 'var(--red-danger)',
             }}>
-              {myDecision === Decision.COOPERATE ? 'COOPERAR' : 'TRAICIONAR'}
+              {myDecision === Decision.COOPERATE ? tr('COOPERAR') : tr('TRAICIONAR')}
             </div>
           </div>
 
@@ -116,14 +118,14 @@ export function ResultPanel() {
 
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 10, color: 'var(--gray-text)', marginBottom: 4 }}>
-              MAYORIA
+              {tr('MAYORIA')}
             </div>
             <div style={{
               fontSize: 16,
               fontWeight: 'bold',
               color: lastResult.majorityDecision === Decision.COOPERATE ? 'var(--green-neon)' : 'var(--red-danger)',
             }}>
-              {lastResult.majorityDecision === Decision.COOPERATE ? 'COOPERAR' : 'TRAICIONAR'}
+              {lastResult.majorityDecision === Decision.COOPERATE ? tr('COOPERAR') : tr('TRAICIONAR')}
             </div>
           </div>
         </div>
@@ -148,10 +150,10 @@ export function ResultPanel() {
         {/* Desglose de cambios */}
         {revealStep >= 3 && (
         <div style={{ display: 'flex', gap: 16, fontSize: 10, color: 'var(--gray-text)' }}>
-          <span>Ronda: {myChange > 0 ? '+' : ''}{myChange}</span>
+          <span>{tr('Ronda:')} {myChange > 0 ? '+' : ''}{myChange}</span>
           {rachaAmount !== 0 && (
             <span style={{ color: rachaAmount > 0 ? 'var(--green-neon)' : 'var(--red-danger)' }}>
-              Racha: {rachaAmount > 0 ? '+' : ''}{rachaAmount}
+              {tr('Racha:')} {rachaAmount > 0 ? '+' : ''}{rachaAmount}
             </span>
           )}
         </div>
@@ -187,7 +189,7 @@ export function ResultPanel() {
           color: 'var(--gray-text)',
           letterSpacing: 2,
         }}>
-          ASI JUGO CADA CABINA
+          {tr('ASI JUGO CADA CABINA')}
         </div>
         )}
         {revealStep >= 2 && (

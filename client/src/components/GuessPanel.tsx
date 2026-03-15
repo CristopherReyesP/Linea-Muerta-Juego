@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
 import { GamePhase } from '../types'
+import { useI18n } from '../i18n'
 
 interface Props {
   onSubmitGuesses: (guesses: Record<string, string>) => void
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
+  const { tr } = useI18n()
   const phase = useGameStore(s => s.phase)
   const lineAssignments = useGameStore(s => s.lineAssignments)
   const lineGuessResults = useGameStore(s => s.lineGuessResults)
@@ -54,7 +56,7 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
           color: 'var(--cyan)',
           letterSpacing: 4,
         }}>
-          IDENTIDADES REVELADAS
+          {tr('IDENTIDADES REVELADAS')}
         </div>
 
         <div style={{
@@ -64,7 +66,7 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
           textAlign: 'center',
           textTransform: 'uppercase',
         }}>
-          La voz ya no puede esconder a nadie
+          {tr('La voz ya no puede esconder a nadie')}
         </div>
 
         <div style={{
@@ -85,7 +87,7 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
               background: 'rgba(0,229,255,0.03)',
             }}>
               <span style={{ fontSize: 12, color: 'var(--gray-text)' }}>
-                Linea {a.lineNumber}
+                {tr('Linea')} {a.lineNumber}
               </span>
               <span style={{ fontSize: 13, color: 'var(--white)', fontWeight: 'bold' }}>
                 {a.playerName}
@@ -99,14 +101,14 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
           color: myScore > 0 ? 'var(--green-neon)' : 'var(--gray-text)',
           fontWeight: 'bold',
         }}>
-          Adivinaste {myScore} linea{myScore !== 1 ? 's' : ''}
+          {tr('Adivinaste')} {myScore} {myScore !== 1 ? tr('lineas') : tr('linea')}
         </div>
 
         <div style={{
           fontSize: 12,
           color: 'var(--green-neon)',
         }}>
-          Ganador: {lineGuessResults.winnerName}
+          {tr('Ganador')}: {lineGuessResults.winnerName}
         </div>
 
         {isHost && onSkipToFinish && (
@@ -115,7 +117,7 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
             onClick={onSkipToFinish}
             style={{ fontSize: 12, marginTop: 8 }}
           >
-            CONTINUAR
+            {tr('CONTINUAR')}
           </button>
         )}
       </motion.div>
@@ -165,10 +167,10 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
         }}
       >
         <div style={{ fontSize: 14, color: 'var(--cyan)', letterSpacing: 2 }}>
-          RESPUESTAS ENVIADAS
+          {tr('RESPUESTAS ENVIADAS')}
         </div>
         <div style={{ fontSize: 10, color: 'var(--gray-text)' }}>
-          Esperando a los demas...
+          {tr('Esperando a los demas...')}
         </div>
       </motion.div>
     )
@@ -196,7 +198,7 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
         color: 'var(--cyan)',
         letterSpacing: 3,
       }}>
-        ADIVINA QUIEN ES CADA LINEA
+        {tr('ADIVINA QUIEN ES CADA LINEA')}
       </div>
 
       <div style={{
@@ -205,7 +207,7 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
         textAlign: 'center',
         lineHeight: 1.6,
       }}>
-        Tu eres Linea {myLineNumber}. {isCallPhase ? 'Puedes ir adivinando mientras llamas.' : 'Asigna un nombre a cada linea.'}
+        {tr('Tu eres Linea')} {myLineNumber}. {isCallPhase ? tr('Puedes ir adivinando mientras llamas.') : tr('Asigna un nombre a cada linea.')}
       </div>
 
       <div style={{
@@ -215,7 +217,7 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
         fontWeight: 'bold',
         textTransform: 'uppercase',
       }}>
-        {isCallPhase ? 'Cada llamada puede delatar una identidad' : 'Ya no hay mas voces: solo sospechas'}
+        {isCallPhase ? tr('Cada llamada puede delatar una identidad') : tr('Ya no hay mas voces: solo sospechas')}
       </div>
 
       <div style={{
@@ -248,7 +250,7 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
                 fontWeight: 'bold',
                 minWidth: 60,
               }}>
-                Linea {line.lineNumber}
+                {tr('Linea')} {line.lineNumber}
               </div>
 
               <select
@@ -283,7 +285,7 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
                   paddingRight: 24,
                 }}
               >
-                <option value="" style={{ color: 'var(--gray-text)' }}>-- Seleccionar --</option>
+                <option value="" style={{ color: 'var(--gray-text)' }}>{tr('-- Seleccionar --')}</option>
                 {availableNames.map(p => {
                   const isUsed = usedPlayerIds.includes(p.playerId)
                   const isSelected = currentGuess === p.playerId
@@ -297,7 +299,7 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
                         background: 'var(--bg-primary)',
                       }}
                     >
-                      {p.name}{isUsed && !isSelected ? ' (ya asignado)' : ''}
+                      {p.name}{isUsed && !isSelected ? ` ${tr('(ya asignado)')}` : ''}
                     </option>
                   )
                 })}
@@ -316,12 +318,12 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
           opacity: allGuessed ? 1 : 0.4,
         }}
       >
-        {submitted ? 'ACTUALIZAR RESPUESTAS' : 'ENVIAR RESPUESTAS'}
+        {submitted ? tr('ACTUALIZAR RESPUESTAS') : tr('ENVIAR RESPUESTAS')}
       </button>
 
       {submitted && isCallPhase && (
         <div style={{ fontSize: 9, color: 'var(--green-dim)' }}>
-          Respuestas guardadas. Puedes cambiarlas antes del cierre final.
+          {tr('Respuestas guardadas. Puedes cambiarlas antes del cierre final.')}
         </div>
       )}
     </motion.div>

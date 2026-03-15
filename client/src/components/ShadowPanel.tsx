@@ -1,12 +1,14 @@
 import { useGameStore } from '../store/gameStore'
 import { GamePhase } from '../types'
 import { GlitchEffect } from './animations/GlitchEffect'
+import { useI18n } from '../i18n'
 
 interface Props {
   onInterference: (targetId: string) => void
 }
 
 export function ShadowPanel({ onInterference }: Props) {
+  const { language } = useI18n()
   const myPlayer = useGameStore(s => s.getMyPlayer())
   const players = useGameStore(s => s.players)
   const phase = useGameStore(s => s.phase)
@@ -34,20 +36,20 @@ export function ShadowPanel({ onInterference }: Props) {
         }}
         className="glitch-text"
         >
-          ESTADO: SOMBRA
+          {language === 'en' ? 'STATUS: SHADOW' : 'ESTADO: SOMBRA'}
         </div>
 
         <div style={{
           fontSize: 10,
           color: 'var(--gray-text)',
         }}>
-          Cargas de interferencia: {myPlayer.shadowCharges}
+          {language === 'en' ? 'Interference charges' : 'Cargas de interferencia'}: {myPlayer.shadowCharges}
         </div>
 
         {phase === GamePhase.CALL_PHASE && myPlayer.shadowCharges > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 1 }}>
-              INTERFERIR LLAMADA:
+              {language === 'en' ? 'INTERFERE WITH CALL:' : 'INTERFERIR LLAMADA:'}
             </div>
             {targets.length > 0 ? (
               targets.map(t => (
@@ -62,7 +64,7 @@ export function ShadowPanel({ onInterference }: Props) {
               ))
             ) : (
               <div style={{ fontSize: 10, color: 'var(--gray-shadow)' }}>
-                No hay llamadas activas
+                {language === 'en' ? 'No active calls' : 'No hay llamadas activas'}
               </div>
             )}
           </div>
@@ -74,7 +76,7 @@ export function ShadowPanel({ onInterference }: Props) {
             color: 'var(--gray-shadow)',
             fontStyle: 'italic',
           }}>
-            No puedes votar como sombra.
+            {language === 'en' ? 'You cannot vote as a shadow.' : 'No puedes votar como sombra.'}
           </div>
         )}
       </div>

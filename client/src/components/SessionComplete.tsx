@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
 import { PlayerAvatar } from './PlayerAvatar'
+import { useI18n } from '../i18n'
 
 function PlayerDataWithAvatar({ name, avatarId, avatarColor, accessoryId, isShadow }: { name: string; avatarId: string; avatarColor: string; accessoryId: string; isShadow?: boolean }) {
   const player = { name, avatarId, avatarColor, accessoryId, isShadow: isShadow ?? false } as any
@@ -8,6 +9,7 @@ function PlayerDataWithAvatar({ name, avatarId, avatarColor, accessoryId, isShad
 }
 
 export function SessionComplete() {
+  const { tr, trMinigameName } = useI18n()
   const sessionComplete = useGameStore(s => s.sessionComplete)
   const playerId = useGameStore(s => s.playerId)
 
@@ -35,7 +37,7 @@ export function SessionComplete() {
           letterSpacing: 4,
         }}
       >
-        SESION FINALIZADA
+        {tr('SESION FINALIZADA')}
       </motion.div>
 
       <motion.div
@@ -52,7 +54,7 @@ export function SessionComplete() {
             : '0 0 30px rgba(255,23,68,0.5)',
         }}
       >
-        {isWinner ? 'VICTORIA GLOBAL' : 'DERROTA'}
+        {isWinner ? tr('VICTORIA GLOBAL') : tr('DERROTA')}
       </motion.div>
 
       <motion.div
@@ -64,7 +66,7 @@ export function SessionComplete() {
           color: 'var(--cyan)',
         }}
       >
-        Ganador: {sessionComplete.overallWinnerName}
+        {tr('Ganador')}: {sessionComplete.overallWinnerName}
       </motion.div>
 
       {/* Global scoreboard */}
@@ -87,7 +89,7 @@ export function SessionComplete() {
           textAlign: 'center',
           marginBottom: 8,
         }}>
-          CLASIFICACION FINAL
+          {tr('CLASIFICACION FINAL')}
         </div>
 
         {sessionComplete.globalScoreboard.map((p, i) => (
@@ -145,7 +147,7 @@ export function SessionComplete() {
           textAlign: 'center',
           marginBottom: 8,
         }}>
-          HISTORIAL DE MINIJUEGOS
+          {tr('HISTORIAL DE MINIJUEGOS')}
         </div>
 
         {sessionComplete.history.map((result, i) => {
@@ -170,7 +172,7 @@ export function SessionComplete() {
                   #{i + 1}
                 </span>
                 <span style={{ fontSize: 11, color: 'var(--cyan)' }}>
-                  {result.minigameName}
+                  {trMinigameName(result.minigameId, result.minigameName)}
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -200,7 +202,7 @@ export function SessionComplete() {
         onClick={() => window.location.reload()}
         style={{ marginTop: 16 }}
       >
-        NUEVA SESION
+        {tr('NUEVA SESION')}
       </motion.button>
     </div>
   )

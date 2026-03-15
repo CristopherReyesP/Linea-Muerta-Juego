@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { setAmbientVolume } from '../audio/SoundEngine'
+import { useI18n } from '../i18n'
 
 export function AudioControls() {
+  const { tr } = useI18n()
   const ambientVolume = useGameStore((s) => s.ambientVolume)
   const playerVolume = useGameStore((s) => s.playerVolume)
   const setStoreAmbientVolume = useGameStore((s) => s.setAmbientVolume)
@@ -29,11 +31,11 @@ export function AudioControls() {
           <path d="M17 9c1.3 1.3 1.3 4.7 0 6" stroke="#00e5ff" strokeWidth="1.8" strokeLinecap="round" />
           <path d="M19.5 6.5c2.6 2.7 2.6 8.3 0 11" stroke="#00e5ff" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
-        <span style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 1 }}>SONIDO</span>
+        <span style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 1 }}>{tr('SONIDO')}</span>
       </div>
 
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10, color: 'var(--gray-text)' }}>
-        FONDO
+        {tr('FONDO')}
         <input
           type="range"
           min={0}
@@ -44,7 +46,7 @@ export function AudioControls() {
       </label>
 
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10, color: 'var(--gray-text)' }}>
-        JUGADORES
+        {tr('JUGADORES')}
         <input
           type="range"
           min={0}

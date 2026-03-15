@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
 import { Decision, GamePhase } from '../types'
+import { useI18n } from '../i18n'
 
 interface Props {
   onSubmitDecision: (decision: Decision) => void
 }
 
 export function DecisionPanel({ onSubmitDecision }: Props) {
+  const { tr } = useI18n()
   const phase = useGameStore(s => s.phase)
   const myDecision = useGameStore(s => s.myDecision)
   const myPlayer = useGameStore(s => s.getMyPlayer())
@@ -41,7 +43,7 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
         letterSpacing: 4,
         textTransform: 'uppercase',
       }}>
-        DECISION FINAL
+        {tr('DECISION FINAL')}
       </div>
 
       <div style={{
@@ -52,7 +54,7 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
         textAlign: 'center',
         textTransform: 'uppercase',
       }}>
-        Nadie sabra lo que elegiste hasta que sea demasiado tarde
+        {tr('Nadie sabra lo que elegiste hasta que sea demasiado tarde')}
       </div>
 
       <div style={{
@@ -62,7 +64,7 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
         maxWidth: 420,
         lineHeight: 1.6,
       }}>
-        Una mayoria define el castigo. Tu decision define si sobrevives mejor que los demas.
+        {tr('Una mayoria define el castigo. Tu decision define si sobrevives mejor que los demas.')}
       </div>
 
       {!myDecision ? (
@@ -76,7 +78,7 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
               minWidth: 170,
             }}
           >
-            COOPERAR
+            {tr('COOPERAR')}
           </button>
           <button
             className="btn btn-red"
@@ -87,7 +89,7 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
               minWidth: 170,
             }}
           >
-            TRAICIONAR
+            {tr('TRAICIONAR')}
           </button>
         </div>
       ) : (
@@ -102,7 +104,7 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
             color: 'var(--gray-text)',
             letterSpacing: 2,
           }}>
-            TU ELECCION QUEDO SELLADA
+            {tr('TU ELECCION QUEDO SELLADA')}
           </div>
           <div style={{
             fontSize: 18,
@@ -110,13 +112,13 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
             color: myDecision === Decision.COOPERATE ? 'var(--green-neon)' : 'var(--red-danger)',
             letterSpacing: 2,
           }}>
-            {myDecision === Decision.COOPERATE ? 'COOPERAR' : 'TRAICIONAR'}
+            {myDecision === Decision.COOPERATE ? tr('COOPERAR') : tr('TRAICIONAR')}
           </div>
           <div style={{
             fontSize: 11,
             color: 'var(--gray-text)',
           }}>
-            Esperando a los demas...
+            {tr('Esperando a los demas...')}
           </div>
         </div>
       )}
@@ -132,8 +134,8 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
         color: 'var(--gray-text)',
         letterSpacing: 1.2,
       }}>
-        <span>Jugadores pendientes: {Math.max(0, pendingPlayers)}</span>
-        <span>La mayoria decidira el impacto</span>
+        <span>{tr('Jugadores pendientes:')} {Math.max(0, pendingPlayers)}</span>
+        <span>{tr('La mayoria decidira el impacto')}</span>
       </div>
     </motion.div>
   )

@@ -4,11 +4,11 @@ import { useGameStore } from '../store/gameStore'
 import { PlayerAvatar } from './PlayerAvatar'
 import lobbyImage from '../../lobby.png'
 import { PlayerState, type PlayerData } from '../types'
+import { useI18n } from '../i18n'
 
 type LobbyView = 'welcome' | 'setup' | 'join'
 type LobbyAction = 'create-private' | 'create-public' | 'join-public'
 type CustomizeTab = 'masks' | 'accessories'
-type Language = 'es' | 'en'
 type MenuEmojiMemoryRound = {
   target: string
   options: string[]
@@ -123,80 +123,8 @@ const avatarGridStyle: React.CSSProperties = {
   paddingRight: 4,
 }
 
-const menuCopy = {
-  es: {
-    trustLine: 'Confia en la linea.',
-    connected: 'conectados',
-    connecting: 'Conectando al servidor...',
-    namePlaceholder: 'Tu nombre',
-    createRoom: 'CREAR SALA',
-    joinWithCode: 'UNIRSE CON CODIGO',
-    publicRooms: 'Salas publicas',
-    noPublicRooms: 'No hay salas publicas abiertas ahora mismo.',
-    alwaysAvailable: 'disponible siempre mientras este en lobby',
-    emptyRoom: 'sala vacia',
-    openMainChat: 'ABRIR CHAT PRINCIPAL',
-    chatTitle: 'CHAT PRINCIPAL',
-    close: 'CERRAR',
-    chatHelp: 'Los mensajes aparecen aqui. Puedes pedir codigo, avisar que vas a crear sala o decir a cual entraran.',
-    activeSummary: (active: number, lobby: number) => `${active} activo${active !== 1 ? 's' : ''} en partida · ${lobby} en lobby`,
-    noChatMessages: 'Aun no hay mensajes en el chat principal.',
-    chatInputPlaceholder: 'Escribe al chat principal...',
-    chatNeedsName: 'Escribe tu nombre para enviar mensajes',
-    send: 'ENVIAR',
-    chatWrote: 'escribio en el chat',
-    setupCreatePrivate: 'CREAR SALA PRIVADA',
-    setupCreatePublic: 'CREAR SALA PUBLICA',
-    setupJoinPublic: 'UNIRSE A SALA PUBLICA',
-    continue: 'CONTINUAR',
-    join: 'UNIRSE',
-    back: 'VOLVER',
-    joinRoom: 'UNIRSE A SALA',
-    roomCodePlaceholder: 'Codigo de sala...',
-    chooseAvatar: 'ELIGE TU AVATAR',
-    masks: 'MASCARAS',
-    accessories: 'ACCESORIOS',
-    premium: 'PREMIUM',
-  },
-  en: {
-    trustLine: 'Trust the line.',
-    connected: 'connected',
-    connecting: 'Connecting to server...',
-    namePlaceholder: 'Your name',
-    createRoom: 'CREATE ROOM',
-    joinWithCode: 'JOIN WITH CODE',
-    publicRooms: 'Public rooms',
-    noPublicRooms: 'No public rooms are open right now.',
-    alwaysAvailable: 'always available while it stays in lobby',
-    emptyRoom: 'empty room',
-    openMainChat: 'OPEN MAIN CHAT',
-    chatTitle: 'MAIN CHAT',
-    close: 'CLOSE',
-    chatHelp: 'Messages appear here. Ask for a code, say you are creating a room, or tell others which room to join.',
-    activeSummary: (active: number, lobby: number) => `${active} active in game · ${lobby} in lobby`,
-    noChatMessages: 'There are no messages in the main chat yet.',
-    chatInputPlaceholder: 'Write in main chat...',
-    chatNeedsName: 'Enter your name to send messages',
-    send: 'SEND',
-    chatWrote: 'wrote in chat',
-    setupCreatePrivate: 'CREATE PRIVATE ROOM',
-    setupCreatePublic: 'CREATE PUBLIC ROOM',
-    setupJoinPublic: 'JOIN PUBLIC ROOM',
-    continue: 'CONTINUE',
-    join: 'JOIN',
-    back: 'BACK',
-    joinRoom: 'JOIN ROOM',
-    roomCodePlaceholder: 'Room code...',
-    chooseAvatar: 'CHOOSE YOUR AVATAR',
-    masks: 'MASKS',
-    accessories: 'ACCESSORIES',
-    premium: 'PREMIUM',
-  },
-} as const
-
 export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSendMenuChat }: Props) {
   const [view, setView] = useState<LobbyView>('welcome')
-  const [language, setLanguage] = useState<Language>('es')
   const [pendingAction, setPendingAction] = useState<LobbyAction>('create-private')
   const [pendingPublicRoomId, setPendingPublicRoomId] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
@@ -250,7 +178,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
   const playerNameById = useMemo(() => {
     return new Map(connectedLobbyPlayers.map((player) => [player.playerId, player.name]))
   }, [connectedLobbyPlayers])
-  const t = menuCopy[language]
+  const { language, setLanguage, tr, trMinigameName } = useI18n()
 
   // Clear error when changing view
   useEffect(() => {
@@ -313,11 +241,11 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
       {
         id: latestMessage.id,
         playerName: latestMessage.playerName,
-        text: t.chatWrote,
+        text: tr('escribio en el chat'),
       },
       ...items,
     ].slice(0, 3))
-  }, [menuChat, showMenuChatModal, t.chatWrote])
+  }, [menuChat, showMenuChatModal, tr])
 
   useEffect(() => {
     if (menuChatNotifications.length === 0) return
@@ -443,10 +371,10 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
 
   const setupTitle =
     pendingAction === 'create-private'
-      ? t.setupCreatePrivate
+      ? tr('CREAR SALA PRIVADA')
       : pendingAction === 'create-public'
-        ? t.setupCreatePublic
-        : t.setupJoinPublic
+        ? tr('CREAR SALA PUBLICA')
+        : tr('UNIRSE A SALA PUBLICA')
 
   const formatRemainingTime = (expiresAt: number | null) => {
     if (!expiresAt) return null
@@ -608,7 +536,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                 textAlign: 'center',
                 textTransform: 'uppercase',
               }}>
-                {t.trustLine}
+                {tr('Confia en la linea.')}
               </div>
             )}
           </div>
@@ -628,14 +556,14 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                   letterSpacing: 1,
                 }}
               >
-                {error}
+                {tr(error)}
               </motion.div>
             )}
           </AnimatePresence>
 
           {!connected && (
             <div style={{ fontSize: 10, color: 'var(--red-danger)' }}>
-              {t.connecting}
+              {tr('Conectando al servidor...')}
             </div>
           )}
 
@@ -702,7 +630,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       type="text"
                       value={name}
                       onChange={e => setName(e.target.value.slice(0, 15))}
-                      placeholder={t.namePlaceholder}
+                      placeholder={tr('Tu nombre')}
                       maxLength={15}
                       autoFocus
                       style={inputStyle}
@@ -721,14 +649,14 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       onClick={() => openSetupForAction('create-private')}
                       style={{ width: '100%', fontSize: 14, minHeight: 46 }}
                     >
-                      {t.createRoom}
+                      {tr('CREAR SALA')}
                     </button>
                     <button
                       className="btn btn-cyan"
                       onClick={() => setView('join')}
                       style={{ width: '100%', fontSize: 14, minHeight: 46 }}
                     >
-                      {t.joinWithCode}
+                      {tr('UNIRSE CON CODIGO')}
                     </button>
                   </div>
 
@@ -748,7 +676,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       letterSpacing: 1.6,
                       textAlign: 'left',
                     }}>
-                      {t.publicRooms}
+                      {tr('Salas publicas')}
                     </div>
 
                     {publicRooms.length === 0 ? (
@@ -758,7 +686,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                         textAlign: 'center',
                         lineHeight: 1.5,
                       }}>
-                        {t.noPublicRooms}
+                        {tr('No hay salas publicas abiertas ahora mismo.')}
                       </div>
                     ) : (
                       <div style={{
@@ -801,7 +729,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                                   )}
                                   {room.isGeneral && (
                                     <span style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 1.2 }}>
-                                      {t.alwaysAvailable}
+                                      {tr('disponible siempre mientras este en lobby')}
                                     </span>
                                   )}
                                 </span>
@@ -811,7 +739,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                                   </span>
                                   {room.playerCount === 0 && (
                                     <span style={{ fontSize: 9, color: 'var(--gray-shadow)', letterSpacing: 1.2 }}>
-                                      {t.emptyRoom}
+                                      {tr('sala vacia')}
                                     </span>
                                   )}
                                 </span>
@@ -841,7 +769,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                         position: 'relative',
                       }}
                     >
-                      {t.openMainChat}
+                      {tr('ABRIR CHAT PRINCIPAL')}
                       {unreadMenuChatCount > 0 && (
                         <span style={{
                           position: 'absolute',
@@ -893,7 +821,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     value={name}
                     onChange={e => setName(e.target.value.slice(0, 15))}
                     onKeyDown={e => e.key === 'Enter' && handleSetupSubmit()}
-                    placeholder={t.namePlaceholder}
+                    placeholder={tr('Tu nombre')}
                     maxLength={15}
                     autoFocus
                     style={inputStyle}
@@ -913,7 +841,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     padding: 10,
                   }}>
                     <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2, textAlign: 'center' }}>
-                      {t.chooseAvatar}
+                      {tr('ELIGE TU AVATAR')}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                       <PlayerAvatar player={selectedAvatarPreview} size={74} showName={false} showState={false} />
@@ -932,7 +860,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                           cursor: 'pointer',
                         }}
                           >
-                        {t.masks}
+                        {tr('MASCARAS')}
                       </button>
                       <button
                         type="button"
@@ -947,7 +875,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                           cursor: 'pointer',
                         }}
                           >
-                        {t.accessories}
+                        {tr('ACCESORIOS')}
                       </button>
                     </div>
                     {customizeTab === 'masks' && (
@@ -992,7 +920,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                             color: '#ffd666',
                             textShadow: '0 0 10px rgba(255,214,102,0.35)',
                           }}>
-                            {t.premium}
+                            {tr('PREMIUM')}
                           </div>
                         )}
                       </>
@@ -1057,7 +985,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                             color: '#ffd666',
                             textShadow: '0 0 10px rgba(255,214,102,0.35)',
                           }}>
-                            {t.premium}
+                            {tr('PREMIUM')}
                           </div>
                         )}
                       </>
@@ -1070,7 +998,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       onClick={handleSetupSubmit}
                       disabled={!name.trim()}
                     >
-                      {pendingAction === 'join-public' ? t.join : t.continue}
+                      {pendingAction === 'join-public' ? tr('UNIRSE') : tr('CONTINUAR')}
                     </button>
                     <button
                       className="btn btn-red"
@@ -1080,7 +1008,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       }}
                       style={{ fontSize: 12 }}
                     >
-                      {t.back}
+                      {tr('VOLVER')}
                     </button>
                   </div>
                 </motion.div>
@@ -1104,14 +1032,14 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     color: 'var(--cyan)',
                     letterSpacing: 3,
                   }}>
-                    {t.joinRoom}
+                    {tr('UNIRSE A SALA')}
                   </div>
 
                   <input
                     type="text"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    placeholder={t.namePlaceholder}
+                    placeholder={tr('Tu nombre')}
                     maxLength={15}
                     autoFocus
                     style={inputStyle}
@@ -1122,7 +1050,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     value={roomCode}
                     onChange={e => setRoomCode(e.target.value.toUpperCase())}
                     onKeyDown={e => e.key === 'Enter' && handleJoin()}
-                    placeholder={t.roomCodePlaceholder}
+                    placeholder={tr('Codigo de sala...')}
                     maxLength={6}
                     style={{
                       ...inputStyle,
@@ -1147,7 +1075,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     padding: 10,
                   }}>
                     <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2, textAlign: 'center' }}>
-                      {t.chooseAvatar}
+                      {tr('ELIGE TU AVATAR')}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                       <PlayerAvatar player={selectedAvatarPreview} size={74} showName={false} showState={false} />
@@ -1166,7 +1094,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                           cursor: 'pointer',
                         }}
                       >
-                        {t.masks}
+                        {tr('MASCARAS')}
                       </button>
                       <button
                         type="button"
@@ -1181,7 +1109,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                           cursor: 'pointer',
                         }}
                       >
-                        {t.accessories}
+                        {tr('ACCESORIOS')}
                       </button>
                     </div>
                     {customizeTab === 'masks' && (
@@ -1226,7 +1154,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                             color: '#ffd666',
                             textShadow: '0 0 10px rgba(255,214,102,0.35)',
                           }}>
-                            {t.premium}
+                            {tr('PREMIUM')}
                           </div>
                         )}
                       </>
@@ -1291,7 +1219,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                             color: '#ffd666',
                             textShadow: '0 0 10px rgba(255,214,102,0.35)',
                           }}>
-                            {t.premium}
+                            {tr('PREMIUM')}
                           </div>
                         )}
                       </>
@@ -1304,14 +1232,14 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       onClick={handleJoin}
                       disabled={!name.trim() || !roomCode.trim()}
                     >
-                      {t.join}
+                      {tr('UNIRSE')}
                     </button>
                     <button
                       className="btn btn-red"
                       onClick={() => setView('welcome')}
                       style={{ fontSize: 12 }}
                     >
-                      {t.back}
+                      {tr('VOLVER')}
                     </button>
                   </div>
                 </motion.div>
@@ -1359,7 +1287,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     color: 'var(--green-neon)',
                     letterSpacing: 2,
                   }}>
-                    {t.chatTitle}
+                    {tr('CHAT PRINCIPAL')}
                   </div>
                   <button
                     type="button"
@@ -1367,12 +1295,12 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     onClick={() => setShowMenuChatModal(false)}
                     style={{ padding: '6px 14px', fontSize: 11 }}
                   >
-                    {t.close}
+                    {tr('CERRAR')}
                   </button>
                 </div>
 
                 <div style={{ fontSize: 10, color: 'var(--gray-text)', lineHeight: 1.5 }}>
-                  {t.chatHelp}
+                  {tr('Los mensajes aparecen aqui. Puedes pedir codigo, avisar que vas a crear sala o decir a cual entraran.')}
                 </div>
 
                 {globalStats && (
@@ -1381,7 +1309,9 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     color: 'var(--gray-shadow)',
                     lineHeight: 1.5,
                   }}>
-                    {t.activeSummary(globalStats.totalActivePlayers, globalStats.totalLobbyPlayers)}
+                    {language === 'en'
+                      ? `${globalStats.totalActivePlayers} active in game · ${globalStats.totalLobbyPlayers} in lobby`
+                      : `${globalStats.totalActivePlayers} activo${globalStats.totalActivePlayers !== 1 ? 's' : ''} en partida · ${globalStats.totalLobbyPlayers} en lobby`}
                   </div>
                 )}
 
@@ -1389,7 +1319,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value.slice(0, 15))}
-                  placeholder={t.namePlaceholder}
+                  placeholder={tr('Tu nombre')}
                   maxLength={15}
                   style={{
                     ...inputStyle,
@@ -1416,7 +1346,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                 >
                   {menuChat.length === 0 ? (
                     <div style={{ fontSize: 11, color: 'var(--gray-shadow)', lineHeight: 1.5 }}>
-                      {t.noChatMessages}
+                      {tr('Aun no hay mensajes en el chat principal.')}
                     </div>
                   ) : (
                     menuChat.map((message) => {
@@ -1455,7 +1385,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                         handleSendMenuChat()
                       }
                     }}
-                    placeholder={name.trim() ? t.chatInputPlaceholder : t.chatNeedsName}
+                    placeholder={name.trim() ? tr('Escribe al chat principal...') : tr('Escribe tu nombre para enviar mensajes')}
                     style={{
                       ...inputStyle,
                       width: '100%',
@@ -1470,7 +1400,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     disabled={!name.trim() || !menuChatDraft.trim()}
                     style={{ minWidth: 92 }}
                   >
-                    {t.send}
+                    {tr('ENVIAR')}
                   </button>
                 </div>
               </div>
@@ -1856,7 +1786,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                                   onChange={() => toggleMinigameSelection(minigame.id)}
                                   disabled={disabled}
                                 />
-                                {minigame.name}
+                                {trMinigameName(minigame.id, minigame.name)}
                                 {disabled && <span style={{ fontSize: 9, color: 'var(--gray-shadow)' }}>(min {minigame.minPlayers})</span>}
                               </label>
                             )
@@ -1912,7 +1842,9 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
           textTransform: 'uppercase',
           backdropFilter: 'blur(6px)',
         }}>
-          {globalStats.totalPlayers} {t.connected}
+          {language === 'en'
+            ? `${globalStats.totalPlayers} connected`
+            : `${globalStats.totalPlayers} conectado${globalStats.totalPlayers !== 1 ? 's' : ''}`}
         </div>
       )}
 
@@ -1952,7 +1884,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                   whiteSpace: 'normal',
                 }}
               >
-                <span style={{ color: 'var(--green-neon)' }}>{n.playerName}</span> {n.action}
+                <span style={{ color: 'var(--green-neon)' }}>{n.playerName}</span> {tr(n.action)}
               </motion.div>
             ))}
           </AnimatePresence>

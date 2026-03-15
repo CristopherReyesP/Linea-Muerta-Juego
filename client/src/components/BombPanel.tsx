@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
 import { PlayerState } from '../types'
+import { useI18n } from '../i18n'
 
 interface Props {
   onPassBomb: (targetId: string) => void
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
+  const { language } = useI18n()
   const bombState = useGameStore((s) => s.bombState)
   const bombLastPass = useGameStore((s) => s.bombLastPass)
   const bombLastDefuseResult = useGameStore((s) => s.bombLastDefuseResult)
@@ -85,24 +87,24 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}>
           <div style={{ fontSize: isMobile ? 9 : 11, color: 'var(--red-danger)', letterSpacing: isMobile ? 2.6 : 4 }}>
-            ALERTA CRITICA
+            {language === 'en' ? 'CRITICAL ALERT' : 'ALERTA CRITICA'}
           </div>
           <div style={{ fontSize: isMobile ? 18 : 24, color: 'var(--white)', fontWeight: 'bold', textTransform: 'uppercase', lineHeight: 1.15 }}>
-            {isHolder ? 'La decision esta en tus manos' : `${bombState.holderName} sostiene la bomba`}
+            {isHolder ? (language === 'en' ? 'The decision is in your hands' : 'La decision esta en tus manos') : `${bombState.holderName} ${language === 'en' ? 'holds the bomb' : 'sostiene la bomba'}`}
           </div>
           <div style={{ fontSize: isMobile ? 11 : 12, color: 'var(--gray-text)', lineHeight: 1.5 }}>
             {isHolder
-              ? 'Puedes jugartela ahora o condenar a otra cabina con un pase.'
-              : 'Cada segundo que pasa acerca la explosion o una transferencia inesperada.'}
+              ? (language === 'en' ? 'You can risk it now or doom another cabin with a pass.' : 'Puedes jugartela ahora o condenar a otra cabina con un pase.')
+              : (language === 'en' ? 'Every second brings the explosion or an unexpected transfer closer.' : 'Cada segundo que pasa acerca la explosion o una transferencia inesperada.')}
           </div>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
-            TEMPORIZADOR DE BOMBA
+            {language === 'en' ? 'BOMB TIMER' : 'TEMPORIZADOR DE BOMBA'}
           </div>
           <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
-            LLAMADAS ACTIVAS: {activeCalls.length}
+            {language === 'en' ? 'ACTIVE CALLS' : 'LLAMADAS ACTIVAS'}: {activeCalls.length}
           </div>
         </div>
 
@@ -139,25 +141,25 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
             flexWrap: 'wrap',
           }}
         >
-          <span style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>TIENE LA BOMBA</span>
+          <span style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>{language === 'en' ? 'HAS THE BOMB' : 'TIENE LA BOMBA'}</span>
           <span style={{ fontSize: isMobile ? 12 : 14, color: 'var(--red-danger)', fontWeight: 'bold' }}>{bombState.holderName}</span>
         </motion.div>
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
-            PROB. DESACTIVACION
+            {language === 'en' ? 'DEFUSE CHANCE' : 'PROB. DESACTIVACION'}
           </span>
           <span style={{ fontSize: isMobile ? 20 : 24, color: 'var(--cyan)', fontWeight: 'bold' }}>
             {bombState.disarmChance}%
           </span>
           <span style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)' }}>
-            ({bombState.passCount} pases)
+            ({bombState.passCount} {language === 'en' ? 'passes' : 'pases'})
           </span>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ fontSize: isMobile ? 9 : 10, color: 'var(--gray-text)', letterSpacing: 2 }}>
-            HISTORIAL DE PASES
+            {language === 'en' ? 'PASS HISTORY' : 'HISTORIAL DE PASES'}
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {bombState.passHistory.map((name, index) => (
@@ -179,21 +181,21 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
 
         {bombLastPass && (
           <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--cyan)', lineHeight: 1.4 }}>
-            Pase reciente: {bombLastPass.fromName} {'->'} {bombLastPass.toName}
+            {language === 'en' ? 'Recent pass' : 'Pase reciente'}: {bombLastPass.fromName} {'->'} {bombLastPass.toName}
           </div>
         )}
 
         {bombLastDefuseResult && (
           <div style={{ fontSize: isMobile ? 10 : 11, color: bombLastDefuseResult.success ? 'var(--green-neon)' : 'var(--red-danger)', lineHeight: 1.4 }}>
-            {bombLastDefuseResult.playerName} intento desactivar ({bombLastDefuseResult.chance}%):{' '}
-            {bombLastDefuseResult.success ? 'EXITO' : 'FALLO'}
+            {bombLastDefuseResult.playerName} {language === 'en' ? 'tried to defuse' : 'intento desactivar'} ({bombLastDefuseResult.chance}%):{' '}
+            {bombLastDefuseResult.success ? (language === 'en' ? 'SUCCESS' : 'EXITO') : (language === 'en' ? 'FAIL' : 'FALLO')}
           </div>
         )}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
-          ACCIONES
+          {language === 'en' ? 'ACTIONS' : 'ACCIONES'}
         </div>
 
         <button
@@ -202,7 +204,7 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
           disabled={!isHolder}
           style={isMobile ? { width: '100%', padding: '10px 14px', fontSize: 12 } : undefined}
         >
-          DESACTIVAR
+          {language === 'en' ? 'DEFUSE' : 'DESACTIVAR'}
         </button>
 
         <select
@@ -219,7 +221,7 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
             width: '100%',
           }}
         >
-          <option value="">Seleccionar destino</option>
+          <option value="">{language === 'en' ? 'Select target' : 'Seleccionar destino'}</option>
           {passTargets.map((player) => (
             <option key={player.id} value={player.id}>
               {player.name}
@@ -237,13 +239,13 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
           disabled={!isHolder || !selectedTargetId}
           style={isMobile ? { width: '100%', padding: '10px 14px', fontSize: 12 } : undefined}
         >
-          PASAR BOMBA
+          {language === 'en' ? 'PASS BOMB' : 'PASAR BOMBA'}
         </button>
 
         <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', lineHeight: 1.5 }}>
           {isHolder
-            ? 'Cada accion cambia tus probabilidades. Una falla explota de inmediato.'
-            : `Esperando decision de ${bombState.holderName}. Nadie sabe si arriesgara o pasara.`}
+            ? (language === 'en' ? 'Each action changes your odds. One failure explodes immediately.' : 'Cada accion cambia tus probabilidades. Una falla explota de inmediato.')
+            : (language === 'en' ? `Waiting for ${bombState.holderName}'s decision. No one knows if they will risk it or pass it.` : `Esperando decision de ${bombState.holderName}. Nadie sabe si arriesgara o pasara.`)}
         </div>
       </div>
     </div>

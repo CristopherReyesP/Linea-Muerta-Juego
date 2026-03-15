@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
+import { useI18n } from '../i18n'
 
 interface Props {
   onVoteEmoji: (targetId: string) => void
 }
 
 export function EmojiPanel({ onVoteEmoji }: Props) {
+  const { tr } = useI18n()
   const emojiState = useGameStore(s => s.emojiState)
   const players = useGameStore(s => s.players)
   const myPlayerId = useGameStore(s => s.playerId)
@@ -34,7 +36,7 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           background: 'rgba(0,229,255,0.04)',
         }}
       >
-        <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 4 }}>REVELACION PRIVADA</div>
+        <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 4 }}>{tr('REVELACION PRIVADA')}</div>
 
         <div style={{
           fontSize: 22,
@@ -43,7 +45,7 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           textTransform: 'uppercase',
           textAlign: 'center',
         }}>
-          Puede que tengas la pieza que no encaja
+          {tr('Puede que tengas la pieza que no encaja')}
         </div>
 
         <motion.div
@@ -61,7 +63,7 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
         </motion.div>
 
         <div style={{ fontSize: 12, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.6 }}>
-          Memoriza tu emoji. En unos segundos tendras que defenderlo sin saber si eres el diferente.
+          {tr('Memoriza tu emoji. En unos segundos tendras que defenderlo sin saber si eres el diferente.')}
         </div>
       </motion.div>
     )
@@ -94,16 +96,16 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
         }}>
           <span style={{ fontSize: 48 }}>{myEmoji}</span>
           <div>
-            <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 2 }}>TU EMOJI</div>
+            <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 2 }}>{tr('TU EMOJI')}</div>
           </div>
         </div>
 
         <div style={{ fontSize: 18, color: 'var(--white)', textAlign: 'center', textTransform: 'uppercase', fontWeight: 'bold' }}>
-          Todos suenan convincentes hasta que uno no encaja
+          {tr('Todos suenan convincentes hasta que uno no encaja')}
         </div>
 
         <div style={{ fontSize: 11, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.6 }}>
-          Llama, compara descripciones y detecta quien esta fingiendo normalidad.
+          {tr('Llama, compara descripciones y detecta quien esta fingiendo normalidad.')}
         </div>
       </motion.div>
     )
@@ -140,15 +142,15 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
         </div>
 
         <div style={{ fontSize: 10, color: 'var(--red-danger)', letterSpacing: 4 }}>
-          JUICIO FINAL
+          {tr('JUICIO FINAL')}
         </div>
 
         <div style={{ fontSize: 20, color: 'var(--white)', fontWeight: 'bold', textTransform: 'uppercase', textAlign: 'center' }}>
-          Quien no pertenece al patron?
+          {tr('Quien no pertenece al patron?')}
         </div>
 
         <div style={{ fontSize: 11, color: 'var(--cyan)' }}>
-          Votos: {emojiState.voteCount} / {emojiState.totalVoters}
+          {tr('Votos:')} {emojiState.voteCount} / {emojiState.totalVoters}
         </div>
 
         {!voted ? (
@@ -179,7 +181,7 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           </div>
         ) : (
           <div style={{ fontSize: 11, color: 'var(--green-dim)', letterSpacing: 1, textAlign: 'center' }}>
-            Tu acusacion ya fue registrada. Esperando el veredicto...
+            {tr('Tu acusacion ya fue registrada. Esperando el veredicto...')}
           </div>
         )}
       </motion.div>
@@ -215,25 +217,25 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           color: emojiState.success ? 'var(--green-neon)' : 'var(--red-danger)',
           letterSpacing: 2,
         }}>
-          {emojiState.success ? 'DIFERENTE DESCUBIERTO' : 'ENGANO EXITOSO'}
+          {emojiState.success ? tr('DIFERENTE DESCUBIERTO') : tr('ENGANO EXITOSO')}
         </div>
 
         <div style={{ fontSize: 12, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.6 }}>
           {emojiState.success
-            ? 'La mayoria encontro la grieta en el patron.'
-            : 'El diferente logro mezclarse con todos los demas.'}
+            ? tr('La mayoria encontro la grieta en el patron.')
+            : tr('El diferente logro mezclarse con todos los demas.')}
         </div>
 
         {/* Show both emojis side by side */}
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 64 }}>{emojiState.baseEmoji}</div>
-            <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 2, marginTop: 4 }}>BASE</div>
+            <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 2, marginTop: 4 }}>{tr('BASE')}</div>
           </div>
           <div style={{ fontSize: 20, color: 'var(--gray-text)' }}>vs</div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 64 }}>{emojiState.differentEmoji}</div>
-            <div style={{ fontSize: 9, color: 'var(--red-danger)', letterSpacing: 2, marginTop: 4 }}>DIFERENTE</div>
+            <div style={{ fontSize: 9, color: 'var(--red-danger)', letterSpacing: 2, marginTop: 4 }}>{tr('DIFERENTE')}</div>
           </div>
         </div>
 
@@ -244,13 +246,13 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           fontSize: 12,
           color: 'var(--white)',
         }}>
-          El diferente era: <strong style={{ color: 'var(--red-danger)' }}>{emojiState.differentPlayerName}</strong>
+          {tr('El diferente era:')} <strong style={{ color: 'var(--red-danger)' }}>{emojiState.differentPlayerName}</strong>
         </div>
 
         {/* Show votes */}
         {emojiState.votes && (
           <div style={{ width: '100%' }}>
-            <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 2, marginBottom: 4 }}>VOTOS</div>
+            <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 2, marginBottom: 4 }}>{tr('VOTOS')}</div>
             {Object.entries(emojiState.votes).map(([voterId, targetId]) => {
               const correct = targetId === emojiState.differentPlayerId
               return (
@@ -275,8 +277,8 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           color: emojiState.success ? 'var(--green-neon)' : 'var(--red-danger)',
         }}>
           {emojiState.success
-            ? 'Todos ganan +1 punto excepto el diferente'
-            : `${emojiState.differentPlayerName} gana +1 punto`
+            ? tr('Todos ganan +1 punto excepto el diferente')
+            : `${emojiState.differentPlayerName} ${tr('gana +1 punto')}`
           }
         </div>
       </motion.div>

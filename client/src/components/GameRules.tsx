@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
+import { useI18n } from '../i18n'
 
 interface Props {
   onClose: () => void
@@ -282,11 +283,103 @@ const defaultRulesData = {
   tagline: '"Tu saldo es tu vida. Confia en la linea."',
 }
 
+const englishRulesMap: Record<string, { title: string; rules: RuleSection[]; tagline: string }> = {
+  'cooperar-traicionar': {
+    title: 'COOPERATE OR BETRAY',
+    tagline: '"Your balance is your life. Trust the line."',
+    rules: [
+      { title: 'OBJECTIVE', text: 'Survive 10 rounds with the highest balance possible. If your balance reaches 0, you become a SHADOW.' },
+      { title: 'CALL PHASE (30s)', text: 'Talk to other players by voice. Negotiate, lie, or persuade before deciding.' },
+      { title: 'DECISION PHASE (10s)', text: 'Choose in secret: COOPERATE or BETRAY.' },
+      { title: 'RESULTS', items: ['If the majority COOPERATES: cooperators +30, betrayers +45', 'If the majority BETRAYS: cooperators -40, betrayers -10'] },
+      { title: 'STREAKS', items: ['Cooperate twice in a row: +15 bonus', 'Betray twice in a row: -25 penalty', 'A streak breaks if you change your decision'] },
+      { title: 'SHADOW', text: 'If your balance reaches 0, you lose your vote but can still call and get 2 interference charges to distort other calls.' },
+      { title: 'END OF GAME', text: 'The game ends when only 1 active player remains or all 10 rounds are completed. Highest balance wins.' },
+    ],
+  },
+  'votacion-sobra': {
+    title: 'WHO DOES NOT BELONG?',
+    tagline: '"The brightest one casts the deepest shadow."',
+    rules: [
+      { title: 'OBJECTIVE', text: 'Vote for the player you think is dominating too much. The most voted player loses 1 global point.' },
+      { title: 'CALL PHASE (20s)', text: 'Talk with others to discuss who is dominating the session.' },
+      { title: 'VOTING PHASE (15s)', text: 'Vote in secret for the player who does not belong. You cannot vote for yourself.' },
+      { title: 'RESULT', items: ['The most voted player loses 1 point from the global scoreboard', 'In case of a tie, every tied player loses the point'] },
+    ],
+  },
+  'votacion-merece': {
+    title: 'WHO DESERVES IT?',
+    tagline: '"Recognition is a double-edged weapon."',
+    rules: [
+      { title: 'OBJECTIVE', text: 'Vote for the player who most deserves to move forward. The most voted player gains 1 global point.' },
+      { title: 'CALL PHASE (20s)', text: 'Talk with others to discuss who deserves to be recognized.' },
+      { title: 'VOTING PHASE (15s)', text: 'Vote in secret for the player who deserves it most. You cannot vote for yourself.' },
+      { title: 'RESULT', items: ['The most voted player gains 1 point on the global scoreboard', 'In case of a tie, every tied player gains the point'] },
+    ],
+  },
+  'adivina-linea': {
+    title: 'GUESS THE LINE',
+    tagline: '"Voices lie, but words reveal."',
+    rules: [
+      { title: 'OBJECTIVE', text: 'Discover who is behind each phone line. Whoever guesses the most identities wins.' },
+      { title: 'HIDDEN IDENTITIES', text: 'Player names are hidden. You only see line numbers (Line 1, Line 2, etc.).' },
+      { title: 'DISTORTED VOICES', text: 'Voices are distorted to make recognition harder. Pay attention to clues in the conversation.' },
+      { title: 'CALL PHASE (5 min)', text: 'Call different lines to figure out who each player is. You can fill in your suspicions while talking.' },
+      { title: 'GUESSING PHASE (30s)', text: 'Assign one name to each line. Every name can only be used once.' },
+      { title: 'RESULT', items: ['Each correct guess gives 1 point', 'The player or players with the most correct guesses earn +1 global point'] },
+    ],
+  },
+  'la-bomba': {
+    title: 'THE BOMB',
+    tagline: '"Every second matters. Every pass decides."',
+    rules: [
+      { title: 'OBJECTIVE', text: 'Stop the bomb from exploding. Only the current holder can choose to defuse or pass it.' },
+      { title: 'TIMERS', text: 'There are two clocks: the full match lasts 5 minutes and each holder gets their own decision timer.' },
+      { title: 'BOMB TIMER (50s)', text: 'Each holder has 50 seconds to decide. Passing the bomb resets the timer for the new holder.' },
+      { title: 'DEFUSE CHANCE', items: ['Starts at 15%', 'Each pass adds +10% cumulatively', 'More passes means better odds'] },
+      { title: 'ACTIONS', items: ['DEFUSE: attempt to defuse using the current chance', 'PASS BOMB: send it to another cabin to increase the chance', 'Only the current holder can perform these actions'] },
+      { title: 'RESULT', items: ['If someone defuses it: that player gains +2 global points', 'If it explodes: the holder loses -2 global points'] },
+    ],
+  },
+  'central-emergencias': {
+    title: 'EMERGENCY CENTER',
+    tagline: '"Information is fragmented. So is the truth."',
+    rules: [
+      { title: 'OBJECTIVE', text: 'Operators must identify the correct message using reports from 2 Technicians and 1 Saboteur.' },
+      { title: 'MESSAGE FORMAT', items: ['The message always has 3 fields: EMERGENCY, LOCATION, ACCESS', 'There is no PLACE field in this version'] },
+      { title: 'ROLES', items: ['OPERATOR(S): receive reports and choose the correct emergency among 4 options (majority vote)', '2 TECHNICIANS: each gets 1 field with a REAL and FAKE option; they must push the REAL one', '1 SABOTEUR: gets 1 field with a REAL and FAKE option, but must sneak in the FAKE one'] },
+      { title: 'PHASE 1: ASSIGNMENT (10s)', text: 'Roles are assigned randomly. Each non-operator gets a partial clue with two values: one real and one fake.' },
+      { title: 'PHASE 2: PREPARATION (10s)', text: 'Everyone reviews their REAL/FAKE pair. The Saboteur prepares a strategy to defend the fake value.' },
+      { title: 'PHASE 3: TRANSMISSION (90s)', items: ['Each sender (2 technicians + 1 saboteur) can call each other to discuss', 'Everyone compares real/fake options to detect inconsistencies', 'Each sender sends a report of up to 3 words to the Operator', 'Operators cannot make or receive calls during this phase', 'Total report combinations: 8 (2^3)'] },
+      { title: 'PHASE 4: OPERATOR RESPONSE (60s)', text: 'Each Operator chooses the correct emergency among 4 options. The majority decides the result.' },
+      { title: 'SCORING', items: ['If the operator majority is correct: Operators and loyal Technicians +1 pt, Saboteur 0 pts', 'If the majority fails: Saboteur +1 pt, everyone else 0 pts'] },
+    ],
+  },
+  'emoji-diferente': {
+    title: 'ODD EMOJI',
+    tagline: '"Appearances deceive. Only one is different."',
+    rules: [
+      { title: 'OBJECTIVE', text: 'Everyone sees the same emoji except one player, who gets a different one. Nobody knows if they are the odd one. Find them by talking.' },
+      { title: 'REVEAL PHASE (8s)', text: 'You see your emoji big on screen. Memorize it well. You cannot call anyone yet.' },
+      { title: 'DISCUSSION PHASE (45s)', text: 'Call other players and describe your emoji to figure out who has a different one. Careful: you might be the odd one without knowing it.' },
+      { title: 'VOTING PHASE (20s)', text: 'Vote for who you think has the different emoji. You cannot vote for yourself.' },
+      { title: 'RESULT', items: ['If the majority votes correctly: everyone gains +1 pt except the odd player', 'If the majority fails: the odd player gains +1 pt, everyone else gets 0'] },
+    ],
+  },
+}
+
 export function GameRules({ onClose }: Props) {
+  const { language, tr } = useI18n()
   const activeMinigameId = useGameStore(s => s.activeMinigameId)
   const currentMinigameInfo = useGameStore(s => s.currentMinigameInfo)
   const minigameId = activeMinigameId ?? currentMinigameInfo?.id ?? ''
-  const rulesData = rulesMap[minigameId] ?? defaultRulesData
+  const rulesData = language === 'en'
+    ? (englishRulesMap[minigameId] ?? {
+      title: 'PROTOCOL RULES',
+      rules: englishRulesMap['cooperar-traicionar'].rules,
+      tagline: '"Your balance is your life. Trust the line."',
+    })
+    : (rulesMap[minigameId] ?? defaultRulesData)
 
   return (
     <motion.div
@@ -394,7 +487,7 @@ export function GameRules({ onClose }: Props) {
             {rulesData.tagline}
           </div>
           <button className="btn btn-green" onClick={onClose}>
-            ENTENDIDO
+            {tr('ENTENDIDO')}
           </button>
         </div>
       </motion.div>

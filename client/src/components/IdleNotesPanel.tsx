@@ -69,10 +69,10 @@ export function IdleNotesPanel() {
       >
         <div>
           <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2.2 }}>
-            BLOC DE CABINA
+            {tr('BLOC DE CABINA')}
           </div>
           <div style={{ fontSize: 9, color: 'var(--gray-text)', marginTop: 2 }}>
-            Solo lo ves tu
+            {tr('Solo lo ves tu')}
           </div>
         </div>
 

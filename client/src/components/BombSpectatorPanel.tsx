@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
+import { useI18n } from '../i18n'
 
 export function BombSpectatorPanel() {
+  const { language } = useI18n()
   const bombState = useGameStore((s) => s.bombState)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
@@ -45,7 +47,7 @@ export function BombSpectatorPanel() {
       }}
     >
       <div style={{ fontSize: isMobile ? 9 : 10, color: isUrgent ? 'var(--red-danger)' : 'var(--gray-text)', letterSpacing: isMobile ? 2 : 3 }}>
-        {isUrgent ? 'ULTIMOS SEGUNDOS' : 'ESTADO DE BOMBA'}
+        {language === 'en' ? (isUrgent ? 'FINAL SECONDS' : 'BOMB STATUS') : (isUrgent ? 'ULTIMOS SEGUNDOS' : 'ESTADO DE BOMBA')}
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', padding: '2px 0 4px' }}>
         <svg width={isMobile ? 64 : 84} height={isMobile ? 50 : 66} viewBox="0 0 96 78" role="img" aria-label="Bomba">
@@ -70,18 +72,18 @@ export function BombSpectatorPanel() {
         </svg>
       </div>
       <div style={{ fontSize: isMobile ? 15 : 18, color: 'var(--red-danger)', fontWeight: 'bold', textTransform: 'uppercase', lineHeight: 1.2 }}>
-        Portador actual: {bombState.holderName}
+        {language === 'en' ? 'Current holder' : 'Portador actual'}: {bombState.holderName}
       </div>
       <div style={{ fontSize: isMobile ? 11 : 12, color: 'var(--cyan)' }}>
-        Tiempo del portador: {remainingSeconds}s
+        {language === 'en' ? 'Holder timer' : 'Tiempo del portador'}: {remainingSeconds}s
       </div>
       <div style={{ fontSize: isMobile ? 11 : 12, color: 'var(--white)' }}>
-        Probabilidad actual: {bombState.disarmChance}% ({bombState.passCount} pases)
+        {language === 'en' ? 'Current chance' : 'Probabilidad actual'}: {bombState.disarmChance}% ({bombState.passCount} {language === 'en' ? 'passes' : 'pases'})
       </div>
       <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', lineHeight: 1.5 }}>
         {isUrgent
-          ? 'Cualquier decision ahora puede terminar la ronda de inmediato.'
-          : 'Observa el reloj. La siguiente transferencia puede caer sobre cualquiera.'}
+          ? (language === 'en' ? 'Any decision now can end the round immediately.' : 'Cualquier decision ahora puede terminar la ronda de inmediato.')
+          : (language === 'en' ? 'Watch the clock. The next transfer can fall on anyone.' : 'Observa el reloj. La siguiente transferencia puede caer sobre cualquiera.')}
       </div>
     </div>
   )

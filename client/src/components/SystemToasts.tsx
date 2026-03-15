@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { GamePhase } from '../types'
+import { useI18n } from '../i18n'
 
 interface Toast {
   id: string
@@ -10,6 +11,7 @@ interface Toast {
 }
 
 export function SystemToasts() {
+  const { tr } = useI18n()
   const phase = useGameStore((s) => s.phase)
   const incomingCalls = useGameStore((s) => s.incomingCalls)
   const latestSignal = useGameStore((s) => s.latestSignal)
@@ -19,11 +21,11 @@ export function SystemToasts() {
   const [toasts, setToasts] = useState<Toast[]>([])
 
   const phaseLabel = useMemo(() => {
-    if (phase === GamePhase.CALL_PHASE) return 'FASE DE LLAMADA'
-    if (phase === GamePhase.DECISION_PHASE) return 'FASE DE DECISION'
-    if (phase === GamePhase.RESULT_PHASE) return 'ENTRANDO A RESULTADOS'
+    if (phase === GamePhase.CALL_PHASE) return tr('FASE DE LLAMADA')
+    if (phase === GamePhase.DECISION_PHASE) return tr('FASE DE DECISION')
+    if (phase === GamePhase.RESULT_PHASE) return tr('Entrando a resultados.')
     return null
-  }, [phase])
+  }, [phase, tr])
 
   const pushToast = (toast: Toast) => {
     setToasts((current) => [...current, toast].slice(-3))
@@ -45,7 +47,7 @@ export function SystemToasts() {
     if (incomingCalls.length === 0) return
     pushToast({
       id: `call-${incomingCalls[0]?.callId ?? Date.now()}`,
-      text: incomingCalls.length === 1 ? 'LLAMADA ENTRANTE' : `${incomingCalls.length} LLAMADAS ENTRANTES`,
+      text: incomingCalls.length === 1 ? tr('LLAMADA ENTRANTE') : `${incomingCalls.length} ${tr('LLAMADAS ENTRANTES...').replace('...', '')}`,
       tone: 'good',
     })
   }, [incomingCalls])
@@ -55,8 +57,8 @@ export function SystemToasts() {
     pushToast({
       id: `signal-${latestSignal.playerId}-${latestSignal.emoji}-${Date.now()}`,
       text: activeMinigameId === 'adivina-linea'
-        ? `SENAL ANONIMA ${latestSignal.emoji} ${latestSignal.label}`
-        : `${latestSignal.playerName} / ${latestSignal.emoji} ${latestSignal.label}`,
+        ? `${tr('SENAL ANONIMA')} ${latestSignal.emoji} ${tr(latestSignal.label)}`
+        : `${latestSignal.playerName} / ${latestSignal.emoji} ${tr(latestSignal.label)}`,
       tone: 'neutral',
     })
   }, [activeMinigameId, latestSignal])
@@ -66,8 +68,8 @@ export function SystemToasts() {
     pushToast({
       id: `bomb-${bombOutcome.type}-${bombOutcome.playerId}`,
       text: bombOutcome.type === 'defused'
-        ? `${bombOutcome.playerName} DESACTIVO LA BOMBA`
-        : `LA BOMBA EXPLOTO EN ${bombOutcome.playerName}`,
+        ? `${bombOutcome.playerName} ${tr('DESACTIVO LA BOMBA')}`
+        : `${tr('LA BOMBA EXPLOTO EN')} ${bombOutcome.playerName}`,
       tone: bombOutcome.type === 'defused' ? 'good' : 'warn',
     })
   }, [bombOutcome])
@@ -117,7 +119,7 @@ export function SystemToasts() {
                 fontFamily: 'var(--font-mono)',
               }}
             >
-              <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 2 }}>SISTEMA</div>
+              <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 2 }}>{tr('SISTEMA')}</div>
               <div style={{ fontSize: 11, color: textColor, letterSpacing: 1.2, marginTop: 4 }}>{toast.text}</div>
             </motion.div>
           )

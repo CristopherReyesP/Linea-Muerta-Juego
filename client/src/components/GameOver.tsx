@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
 import { PlayerAvatar } from './PlayerAvatar'
+import { useI18n } from '../i18n'
 
 function PlayerDataWithAvatar({ name, avatarId, avatarColor, accessoryId, isShadow }: { name: string; avatarId: string; avatarColor: string; accessoryId: string; isShadow?: boolean }) {
   const player = { name, avatarId, avatarColor, accessoryId, isShadow: isShadow ?? false } as any
@@ -8,6 +9,7 @@ function PlayerDataWithAvatar({ name, avatarId, avatarColor, accessoryId, isShad
 }
 
 export function GameOver() {
+  const { tr } = useI18n()
   const gameOver = useGameStore(s => s.gameOver)
   const playerId = useGameStore(s => s.playerId)
   const activeMinigameId = useGameStore(s => s.activeMinigameId)
@@ -56,7 +58,7 @@ export function GameOver() {
           letterSpacing: 4,
         }}
       >
-        PROTOCOLO FINALIZADO
+        {tr('PROTOCOLO FINALIZADO')}
       </motion.div>
 
       <motion.div
@@ -69,7 +71,7 @@ export function GameOver() {
           letterSpacing: 2,
         }}
       >
-        {gameOver.reason}
+        {tr(gameOver.reason)}
       </motion.div>
 
       <motion.div
@@ -86,7 +88,7 @@ export function GameOver() {
             : '0 0 30px rgba(255,23,68,0.5)',
         }}
       >
-        {isWinner ? 'VICTORIA' : 'DERROTA'}
+        {isWinner ? tr('VICTORIA') : tr('DERROTA')}
       </motion.div>
 
       {/* Winner/loser announcement */}
@@ -149,7 +151,7 @@ export function GameOver() {
           textAlign: 'center',
           marginBottom: 8,
         }}>
-          CLASIFICACION FINAL
+          {tr('CLASIFICACION FINAL')}
         </div>
 
         {gameOver.standings.map((p, i) => {
@@ -189,7 +191,7 @@ export function GameOver() {
                 </span>
                 {p.isShadow && (
                   <span style={{ fontSize: 9, color: 'var(--gray-shadow)', letterSpacing: 1 }}>
-                    SOMBRA
+                    {tr('SOMBRA')}
                   </span>
                 )}
               </div>
@@ -213,7 +215,7 @@ export function GameOver() {
         onClick={() => window.location.reload()}
         style={{ marginTop: 16 }}
       >
-        NUEVA PARTIDA
+        {tr('NUEVA PARTIDA')}
       </motion.button>
     </div>
   )

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
+import { useI18n } from '../i18n'
 
 interface Props {
   open: boolean
@@ -21,6 +22,7 @@ const SIGNAL_OPTIONS = [
 ]
 
 export function MobileToolsDrawer({ open, onToggle, onShowRules, onSendSignal }: Props) {
+  const { tr } = useI18n()
   const latestSignal = useGameStore((s) => s.latestSignal)
   const signalHistory = useGameStore((s) => s.signalHistory)
   const activeMinigameId = useGameStore((s) => s.activeMinigameId)
@@ -82,8 +84,8 @@ export function MobileToolsDrawer({ open, onToggle, onShowRules, onSendSignal }:
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 2.4 }}>HERRAMIENTAS</div>
-                <div style={{ fontSize: 9, color: 'var(--gray-text)', marginTop: 2 }}>Accesos rapidos de cabina</div>
+                <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 2.4 }}>{tr('HERRAMIENTAS')}</div>
+                <div style={{ fontSize: 9, color: 'var(--gray-text)', marginTop: 2 }}>{tr('Accesos rapidos de cabina')}</div>
               </div>
               <button
                 onClick={onShowRules}
@@ -96,11 +98,11 @@ export function MobileToolsDrawer({ open, onToggle, onShowRules, onSendSignal }:
                   fontSize: 10,
                 }}
               >
-                REGLAS
+                {tr('REGLAS')}
               </button>
             </div>
 
-            <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 1.2 }}>CANAL GLOBAL</div>
+            <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 1.2 }}>{tr('CANAL GLOBAL')}</div>
 
             <div style={{
               border: '1px solid rgba(0,229,255,0.16)',

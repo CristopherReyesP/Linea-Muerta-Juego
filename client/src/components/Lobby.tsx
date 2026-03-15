@@ -146,6 +146,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
   const [menuEmojiPhase, setMenuEmojiPhase] = useState<'showing' | 'guessing' | 'result'>('showing')
   const [menuEmojiResult, setMenuEmojiResult] = useState<{ correct: boolean; guessed: string } | null>(null)
   const [menuEmojiScore, setMenuEmojiScore] = useState(0)
+  const [menuEmojiGuessSeconds, setMenuEmojiGuessSeconds] = useState(5)
   const gameId = useGameStore(s => s.gameId)
   const lobbyPlayers = useGameStore(s => s.lobbyPlayers)
   const lobbyChat = useGameStore(s => s.lobbyChat)
@@ -229,14 +230,35 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
     if (hasJoined || view !== 'welcome') return
 
     if (menuEmojiPhase === 'showing') {
-      const timer = setTimeout(() => setMenuEmojiPhase('guessing'), 700)
+      const timer = setTimeout(() => setMenuEmojiPhase('guessing'), 350)
       return () => clearTimeout(timer)
+    }
+
+    if (menuEmojiPhase === 'guessing') {
+      setMenuEmojiGuessSeconds(5)
+
+      const countdown = setInterval(() => {
+        setMenuEmojiGuessSeconds((current) => {
+          if (current <= 1) {
+            clearInterval(countdown)
+            setMenuEmojiResult({ correct: false, guessed: 'TIEMPO' })
+            setMenuEmojiScore((score) => Math.max(0, score - 1))
+            setMenuEmojiPhase('result')
+            return 0
+          }
+
+          return current - 1
+        })
+      }, 1000)
+
+      return () => clearInterval(countdown)
     }
 
     if (menuEmojiPhase === 'result') {
       const timer = setTimeout(() => {
         setMenuEmojiResult(null)
         setMenuEmojiRound((current) => createMenuEmojiRound(current.round + 1))
+        setMenuEmojiGuessSeconds(5)
         setMenuEmojiPhase('showing')
       }, 1000)
       return () => clearTimeout(timer)
@@ -519,37 +541,15 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     style={inputStyle}
                   />
 
-                  <button
-                    className="btn btn-green"
-                    onClick={() => openSetupForAction('create-private')}
-                    style={{ width: 280, fontSize: 14 }}
-                  >
-                    CREAR SALA PRIVADA
-                  </button>
-                  <button
-                    className="btn btn-cyan"
-                    onClick={() => openSetupForAction('create-public')}
-                    style={{ width: 280, fontSize: 14 }}
-                  >
-                    CREAR SALA PUBLICA
-                  </button>
-                  <button
-                    className="btn btn-cyan"
-                    onClick={() => setView('join')}
-                    style={{ width: 280, fontSize: 14 }}
-                  >
-                    UNIRSE A SALA PRIVADA
-                  </button>
-
                   <div style={{
                     width: '100%',
                     maxWidth: 420,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 10,
+                    gap: 8,
                     padding: 12,
-                    border: '1px solid rgba(0,229,255,0.18)',
-                    background: 'rgba(0,0,0,0.28)',
+                    border: '1px solid rgba(140, 155, 176, 0.18)',
+                    background: 'rgba(0,0,0,0.22)',
                   }}>
                     <div style={{
                       fontSize: 10,
@@ -557,7 +557,42 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       letterSpacing: 2,
                       textAlign: 'center',
                     }}>
-                      UNIRSE A SALA PUBLICA
+                      ACCESO RAPIDO
+                    </div>
+
+                    <button
+                      className="btn btn-green"
+                      onClick={() => openSetupForAction('create-private')}
+                      style={{ width: '100%', fontSize: 14 }}
+                    >
+                      CREAR SALA
+                    </button>
+                    <button
+                      className="btn btn-cyan"
+                      onClick={() => setView('join')}
+                      style={{ width: '100%', fontSize: 14 }}
+                    >
+                      UNIRSE CON CODIGO
+                    </button>
+                  </div>
+
+                  <div style={{
+                    width: '100%',
+                    maxWidth: 420,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    padding: 12,
+                    border: '1px solid rgba(140,155,176,0.18)',
+                    background: 'rgba(0,0,0,0.22)',
+                  }}>
+                    <div style={{
+                      fontSize: 10,
+                      color: 'var(--gray-text)',
+                      letterSpacing: 2,
+                      textAlign: 'center',
+                    }}>
+                      SALAS PUBLICAS DISPONIBLES
                     </div>
 
                     {publicRooms.length === 0 ? (
@@ -573,8 +608,8 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       <div style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: 8,
-                        maxHeight: 180,
+                        gap: 6,
+                        maxHeight: 156,
                         overflowY: 'auto',
                       }}>
                         {publicRooms.map((room) => (
@@ -591,7 +626,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                                   border: `1px solid ${roomColors.border}`,
                                   background: roomColors.background,
                                   color: roomColors.text,
-                                  padding: '10px 12px',
+                                  padding: '8px 10px',
                                   cursor: 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
@@ -651,109 +686,106 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                   <div style={{
                     width: '100%',
                     maxWidth: 420,
-                    display: 'flex',
-                    justifyContent: 'center',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr auto',
+                    gap: 12,
+                    alignItems: 'start',
                   }}>
                     <button
                       type="button"
                       className="btn btn-cyan"
                       onClick={() => setShowMenuChatModal(true)}
-                      style={{ width: '100%', maxWidth: 280, fontSize: 13 }}
+                      style={{ width: '100%', fontSize: 13, minHeight: 42 }}
                     >
                       ABRIR CHAT PRINCIPAL
                     </button>
-                  </div>
 
-                  <div style={{
-                    width: '100%',
-                    maxWidth: 360,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                    padding: 10,
-                    border: '1px solid rgba(0,229,255,0.18)',
-                    background: 'rgba(0,0,0,0.28)',
-                  }}>
                     <div style={{
+                      width: 148,
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 10,
+                      flexDirection: 'column',
+                      gap: 6,
+                      padding: 8,
+                      border: '1px solid rgba(140,155,176,0.18)',
+                      background: 'rgba(0,0,0,0.22)',
                     }}>
                       <div style={{
-                        fontSize: 10,
-                        color: 'var(--cyan)',
-                        letterSpacing: 2,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: 8,
+                        alignItems: 'center',
                       }}>
-                        FANTASMA EMOJI
+                        <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 1.6 }}>
+                          EMOJI
+                        </div>
+                        <div style={{ fontSize: 9, color: 'var(--gray-text)' }}>
+                          {menuEmojiPhase === 'guessing' ? `${menuEmojiGuessSeconds}s` : menuEmojiScore}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 1 }}>
-                        ronda {menuEmojiRound.round} · score {menuEmojiScore}
+
+                      <div style={{
+                        minHeight: 42,
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        background: 'linear-gradient(180deg, rgba(0,229,255,0.05), rgba(0,0,0,0.16))',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 6,
+                      }}>
+                        {menuEmojiPhase === 'showing' && (
+                          <div className="broadcast-pop" style={{ fontSize: 24 }}>
+                            {menuEmojiRound.target}
+                          </div>
+                        )}
+
+                        {menuEmojiPhase === 'guessing' && (
+                          <div style={{ fontSize: 9, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.4 }}>
+                            ¿Cual fue?
+                          </div>
+                        )}
+
+                        {menuEmojiPhase === 'result' && menuEmojiResult && (
+                          <div style={{
+                            fontSize: 9,
+                            color: menuEmojiResult.correct ? 'var(--green-neon)' : 'var(--red-danger)',
+                            textAlign: 'center',
+                            lineHeight: 1.4,
+                          }}>
+                            {menuEmojiResult.correct ? 'Bien' : menuEmojiRound.target}
+                          </div>
+                        )}
                       </div>
-                    </div>
 
-                    <div style={{
-                      minHeight: 66,
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      background: 'linear-gradient(180deg, rgba(0,229,255,0.06), rgba(0,0,0,0.18))',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: 8,
-                    }}>
-                      {menuEmojiPhase === 'showing' && (
-                        <div className="broadcast-pop" style={{ fontSize: 34, filter: 'drop-shadow(0 0 10px rgba(0,229,255,0.28))' }}>
-                          {menuEmojiRound.target}
-                        </div>
-                      )}
-
-                      {menuEmojiPhase === 'guessing' && (
-                        <div style={{ fontSize: 11, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.5 }}>
-                          ¿Cuál emoji apareció?
-                        </div>
-                      )}
-
-                      {menuEmojiPhase === 'result' && menuEmojiResult && (
-                        <div style={{
-                          fontSize: 11,
-                          color: menuEmojiResult.correct ? 'var(--green-neon)' : 'var(--red-danger)',
-                          textAlign: 'center',
-                          lineHeight: 1.6,
-                        }}>
-                          {menuEmojiResult.correct ? 'Correcto' : `Era ${menuEmojiRound.target}, no ${menuEmojiResult.guessed}`}
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-                      gap: 6,
-                    }}>
-                      {menuEmojiRound.options.map((emoji) => (
-                        <button
-                          key={`${menuEmojiRound.round}-${emoji}`}
-                          type="button"
-                          onClick={() => handleMenuEmojiGuess(emoji)}
-                          disabled={menuEmojiPhase !== 'guessing'}
-                          style={{
-                            border: `1px solid ${
-                              menuEmojiPhase === 'result' && emoji === menuEmojiRound.target
-                                ? 'var(--green-neon)'
-                                : 'rgba(0,229,255,0.22)'
-                            }`,
-                            background: menuEmojiPhase === 'guessing'
-                              ? 'rgba(0,229,255,0.08)'
-                              : 'rgba(255,255,255,0.03)',
-                            color: 'var(--white)',
-                            minHeight: 40,
-                            cursor: menuEmojiPhase === 'guessing' ? 'pointer' : 'default',
-                            fontSize: 20,
-                          }}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                        gap: 4,
+                      }}>
+                        {menuEmojiRound.options.map((emoji) => (
+                          <button
+                            key={`${menuEmojiRound.round}-${emoji}`}
+                            type="button"
+                            onClick={() => handleMenuEmojiGuess(emoji)}
+                            disabled={menuEmojiPhase !== 'guessing'}
+                            style={{
+                              border: `1px solid ${
+                                menuEmojiPhase === 'result' && emoji === menuEmojiRound.target
+                                  ? 'var(--green-neon)'
+                                  : 'rgba(0,229,255,0.18)'
+                              }`,
+                              background: menuEmojiPhase === 'guessing'
+                                ? 'rgba(0,229,255,0.06)'
+                                : 'rgba(255,255,255,0.03)',
+                              color: 'var(--white)',
+                              minHeight: 28,
+                              cursor: menuEmojiPhase === 'guessing' ? 'pointer' : 'default',
+                              fontSize: 16,
+                            }}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </motion.div>

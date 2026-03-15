@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
-import { WelcomeText } from './WelcomeText'
 import { PlayerAvatar } from './PlayerAvatar'
 import lobbyImage from '../../lobby.png'
 import { PlayerState, type PlayerData } from '../types'
@@ -485,7 +484,6 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
             >
               LINEA MUERTA
             </motion.h1>
-            {!hasJoined && view === 'welcome' && <WelcomeText />}
           </div>
 
           <AnimatePresence>
@@ -553,33 +551,21 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                   <div style={{
                     width: '100%',
                     maxWidth: 420,
-                    display: 'flex',
-                    flexDirection: 'column',
+                    display: 'grid',
                     gap: 8,
-                    padding: 12,
-                    border: '1px solid rgba(140, 155, 176, 0.18)',
-                    background: 'rgba(0,0,0,0.22)',
+                    marginTop: 4,
                   }}>
-                    <div style={{
-                      fontSize: 10,
-                      color: 'var(--gray-text)',
-                      letterSpacing: 2,
-                      textAlign: 'center',
-                    }}>
-                      ACCESO RAPIDO
-                    </div>
-
                     <button
                       className="btn btn-green"
                       onClick={() => openSetupForAction('create-private')}
-                      style={{ width: '100%', fontSize: 14 }}
+                      style={{ width: '100%', fontSize: 14, minHeight: 46 }}
                     >
                       CREAR SALA
                     </button>
                     <button
                       className="btn btn-cyan"
                       onClick={() => setView('join')}
-                      style={{ width: '100%', fontSize: 14 }}
+                      style={{ width: '100%', fontSize: 14, minHeight: 46 }}
                     >
                       UNIRSE CON CODIGO
                     </button>
@@ -590,18 +576,18 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     maxWidth: 420,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 8,
-                    padding: 12,
-                    border: '1px solid rgba(140,155,176,0.18)',
+                    gap: 6,
+                    padding: 10,
+                    border: '1px solid rgba(140,155,176,0.14)',
                     background: 'rgba(0,0,0,0.22)',
                   }}>
                     <div style={{
                       fontSize: 10,
                       color: 'var(--gray-text)',
-                      letterSpacing: 2,
-                      textAlign: 'center',
+                      letterSpacing: 1.6,
+                      textAlign: 'left',
                     }}>
-                      SALAS PUBLICAS DISPONIBLES
+                      Salas publicas
                     </div>
 
                     {publicRooms.length === 0 ? (
@@ -618,7 +604,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 6,
-                        maxHeight: 156,
+                        maxHeight: 148,
                         overflowY: 'auto',
                       }}>
                         {publicRooms.map((room) => (
@@ -681,13 +667,13 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     maxWidth: 420,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 12,
+                    gap: 10,
                   }}>
                     <button
                       type="button"
                       className="btn btn-cyan"
                       onClick={() => setShowMenuChatModal(true)}
-                      style={{ width: '100%', fontSize: 13, minHeight: 42 }}
+                      style={{ width: '100%', fontSize: 12, minHeight: 38 }}
                     >
                       ABRIR CHAT PRINCIPAL
                     </button>
@@ -696,10 +682,10 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       width: '100%',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 8,
-                      padding: 10,
-                      border: '1px solid rgba(140,155,176,0.18)',
-                      background: 'rgba(0,0,0,0.22)',
+                      gap: 6,
+                      padding: 8,
+                      border: '1px solid rgba(140,155,176,0.14)',
+                      background: 'rgba(0,0,0,0.18)',
                     }}>
                       <div style={{
                         display: 'flex',
@@ -707,38 +693,38 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                         gap: 8,
                         alignItems: 'center',
                       }}>
-                        <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 1.6 }}>
-                          FANTASMA EMOJI
+                        <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 1.4 }}>
+                          Minijuego de espera
                         </div>
-                        <div style={{ fontSize: 10, color: 'var(--gray-text)' }}>
+                        <div style={{ fontSize: 9, color: 'var(--gray-text)' }}>
                           {menuEmojiPhase === 'guessing' ? `${menuEmojiGuessSeconds}s` : `score ${menuEmojiScore}`}
                         </div>
                       </div>
 
                       <div style={{
-                        minHeight: 54,
+                        minHeight: 48,
                         border: '1px solid rgba(255,255,255,0.06)',
                         background: 'linear-gradient(180deg, rgba(0,229,255,0.05), rgba(0,0,0,0.16))',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: 8,
+                        padding: 6,
                       }}>
                         {menuEmojiPhase === 'showing' && (
-                          <div className="broadcast-pop" style={{ fontSize: 28 }}>
+                          <div className="broadcast-pop" style={{ fontSize: 24 }}>
                             {menuEmojiRound.target}
                           </div>
                         )}
 
                         {menuEmojiPhase === 'guessing' && (
-                          <div style={{ fontSize: 10, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.4 }}>
+                          <div style={{ fontSize: 9, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.4 }}>
                             ¿Cual fue?
                           </div>
                         )}
 
                         {menuEmojiPhase === 'result' && menuEmojiResult && (
                           <div style={{
-                            fontSize: 10,
+                            fontSize: 9,
                             color: menuEmojiResult.correct ? 'var(--green-neon)' : 'var(--red-danger)',
                             textAlign: 'center',
                             lineHeight: 1.4,
@@ -769,9 +755,9 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                                 ? 'rgba(0,229,255,0.06)'
                                 : 'rgba(255,255,255,0.03)',
                               color: 'var(--white)',
-                              minHeight: 38,
+                              minHeight: 34,
                               cursor: menuEmojiPhase === 'guessing' ? 'pointer' : 'default',
-                              fontSize: 20,
+                              fontSize: 18,
                             }}
                           >
                             {emoji}

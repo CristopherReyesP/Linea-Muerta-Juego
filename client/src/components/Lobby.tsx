@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
 import { WelcomeText } from './WelcomeText'
@@ -9,14 +9,38 @@ import { PlayerState, type PlayerData } from '../types'
 type LobbyView = 'welcome' | 'setup' | 'join'
 type LobbyAction = 'create-private' | 'create-public' | 'join-public'
 type CustomizeTab = 'masks' | 'accessories'
+type MenuEmojiMemoryRound = {
+  target: string
+  options: string[]
+  round: number
+}
 const DEV_MODE_STORAGE_KEY = 'lm_dev_mode'
 const isLocalMachine = import.meta.env.DEV && typeof window !== 'undefined'
   && ['localhost', '127.0.0.1', '[::1]', '::1'].includes(window.location.hostname)
+
+const menuEmojiPool = ['👁️', '🧠', '🕷️', '🧨', '🦷', '🦴', '🗝️', '📻', '🩸', '🫀', '🛸', '💀']
+
+function shuffleItems<T>(items: T[]): T[] {
+  const copy = [...items]
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
+}
+
+function createMenuEmojiRound(round: number): MenuEmojiMemoryRound {
+  const options = shuffleItems(menuEmojiPool).slice(0, 4)
+  const target = options[Math.floor(Math.random() * options.length)]
+  return { target, options: shuffleItems(options), round }
+}
 
 interface Props {
   onCreateGame: (name: string, avatarId?: string, avatarColor?: string, accessoryId?: string, isPublic?: boolean) => void
   onJoinGame: (name: string, code: string, avatarId?: string, avatarColor?: string, accessoryId?: string) => void
   onStart: (data?: { selectedMinigameIds?: string[] }) => void
+  onSendLobbyChat: (text: string) => void
+  onSendMenuChat: (data: { name: string; text: string }) => void
   onShowRules: () => void
 }
 
@@ -99,7 +123,7 @@ const avatarGridStyle: React.CSSProperties = {
   paddingRight: 4,
 }
 
-export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
+export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSendMenuChat }: Props) {
   const [view, setView] = useState<LobbyView>('welcome')
   const [pendingAction, setPendingAction] = useState<LobbyAction>('create-private')
   const [pendingPublicRoomId, setPendingPublicRoomId] = useState<string | null>(null)
@@ -115,8 +139,16 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
     return window.sessionStorage.getItem(DEV_MODE_STORAGE_KEY) === '1'
   })
   const [selectedMinigameIds, setSelectedMinigameIds] = useState<string[]>([])
+  const [lobbyChatDraft, setLobbyChatDraft] = useState('')
+  const [menuChatDraft, setMenuChatDraft] = useState('')
+  const [menuEmojiRound, setMenuEmojiRound] = useState<MenuEmojiMemoryRound>(() => createMenuEmojiRound(1))
+  const [menuEmojiPhase, setMenuEmojiPhase] = useState<'showing' | 'guessing' | 'result'>('showing')
+  const [menuEmojiResult, setMenuEmojiResult] = useState<{ correct: boolean; guessed: string } | null>(null)
+  const [menuEmojiScore, setMenuEmojiScore] = useState(0)
   const gameId = useGameStore(s => s.gameId)
   const lobbyPlayers = useGameStore(s => s.lobbyPlayers)
+  const lobbyChat = useGameStore(s => s.lobbyChat)
+  const menuChat = useGameStore(s => s.menuChat)
   const globalScoreboard = useGameStore(s => s.globalScoreboard)
   const playerId = useGameStore(s => s.playerId)
   const connected = useGameStore(s => s.connected)
@@ -134,6 +166,12 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
   const isHost = playerId === hostId
   const hasJoined = !!playerId
   const connectedLobbyPlayers = lobbyPlayers.length > 0 ? lobbyPlayers : globalScoreboard
+  const chatListRef = useRef<HTMLDivElement | null>(null)
+  const menuChatListRef = useRef<HTMLDivElement | null>(null)
+
+  const playerNameById = useMemo(() => {
+    return new Map(connectedLobbyPlayers.map((player) => [player.playerId, player.name]))
+  }, [connectedLobbyPlayers])
 
   // Clear error when changing view
   useEffect(() => {
@@ -168,6 +206,36 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
     window.sessionStorage.removeItem(DEV_MODE_STORAGE_KEY)
   }, [devMode])
 
+  useEffect(() => {
+    const element = chatListRef.current
+    if (!element) return
+    element.scrollTop = element.scrollHeight
+  }, [lobbyChat.length])
+
+  useEffect(() => {
+    const element = menuChatListRef.current
+    if (!element) return
+    element.scrollTop = element.scrollHeight
+  }, [menuChat.length])
+
+  useEffect(() => {
+    if (hasJoined || view !== 'welcome') return
+
+    if (menuEmojiPhase === 'showing') {
+      const timer = setTimeout(() => setMenuEmojiPhase('guessing'), 1300)
+      return () => clearTimeout(timer)
+    }
+
+    if (menuEmojiPhase === 'result') {
+      const timer = setTimeout(() => {
+        setMenuEmojiResult(null)
+        setMenuEmojiRound((current) => createMenuEmojiRound(current.round + 1))
+        setMenuEmojiPhase('showing')
+      }, 1400)
+      return () => clearTimeout(timer)
+    }
+  }, [hasJoined, menuEmojiPhase, view])
+
   const handleCreate = (isPublic: boolean = false) => {
     if (!name.trim()) return
     onCreateGame(name.trim(), selectedAvatarId, selectedAvatarColor, selectedAccessoryId, isPublic)
@@ -181,6 +249,30 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
   const handleJoinPublicRoom = (publicGameId: string) => {
     if (!name.trim()) return
     onJoinGame(name.trim(), publicGameId, selectedAvatarId, selectedAvatarColor, selectedAccessoryId)
+  }
+
+  const handleSendLobbyChat = () => {
+    const message = lobbyChatDraft.trim()
+    if (!message) return
+    onSendLobbyChat(message)
+    setLobbyChatDraft('')
+  }
+
+  const handleSendMenuChat = () => {
+    const normalizedName = name.trim()
+    const normalizedText = menuChatDraft.trim()
+    if (!normalizedName || !normalizedText) return
+    onSendMenuChat({ name: normalizedName, text: normalizedText })
+    setMenuChatDraft('')
+  }
+
+  const handleMenuEmojiGuess = (emoji: string) => {
+    if (menuEmojiPhase !== 'guessing') return
+
+    const correct = emoji === menuEmojiRound.target
+    setMenuEmojiResult({ correct, guessed: emoji })
+    setMenuEmojiScore((score) => Math.max(0, score + (correct ? 1 : -1)))
+    setMenuEmojiPhase('result')
   }
 
   const openSetupForAction = (action: LobbyAction, publicRoomId?: string) => {
@@ -410,6 +502,16 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                     paddingTop: 8,
                   }}
                 >
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value.slice(0, 15))}
+                    placeholder="Tu nombre para entrar o chatear"
+                    maxLength={15}
+                    autoFocus
+                    style={inputStyle}
+                  />
+
                   <button
                     className="btn btn-green"
                     onClick={() => openSetupForAction('create-private')}
@@ -538,6 +640,193 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                       {globalStats.totalActiveRooms} sala{globalStats.totalActiveRooms !== 1 ? 's' : ''} en partida · {globalStats.totalActivePlayers} jugador{globalStats.totalActivePlayers !== 1 ? 'es' : ''} jugando
                     </div>
                   )}
+
+                  <div style={{
+                    width: '100%',
+                    maxWidth: 420,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                    padding: 12,
+                    border: '1px solid rgba(0,229,255,0.18)',
+                    background: 'rgba(0,0,0,0.28)',
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                    }}>
+                      <div style={{
+                        fontSize: 10,
+                        color: 'var(--cyan)',
+                        letterSpacing: 2,
+                      }}>
+                        FANTASMA EMOJI
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 1 }}>
+                        ronda {menuEmojiRound.round} · score {menuEmojiScore}
+                      </div>
+                    </div>
+
+                    <div style={{
+                      minHeight: 84,
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      background: 'linear-gradient(180deg, rgba(0,229,255,0.06), rgba(0,0,0,0.18))',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 10,
+                    }}>
+                      {menuEmojiPhase === 'showing' && (
+                        <div className="broadcast-pop" style={{ fontSize: 42, filter: 'drop-shadow(0 0 12px rgba(0,229,255,0.35))' }}>
+                          {menuEmojiRound.target}
+                        </div>
+                      )}
+
+                      {menuEmojiPhase === 'guessing' && (
+                        <div style={{ fontSize: 11, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.5 }}>
+                          ¿Cuál emoji apareció?
+                        </div>
+                      )}
+
+                      {menuEmojiPhase === 'result' && menuEmojiResult && (
+                        <div style={{
+                          fontSize: 11,
+                          color: menuEmojiResult.correct ? 'var(--green-neon)' : 'var(--red-danger)',
+                          textAlign: 'center',
+                          lineHeight: 1.6,
+                        }}>
+                          {menuEmojiResult.correct ? 'Correcto' : `Era ${menuEmojiRound.target}, no ${menuEmojiResult.guessed}`}
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                      gap: 8,
+                    }}>
+                      {menuEmojiRound.options.map((emoji) => (
+                        <button
+                          key={`${menuEmojiRound.round}-${emoji}`}
+                          type="button"
+                          onClick={() => handleMenuEmojiGuess(emoji)}
+                          disabled={menuEmojiPhase !== 'guessing'}
+                          style={{
+                            border: `1px solid ${
+                              menuEmojiPhase === 'result' && emoji === menuEmojiRound.target
+                                ? 'var(--green-neon)'
+                                : 'rgba(0,229,255,0.22)'
+                            }`,
+                            background: menuEmojiPhase === 'guessing'
+                              ? 'rgba(0,229,255,0.08)'
+                              : 'rgba(255,255,255,0.03)',
+                            color: 'var(--white)',
+                            minHeight: 48,
+                            cursor: menuEmojiPhase === 'guessing' ? 'pointer' : 'default',
+                            fontSize: 24,
+                          }}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    width: '100%',
+                    maxWidth: 420,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                    padding: 12,
+                    border: '1px solid rgba(0,255,65,0.18)',
+                    background: 'rgba(0,0,0,0.28)',
+                  }}>
+                    <div style={{
+                      fontSize: 10,
+                      color: 'var(--green-neon)',
+                      letterSpacing: 2,
+                      textAlign: 'center',
+                    }}>
+                      CHAT PRINCIPAL
+                    </div>
+
+                    <div
+                      ref={menuChatListRef}
+                      style={{
+                        minHeight: 120,
+                        maxHeight: 180,
+                        overflowY: 'auto',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        background: 'rgba(0,0,0,0.22)',
+                        padding: 10,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                      }}
+                    >
+                      {menuChat.length === 0 ? (
+                        <div style={{ fontSize: 11, color: 'var(--gray-shadow)', lineHeight: 1.5 }}>
+                          Aqui puedes decir que vas a crear sala, pedir codigo o avisar en cual van a entrar.
+                        </div>
+                      ) : (
+                        menuChat.map((message) => {
+                          const isOwnMessage = message.playerName === name.trim()
+
+                          return (
+                            <div key={message.id} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <div style={{
+                                fontSize: 10,
+                                color: isOwnMessage ? 'var(--green-neon)' : 'var(--cyan)',
+                                letterSpacing: 1,
+                              }}>
+                                {message.playerName.toUpperCase()}
+                              </div>
+                              <div style={{
+                                fontSize: 12,
+                                color: 'var(--white)',
+                                lineHeight: 1.45,
+                                wordBreak: 'break-word',
+                              }}>
+                                {message.text}
+                              </div>
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        value={menuChatDraft}
+                        onChange={(e) => setMenuChatDraft(e.target.value.slice(0, 140))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            handleSendMenuChat()
+                          }
+                        }}
+                        placeholder={name.trim() ? 'Escribe al chat principal...' : 'Primero escribe tu nombre arriba'}
+                        style={{
+                          ...inputStyle,
+                          width: '100%',
+                          textAlign: 'left',
+                          letterSpacing: 0.5,
+                          padding: '10px 12px',
+                        }}
+                      />
+                      <button
+                        className="btn btn-green"
+                        onClick={handleSendMenuChat}
+                        disabled={!name.trim() || !menuChatDraft.trim()}
+                        style={{ minWidth: 92 }}
+                      >
+                        ENVIAR
+                      </button>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
@@ -565,7 +854,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                   <input
                     type="text"
                     value={name}
-                    onChange={e => setName(e.target.value)}
+                    onChange={e => setName(e.target.value.slice(0, 15))}
                     onKeyDown={e => e.key === 'Enter' && handleSetupSubmit()}
                     placeholder="Tu nombre..."
                     maxLength={15}
@@ -1045,11 +1334,11 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
               </div>
 
               <div style={{
-                display: 'flex',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
                 gap: 12,
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                maxWidth: 420,
+                width: '100%',
+                maxWidth: 520,
               }}>
                 {connectedLobbyPlayers.map(p => (
                   <div
@@ -1097,6 +1386,105 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
 
               <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>
                 {connectedLobbyPlayers.length} jugador{connectedLobbyPlayers.length !== 1 ? 'es' : ''} conectado{connectedLobbyPlayers.length !== 1 ? 's' : ''}
+              </div>
+
+              <div style={{
+                width: 'min(520px, 100%)',
+                border: '1px solid rgba(0,229,255,0.22)',
+                background: 'rgba(6, 10, 16, 0.82)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                padding: 12,
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}>
+                  <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 2 }}>
+                    CHAT DEL LOBBY
+                  </div>
+                  <div style={{ fontSize: 9, color: 'var(--gray-shadow)', letterSpacing: 1 }}>
+                    para coordinar sala o mientras esperan
+                  </div>
+                </div>
+
+                <div
+                  ref={chatListRef}
+                  style={{
+                    minHeight: 110,
+                    maxHeight: 170,
+                    overflowY: 'auto',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    background: 'rgba(0,0,0,0.22)',
+                    padding: 10,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                  }}
+                >
+                  {lobbyChat.length === 0 ? (
+                    <div style={{ fontSize: 11, color: 'var(--gray-shadow)', lineHeight: 1.5 }}>
+                      Todavia no hay mensajes. Puedes decir en que sala vas, avisar que faltan jugadores o romper el hielo.
+                    </div>
+                  ) : (
+                    lobbyChat.map((message) => {
+                      const isOwnMessage = message.playerId === playerId
+                      const currentName = playerNameById.get(message.playerId) ?? message.playerName
+
+                      return (
+                        <div key={message.id} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <div style={{
+                            fontSize: 10,
+                            color: isOwnMessage ? 'var(--green-neon)' : 'var(--cyan)',
+                            letterSpacing: 1,
+                          }}>
+                            {isOwnMessage ? 'TU' : currentName.toUpperCase()}
+                          </div>
+                          <div style={{
+                            fontSize: 12,
+                            color: 'var(--white)',
+                            lineHeight: 1.45,
+                            wordBreak: 'break-word',
+                          }}>
+                            {message.text}
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    value={lobbyChatDraft}
+                    onChange={(e) => setLobbyChatDraft(e.target.value.slice(0, 140))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        handleSendLobbyChat()
+                      }
+                    }}
+                    placeholder="Escribe algo corto..."
+                    style={{
+                      ...inputStyle,
+                      width: '100%',
+                      textAlign: 'left',
+                      letterSpacing: 0.5,
+                      padding: '10px 12px',
+                    }}
+                  />
+                  <button
+                    className="btn btn-cyan"
+                    onClick={handleSendLobbyChat}
+                    disabled={!lobbyChatDraft.trim()}
+                    style={{ minWidth: 92 }}
+                  >
+                    ENVIAR
+                  </button>
+                </div>
               </div>
 
               {openVoicePlayerIds.length >= 2 && (

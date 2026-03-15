@@ -164,6 +164,22 @@ export interface CabinSignalData {
   label: string
 }
 
+export interface LobbyChatMessage {
+  id: string
+  playerId: string
+  playerName: string
+  text: string
+  sentAt: number
+}
+
+export interface MenuChatMessage {
+  id: string
+  socketId: string
+  playerName: string
+  text: string
+  sentAt: number
+}
+
 export interface MetaGameStateSnapshot {
   gameId: string
   metaPhase: MetaGamePhase
@@ -171,6 +187,7 @@ export interface MetaGameStateSnapshot {
   totalMinigames: number
   currentMinigameInfo: MiniGameInfo | null
   lobbyPlayers: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string }>
+  lobbyChat: LobbyChatMessage[]
   globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   hostId: string | null
   isPublicRoom: boolean
@@ -249,6 +266,8 @@ export interface ClientToServerEvents {
   submit_emergency_response: (optionIndex: number) => void
   vote_emoji: (targetPlayerId: string) => void
   send_signal: (data: { emoji: string; label: string }) => void
+  send_lobby_chat: (text: string) => void
+  send_menu_chat: (data: { name: string; text: string }) => void
   // WebRTC signaling
   webrtc_offer: (data: { targetId: string; offer: unknown }) => void
   webrtc_answer: (data: { targetId: string; answer: unknown }) => void
@@ -287,6 +306,7 @@ export interface ServerToClientEvents {
   emergency_state: (data: EmergencyStateData) => void
   emoji_state: (data: EmojiStateData) => void
   signal_broadcast: (data: CabinSignalData) => void
+  menu_chat_update: (data: { messages: MenuChatMessage[] }) => void
   error: (message: string) => void
   shadow_interference: (data: { duration: number }) => void
   // WebRTC signaling

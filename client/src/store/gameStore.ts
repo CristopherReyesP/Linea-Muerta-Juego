@@ -6,7 +6,9 @@ import {
   MetaGameStateSnapshot, BombStateData, BombOutcomeData, EmergencyStateData,
   PublicRoomSummary,
   EmojiStateData,
-  CabinSignalData
+  CabinSignalData,
+  LobbyChatMessage,
+  MenuChatMessage
 } from '../types'
 
 interface IncomingCall {
@@ -62,6 +64,7 @@ interface GameStore {
   totalMinigames: number
   currentMinigameInfo: MiniGameInfo | null
   lobbyPlayers: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string }>
+  lobbyChat: LobbyChatMessage[]
   globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   hostId: string | null
   isPublicRoom: boolean
@@ -132,6 +135,7 @@ interface GameStore {
   } | null
   globalNotifications: Array<{ id: number; playerName: string; action: string }>
   publicRooms: PublicRoomSummary[]
+  menuChat: MenuChatMessage[]
 
   // Error
   error: string | null
@@ -184,6 +188,7 @@ interface GameStore {
     totalMenuPlayers: number
   }) => void
   setPublicRooms: (rooms: PublicRoomSummary[]) => void
+  setMenuChat: (messages: MenuChatMessage[]) => void
   addGlobalNotification: (notification: { playerName: string; action: string }) => void
   removeGlobalNotification: (id: number) => void
   setError: (error: string | null) => void
@@ -203,6 +208,7 @@ const initialState = {
   totalMinigames: 5,
   currentMinigameInfo: null,
   lobbyPlayers: [],
+  lobbyChat: [],
   globalScoreboard: [],
   hostId: null,
   isPublicRoom: false,
@@ -245,6 +251,7 @@ const initialState = {
   globalStats: null,
   globalNotifications: [],
   publicRooms: [],
+  menuChat: [],
   error: null,
   ambientVolume: 0.35,
   playerVolume: 1,
@@ -263,6 +270,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     totalMinigames: state.totalMinigames,
     currentMinigameInfo: state.currentMinigameInfo,
     lobbyPlayers: state.lobbyPlayers,
+    lobbyChat: state.lobbyChat,
     globalScoreboard: state.globalScoreboard,
     hostId: state.hostId,
     isPublicRoom: state.isPublicRoom,
@@ -365,6 +373,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   }),
   setGlobalStats: (stats) => set({ globalStats: stats }),
   setPublicRooms: (rooms) => set({ publicRooms: rooms }),
+  setMenuChat: (messages) => set({ menuChat: messages }),
   addGlobalNotification: (notification) => set((s) => ({
     globalNotifications: [{ ...notification, id: Date.now() }, ...s.globalNotifications].slice(0, 5),
   })),

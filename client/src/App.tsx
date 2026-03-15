@@ -38,6 +38,8 @@ export default function App() {
     submitEmergencyResponse,
     voteEmoji,
     sendSignal,
+    sendLobbyChat,
+    sendMenuChat,
   } = useSocket()
 
   const { remoteAudioRef, audioData, isSpeaking } = useWebRTC(socket)
@@ -61,6 +63,8 @@ export default function App() {
           onCreateGame={createGame}
           onJoinGame={joinGame}
           onStart={startGame}
+          onSendLobbyChat={sendLobbyChat}
+          onSendMenuChat={sendMenuChat}
           onShowRules={() => setShowRules(true)}
         />
       )}

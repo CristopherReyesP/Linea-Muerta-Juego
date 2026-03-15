@@ -147,6 +147,22 @@ export interface CabinSignalData {
   label: string
 }
 
+export interface LobbyChatMessage {
+  id: string
+  playerId: string
+  playerName: string
+  text: string
+  sentAt: number
+}
+
+export interface MenuChatMessage {
+  id: string
+  socketId: string
+  playerName: string
+  text: string
+  sentAt: number
+}
+
 export interface EmergencyStateData {
   internalPhase: 'ROLES' | 'SABOTAGE' | 'TRANSMISSION' | 'OPERATOR_RESPONSE' | 'RESULT'
   operatorIds: string[]
@@ -201,6 +217,7 @@ export interface MetaGameStateSnapshot {
   totalMinigames: number
   currentMinigameInfo: MiniGameInfo | null
   lobbyPlayers: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string }>
+  lobbyChat: LobbyChatMessage[]
   globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   hostId: string | null
   isPublicRoom: boolean

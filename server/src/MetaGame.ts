@@ -13,7 +13,7 @@ import { EmojiDiferente } from './minigames/EmojiDiferente'
 import { v4 as uuid } from 'uuid'
 import {
   MetaGamePhase, PlayerState, MiniGameInfo, MinigameResult,
-  MetaGameStateSnapshot, PublicRoomSummary, DEFAULT_CONFIG
+  MetaGameStateSnapshot, PublicRoomSummary, DEFAULT_CONFIG, LobbyChatMessage
 } from './types'
 
 // Registry of all available minigames
@@ -87,6 +87,7 @@ export class MetaGame {
   private phaseTimer: NodeJS.Timeout | null = null
   private lastActivityAt: number = Date.now()
   private developerModeEnabled: boolean = false
+  private lobbyChat: LobbyChatMessage[] = []
 
   private readonly TOTAL_MINIGAMES = 5
 
@@ -230,6 +231,28 @@ export class MetaGame {
     return reconnected ? target : null
   }
 
+  addLobbyChatMessage(playerId: string, text: string): boolean {
+    if (this.metaPhase !== MetaGamePhase.LOBBY) return false
+
+    const player = this.metaPlayers.get(playerId)
+    if (!player?.isConnected) return false
+
+    const normalizedText = text.trim().replace(/\s+/g, ' ').slice(0, 140)
+    if (!normalizedText) return false
+
+    this.lobbyChat.push({
+      id: uuid(),
+      playerId,
+      playerName: player.name,
+      text: normalizedText,
+      sentAt: Date.now(),
+    })
+    this.lobbyChat = this.lobbyChat.slice(-30)
+    this.markActivity()
+    this.broadcastMetaState()
+    return true
+  }
+
   // --- Session flow ---
 
   startSession(options?: { selectedMinigameIds?: string[] }): void {
@@ -276,6 +299,7 @@ export class MetaGame {
 
     // Close lobby voice before starting
     this.io.to(this.room).emit('open_voice', { playerIds: [] })
+    this.lobbyChat = []
 
     this.currentMinigameIndex = 0
     this.markActivity()
@@ -622,6 +646,7 @@ export class MetaGame {
       totalMinigames: this.TOTAL_MINIGAMES,
       currentMinigameInfo: this.selectedMinigames[this.currentMinigameIndex] ?? null,
       lobbyPlayers: this.getLobbyPlayers(),
+      lobbyChat: this.lobbyChat,
       globalScoreboard: this.getGlobalScoreboard(),
       hostId: this.hostId,
       isPublicRoom: this.isPublic,

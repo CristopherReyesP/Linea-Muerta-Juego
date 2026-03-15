@@ -31,6 +31,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
     console.log(`[Connect] ${socket.id}`)
     gameManager.registerConnection(socket.id)
     let lastSignalAt = 0
+    let lastMenuChatAt = 0
 
     // Send current global stats to the newly connected socket
     const initialStats = gameManager.getGlobalStats()
@@ -314,6 +315,36 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
       })
     })
 
+    socket.on('send_lobby_chat', (text: string) => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) return
+
+      const normalizedText = String(text ?? '')
+      if (!result.game.addLobbyChatMessage(result.metaPlayer.id, normalizedText)) {
+        socket.emit('error', 'No se pudo enviar el mensaje al chat del lobby.')
+      }
+    })
+
+    socket.on('send_menu_chat', (data: { name: string; text: string }) => {
+      if (gameManager.getGameBySocket(socket.id)) {
+        socket.emit('error', 'El chat principal solo esta disponible antes de entrar a una sala.')
+        return
+      }
+
+      const now = Date.now()
+      if (now - lastMenuChatAt < 2500) {
+        socket.emit('error', 'Espera un momento antes de enviar otro mensaje.')
+        return
+      }
+
+      if (!gameManager.addMenuChatMessage(socket.id, data.name, data.text)) {
+        socket.emit('error', 'Escribe un nombre corto y un mensaje para el chat principal.')
+        return
+      }
+
+      lastMenuChatAt = now
+    })
+
     socket.on('continue_to_next', (data?: { selectedMinigameIds?: string[] }) => {
       const result = gameManager.getGameBySocket(socket.id)
       if (!result) return
@@ -381,6 +412,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
       gameManager.handleDisconnect(socket.id)
       gameManager.broadcastPublicRooms()
       gameManager.broadcastGlobalActivity()
+      gameManager.broadcastMenuChat()
     })
   })
 }

@@ -40,6 +40,10 @@ export function useSocket() {
       store.setPublicRooms(rooms)
     })
 
+    socket.on('menu_chat_update', ({ messages }) => {
+      store.setMenuChat(messages)
+    })
+
     // Meta-game state updates
     socket.on('meta_state_update', (state) => {
       store.updateMetaState(state)
@@ -341,6 +345,14 @@ export function useSocket() {
     socketRef.current?.emit('send_signal', data)
   }, [])
 
+  const sendLobbyChat = useCallback((text: string) => {
+    socketRef.current?.emit('send_lobby_chat', text)
+  }, [])
+
+  const sendMenuChat = useCallback((data: { name: string; text: string }) => {
+    socketRef.current?.emit('send_menu_chat', data)
+  }, [])
+
   return {
     socket: socketRef,
     createGame,
@@ -363,5 +375,7 @@ export function useSocket() {
     submitEmergencyResponse,
     voteEmoji,
     sendSignal,
+    sendLobbyChat,
+    sendMenuChat,
   }
 }

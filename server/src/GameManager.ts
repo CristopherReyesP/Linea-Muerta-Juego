@@ -1,7 +1,7 @@
 import { Server } from 'socket.io'
 import { MetaGame } from './MetaGame'
 import { MetaPlayer } from './MetaPlayer'
-import { MetaGamePhase, PublicRoomSummary } from './types'
+import { MetaGamePhase, PublicRoomSummary, MenuChatMessage } from './types'
 import { v4 as uuid } from 'uuid'
 
 export class GameManager {
@@ -12,6 +12,7 @@ export class GameManager {
   private io: Server
   private cleanupTimer: NodeJS.Timeout
   private nextPublicColorVariant: number = 0
+  private menuChat: MenuChatMessage[] = []
 
   constructor(io: Server) {
     this.io = io
@@ -70,10 +71,12 @@ export class GameManager {
 
   registerConnection(socketId: string): void {
     this.connectedSockets.add(socketId)
+    this.broadcastMenuChatToSocket(socketId)
   }
 
   unregisterConnection(socketId: string): void {
     this.connectedSockets.delete(socketId)
+    this.menuChat = this.menuChat.filter((message) => message.socketId !== socketId)
   }
 
   handleDisconnect(socketId: string): void {
@@ -206,6 +209,36 @@ export class GameManager {
   broadcastPublicRooms(): void {
     this.io.emit('public_rooms_update', {
       rooms: this.getPublicRooms(),
+    })
+  }
+
+  addMenuChatMessage(socketId: string, name: string, text: string): boolean {
+    const normalizedName = String(name ?? '').trim().replace(/\s+/g, ' ').slice(0, 15)
+    const normalizedText = String(text ?? '').trim().replace(/\s+/g, ' ').slice(0, 140)
+
+    if (!normalizedName || !normalizedText) return false
+
+    this.menuChat.push({
+      id: uuid(),
+      socketId,
+      playerName: normalizedName,
+      text: normalizedText,
+      sentAt: Date.now(),
+    })
+    this.menuChat = this.menuChat.slice(-40)
+    this.broadcastMenuChat()
+    return true
+  }
+
+  broadcastMenuChat(): void {
+    this.io.emit('menu_chat_update', {
+      messages: this.menuChat,
+    })
+  }
+
+  broadcastMenuChatToSocket(socketId: string): void {
+    this.io.to(socketId).emit('menu_chat_update', {
+      messages: this.menuChat,
     })
   }
 }

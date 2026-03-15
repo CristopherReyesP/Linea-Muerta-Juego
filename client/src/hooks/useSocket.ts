@@ -13,6 +13,7 @@ import {
 
 // In production, connect to same origin. In dev, connect to local server.
 const SOCKET_URL = import.meta.env.PROD ? '' : 'http://localhost:3001'
+const SESSION_STORAGE_KEY = 'lm_active_session'
 
 export function useSocket() {
   const socketRef = useRef<Socket | null>(null)
@@ -26,6 +27,20 @@ export function useSocket() {
 
     socket.on('connect', () => {
       store.setConnected(true)
+
+      if (typeof window !== 'undefined') {
+        const saved = window.sessionStorage.getItem(SESSION_STORAGE_KEY)
+        if (saved) {
+          try {
+            const session = JSON.parse(saved) as { gameId: string; playerId: string }
+            if (session.gameId && session.playerId) {
+              socket.emit('resume_session', session)
+            }
+          } catch {
+            window.sessionStorage.removeItem(SESSION_STORAGE_KEY)
+          }
+        }
+      }
     })
 
     socket.on('disconnect', () => {
@@ -34,11 +49,17 @@ export function useSocket() {
 
     socket.on('game_joined', ({ gameId, playerId }) => {
       store.setPlayerInfo(playerId, gameId)
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ gameId, playerId }))
+      }
     })
 
     socket.on('game_left', () => {
       store.reset()
       store.setConnected(socket.connected)
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(SESSION_STORAGE_KEY)
+      }
     })
 
     socket.on('public_rooms_update', ({ rooms }) => {

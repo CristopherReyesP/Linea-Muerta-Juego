@@ -13,7 +13,8 @@ import { EmojiDiferente } from './minigames/EmojiDiferente'
 import { v4 as uuid } from 'uuid'
 import {
   MetaGamePhase, PlayerState, MiniGameInfo, MinigameResult,
-  MetaGameStateSnapshot, PublicRoomSummary, DEFAULT_CONFIG, LobbyChatMessage
+  MetaGameStateSnapshot, PublicRoomSummary, DEFAULT_CONFIG, LobbyChatMessage,
+  DiscussionData, SessionCompleteData
 } from './types'
 
 // Registry of all available minigames
@@ -627,6 +628,36 @@ export class MetaGame {
     this.broadcastMetaState()
   }
 
+  private buildDiscussionData(): DiscussionData | null {
+    const lastResult = this.minigameHistory[this.minigameHistory.length - 1]
+    if (!lastResult) return null
+
+    const nextInfo = this.currentMinigameIndex < this.TOTAL_MINIGAMES - 1
+      ? this.selectedMinigames[this.currentMinigameIndex + 1]
+      : null
+
+    return {
+      completedResult: lastResult,
+      globalScoreboard: this.getGlobalScoreboard(),
+      nextMinigame: nextInfo,
+      currentIndex: this.currentMinigameIndex,
+      totalMinigames: this.TOTAL_MINIGAMES,
+    }
+  }
+
+  private buildSessionCompleteData(): SessionCompleteData {
+    const scoreboard = this.getGlobalScoreboard()
+    const sorted = [...scoreboard].sort((a, b) => b.globalScore - a.globalScore)
+    const winner = sorted[0]
+
+    return {
+      overallWinnerId: winner?.playerId ?? '',
+      overallWinnerName: winner?.name ?? 'Nadie',
+      globalScoreboard: scoreboard,
+      history: this.minigameHistory,
+    }
+  }
+
   // --- Delegate to current minigame ---
 
   getCurrentMinigame(): MiniGame | null {
@@ -643,7 +674,7 @@ export class MetaGame {
 
   private getGlobalScoreboard(): Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }> {
     return Array.from(this.metaPlayers.values())
-      .filter(p => p.isConnected)
+      .filter(p => this.metaPhase === MetaGamePhase.LOBBY ? p.isConnected : true)
       .map(p => ({ playerId: p.id, name: p.name, avatarId: p.avatarId, avatarColor: p.avatarColor, accessoryId: p.accessoryId, globalScore: p.globalScore }))
       .sort((a, b) => b.globalScore - a.globalScore)
   }
@@ -708,6 +739,8 @@ export class MetaGame {
       hostId: this.hostId,
       isPublicRoom: this.isPublic,
       isGeneralPublicRoom: this.isGeneralPublic,
+      discussionData: this.metaPhase === MetaGamePhase.DISCUSSION ? this.buildDiscussionData() : null,
+      sessionCompleteData: this.metaPhase === MetaGamePhase.SESSION_COMPLETE ? this.buildSessionCompleteData() : null,
       minigameSnapshot: this.currentMinigame?.getSnapshot() ?? null
     }
   }

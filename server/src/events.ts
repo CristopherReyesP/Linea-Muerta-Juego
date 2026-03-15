@@ -107,6 +107,26 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
       gameManager.broadcastGlobalActivity({ playerName: name, action: 'se unio a una sala' })
     })
 
+    socket.on('resume_session', ({ gameId, playerId }: { gameId: string; playerId: string }) => {
+      const code = String(gameId ?? '').toUpperCase().trim()
+      const game = gameManager.getGame(code)
+      if (!game) {
+        socket.emit('game_left')
+        return
+      }
+
+      const restored = game.reconnectPlayer(playerId, socket.id)
+      if (!restored) {
+        socket.emit('game_left')
+        return
+      }
+
+      socket.emit('game_joined', { gameId: game.id, playerId })
+      game.broadcastMetaState()
+      gameManager.broadcastPublicRooms()
+      gameManager.broadcastGlobalActivity()
+    })
+
     socket.on('leave_game', () => {
       const result = gameManager.getGameBySocket(socket.id)
       if (!result) {

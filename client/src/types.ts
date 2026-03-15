@@ -222,5 +222,7 @@ export interface MetaGameStateSnapshot {
   hostId: string | null
   isPublicRoom: boolean
   isGeneralPublicRoom: boolean
+  discussionData: DiscussionData | null
+  sessionCompleteData: SessionCompleteData | null
   minigameSnapshot: GameStateSnapshot | null
 }

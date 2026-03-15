@@ -275,6 +275,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     hostId: state.hostId,
     isPublicRoom: state.isPublicRoom,
     isGeneralPublicRoom: state.isGeneralPublicRoom,
+    discussionData: state.discussionData,
+    sessionComplete: state.sessionCompleteData,
     ...(state.minigameSnapshot ? {
       activeMinigameId: state.minigameSnapshot.minigameId,
       phase: state.minigameSnapshot.phase,

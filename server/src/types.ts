@@ -192,6 +192,8 @@ export interface MetaGameStateSnapshot {
   hostId: string | null
   isPublicRoom: boolean
   isGeneralPublicRoom: boolean
+  discussionData: DiscussionData | null
+  sessionCompleteData: SessionCompleteData | null
   // When in MINIGAME_IN_PROGRESS, the minigame's own snapshot is sent separately
   minigameSnapshot: GameStateSnapshot | null
 }
@@ -249,6 +251,7 @@ export interface EmojiStateData {
 export interface ClientToServerEvents {
   create_game: (data: { name: string; isPublic?: boolean; avatarId?: string; avatarColor?: string; accessoryId?: string }) => void
   join_game: (data: { name: string; gameId: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => void
+  resume_session: (data: { gameId: string; playerId: string }) => void
   leave_game: () => void
   start_game: (data?: { selectedMinigameIds?: string[] }) => void
   call_player: (targetId: string) => void

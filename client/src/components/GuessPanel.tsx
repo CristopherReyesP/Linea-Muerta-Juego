@@ -44,16 +44,27 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
           gap: 16,
           padding: 32,
           border: '1px solid var(--cyan)',
-          background: 'var(--bg-panel)',
-          maxWidth: 400,
+          background: 'rgba(0,229,255,0.05)',
+          maxWidth: 460,
+          boxShadow: '0 0 22px rgba(0,229,255,0.1)',
         }}
       >
         <div style={{
-          fontSize: 14,
+          fontSize: 11,
           color: 'var(--cyan)',
-          letterSpacing: 3,
+          letterSpacing: 4,
         }}>
           IDENTIDADES REVELADAS
+        </div>
+
+        <div style={{
+          fontSize: 22,
+          color: 'var(--white)',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          textTransform: 'uppercase',
+        }}>
+          La voz ya no puede esconder a nadie
         </div>
 
         <div style={{
@@ -164,21 +175,22 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      style={{
-        display: 'flex',
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+          display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: 12,
-        padding: isCallPhase ? 16 : 24,
-        border: '1px solid var(--cyan)',
-        background: 'rgba(0, 229, 255, 0.05)',
-        maxWidth: 420,
-        width: '100%',
-      }}
-    >
+          padding: isCallPhase ? 16 : 24,
+          border: '1px solid var(--cyan)',
+          background: 'rgba(0, 229, 255, 0.05)',
+          maxWidth: 420,
+          width: '100%',
+          boxShadow: '0 0 20px rgba(0,229,255,0.08)',
+        }}
+      >
       <div style={{
         fontSize: isCallPhase ? 11 : 14,
         color: 'var(--cyan)',
@@ -191,8 +203,19 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
         fontSize: 10,
         color: 'var(--gray-text)',
         textAlign: 'center',
+        lineHeight: 1.6,
       }}>
         Tu eres Linea {myLineNumber}. {isCallPhase ? 'Puedes ir adivinando mientras llamas.' : 'Asigna un nombre a cada linea.'}
+      </div>
+
+      <div style={{
+        fontSize: 17,
+        color: 'var(--white)',
+        textAlign: 'center',
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+      }}>
+        {isCallPhase ? 'Cada llamada puede delatar una identidad' : 'Ya no hay mas voces: solo sospechas'}
       </div>
 
       <div style={{
@@ -298,7 +321,7 @@ export function GuessPanel({ onSubmitGuesses, onSkipToFinish }: Props) {
 
       {submitted && isCallPhase && (
         <div style={{ fontSize: 9, color: 'var(--green-dim)' }}>
-          Respuestas guardadas. Puedes cambiarlas antes de que termine el tiempo.
+          Respuestas guardadas. Puedes cambiarlas antes del cierre final.
         </div>
       )}
     </motion.div>

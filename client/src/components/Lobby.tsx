@@ -9,6 +9,9 @@ import { PlayerState, type PlayerData } from '../types'
 type LobbyView = 'welcome' | 'setup' | 'join'
 type LobbyAction = 'create-private' | 'create-public' | 'join-public'
 type CustomizeTab = 'masks' | 'accessories'
+const DEV_MODE_STORAGE_KEY = 'lm_dev_mode'
+const isLocalMachine = typeof window !== 'undefined'
+  && ['localhost', '127.0.0.1', '[::1]', '::1'].includes(window.location.hostname)
 
 interface Props {
   onCreateGame: (name: string, avatarId?: string, avatarColor?: string, accessoryId?: string, isPublic?: boolean) => void
@@ -107,7 +110,10 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
   const [selectedAvatarColor, setSelectedAvatarColor] = useState('#00e5ff')
   const [selectedAccessoryId, setSelectedAccessoryId] = useState('none')
   const [customizeTab, setCustomizeTab] = useState<CustomizeTab>('masks')
-  const [devMode, setDevMode] = useState(false)
+  const [devMode, setDevMode] = useState(() => {
+    if (!isLocalMachine) return false
+    return window.sessionStorage.getItem(DEV_MODE_STORAGE_KEY) === '1'
+  })
   const [selectedMinigameIds, setSelectedMinigameIds] = useState<string[]>([])
   const gameId = useGameStore(s => s.gameId)
   const lobbyPlayers = useGameStore(s => s.lobbyPlayers)
@@ -150,6 +156,17 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
     const timer = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(timer)
   }, [publicRooms])
+
+  useEffect(() => {
+    if (!isLocalMachine) return
+
+    if (devMode) {
+      window.sessionStorage.setItem(DEV_MODE_STORAGE_KEY, '1')
+      return
+    }
+
+    window.sessionStorage.removeItem(DEV_MODE_STORAGE_KEY)
+  }, [devMode])
 
   const handleCreate = (isPublic: boolean = false) => {
     if (!name.trim()) return
@@ -1134,44 +1151,48 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
 
               {isHost ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--gray-text)' }}>
-                    <input
-                      type="checkbox"
-                      checked={devMode}
-                      onChange={e => setDevMode(e.target.checked)}
-                    />
-                    MODO DESARROLLADOR
-                  </label>
+                  {isLocalMachine && (
+                    <>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--gray-text)' }}>
+                        <input
+                          type="checkbox"
+                          checked={devMode}
+                          onChange={e => setDevMode(e.target.checked)}
+                        />
+                        MODO DESARROLLADOR
+                      </label>
 
-                  {devMode && (
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 6,
-                      border: '1px solid var(--cyan)',
-                      background: 'rgba(0,229,255,0.05)',
-                      padding: 12,
-                      minWidth: 280,
-                    }}>
-                      <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 2 }}>
-                        SELECCIONA MINIJUEGOS A PROBAR
-                      </div>
-                      {minigameOptions.map((minigame) => {
-                        const disabled = connectedLobbyPlayers.length < minigame.minPlayers
-                        return (
-                          <label key={minigame.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: disabled ? 'var(--gray-shadow)' : 'var(--white)', cursor: disabled ? 'not-allowed' : 'pointer' }}>
-                            <input
-                              type="checkbox"
-                              checked={selectedMinigameIds.includes(minigame.id)}
-                              onChange={() => toggleMinigameSelection(minigame.id)}
-                              disabled={disabled}
-                            />
-                            {minigame.name}
-                            {disabled && <span style={{ fontSize: 9, color: 'var(--gray-shadow)' }}>(min {minigame.minPlayers})</span>}
-                          </label>
-                        )
-                      })}
-                    </div>
+                      {devMode && (
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 6,
+                          border: '1px solid var(--cyan)',
+                          background: 'rgba(0,229,255,0.05)',
+                          padding: 12,
+                          minWidth: 280,
+                        }}>
+                          <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 2 }}>
+                            SELECCIONA MINIJUEGOS A PROBAR
+                          </div>
+                          {minigameOptions.map((minigame) => {
+                            const disabled = connectedLobbyPlayers.length < minigame.minPlayers
+                            return (
+                              <label key={minigame.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: disabled ? 'var(--gray-shadow)' : 'var(--white)', cursor: disabled ? 'not-allowed' : 'pointer' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedMinigameIds.includes(minigame.id)}
+                                  onChange={() => toggleMinigameSelection(minigame.id)}
+                                  disabled={disabled}
+                                />
+                                {minigame.name}
+                                {disabled && <span style={{ fontSize: 9, color: 'var(--gray-shadow)' }}>(min {minigame.minPlayers})</span>}
+                              </label>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </>
                   )}
 
                   <button

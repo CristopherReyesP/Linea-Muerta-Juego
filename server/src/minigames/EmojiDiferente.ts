@@ -27,7 +27,7 @@ export class EmojiDiferente extends MiniGame {
   readonly info: MiniGameInfo = {
     id: 'emoji-diferente',
     name: 'Emoji Diferente',
-    shortDescription: 'Todos reciben el mismo emoji menos uno. Descubre quien es el diferente.',
+    shortDescription: 'Todos reciben el mismo emoji menos uno. Habla, compara y vota para descubrir quien es el diferente.',
     minPlayers: 3,
   }
 

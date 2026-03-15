@@ -19,22 +19,24 @@ export function BombSpectatorPanel() {
   }, [bombState])
 
   if (!bombState) return null
+  const isUrgent = remainingSeconds <= 10
 
   return (
     <div
       style={{
         width: '100%',
         maxWidth: 560,
-        border: '1px solid var(--cyan)',
-        background: 'rgba(0, 229, 255, 0.04)',
+        border: `1px solid ${isUrgent ? 'var(--red-danger)' : 'var(--cyan)'}`,
+        background: isUrgent ? 'rgba(255, 23, 68, 0.06)' : 'rgba(0, 229, 255, 0.04)',
         padding: 18,
         display: 'flex',
         flexDirection: 'column',
         gap: 10,
+        boxShadow: isUrgent ? '0 0 24px rgba(255,23,68,0.16)' : '0 0 20px rgba(0,229,255,0.08)',
       }}
     >
-      <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2 }}>
-        ESTADO DE BOMBA (OBSERVADOR)
+      <div style={{ fontSize: 10, color: isUrgent ? 'var(--red-danger)' : 'var(--gray-text)', letterSpacing: 3 }}>
+        {isUrgent ? 'ULTIMOS SEGUNDOS' : 'ESTADO DE BOMBA'}
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', padding: '2px 0 4px' }}>
         <svg width="84" height="66" viewBox="0 0 96 78" role="img" aria-label="Bomba">
@@ -58,7 +60,7 @@ export function BombSpectatorPanel() {
           <circle cx="92" cy="24" r="3.8" fill="#ffd36e" className="pulse" />
         </svg>
       </div>
-      <div style={{ fontSize: 14, color: 'var(--red-danger)', fontWeight: 'bold' }}>
+      <div style={{ fontSize: 18, color: 'var(--red-danger)', fontWeight: 'bold', textTransform: 'uppercase' }}>
         Portador actual: {bombState.holderName}
       </div>
       <div style={{ fontSize: 12, color: 'var(--cyan)' }}>
@@ -67,8 +69,10 @@ export function BombSpectatorPanel() {
       <div style={{ fontSize: 12, color: 'var(--white)' }}>
         Probabilidad actual: {bombState.disarmChance}% ({bombState.passCount} pases)
       </div>
-      <div style={{ fontSize: 11, color: 'var(--gray-text)' }}>
-        Espera la siguiente transferencia.
+      <div style={{ fontSize: 11, color: 'var(--gray-text)', lineHeight: 1.6 }}>
+        {isUrgent
+          ? 'Cualquier decision ahora puede terminar la ronda de inmediato.'
+          : 'Observa el reloj. La siguiente transferencia puede caer sobre cualquiera.'}
       </div>
     </div>
   )

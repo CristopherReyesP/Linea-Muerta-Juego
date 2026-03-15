@@ -1,9 +1,23 @@
 import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 
 interface Props {
-  onContinue: () => void
+  onContinue: (data?: { selectedMinigameIds?: string[] }) => void
 }
+
+const DEV_MODE_STORAGE_KEY = 'lm_dev_mode'
+const isLocalMachine = typeof window !== 'undefined'
+  && ['localhost', '127.0.0.1', '[::1]', '::1'].includes(window.location.hostname)
+const minigameOptions = [
+  { id: 'cooperar-traicionar', name: 'Cooperar o Traicionar', minPlayers: 2 },
+  { id: 'votacion-sobra', name: 'Quien Sobra?', minPlayers: 2 },
+  { id: 'votacion-merece', name: 'Quien Merece?', minPlayers: 2 },
+  { id: 'adivina-linea', name: 'Adivina la Linea', minPlayers: 2 },
+  { id: 'la-bomba', name: 'La Bomba', minPlayers: 2 },
+  { id: 'central-emergencias', name: 'Central de Emergencias', minPlayers: 4 },
+  { id: 'emoji-diferente', name: 'Emoji Diferente', minPlayers: 3 },
+]
 
 export function DiscussionPhase({ onContinue }: Props) {
   const discussionData = useGameStore(s => s.discussionData)
@@ -14,6 +28,20 @@ export function DiscussionPhase({ onContinue }: Props) {
   const toggleMic = useGameStore(s => s.toggleMic)
 
   const isHost = playerId === hostId
+  const developerModeActive = isLocalMachine && window.sessionStorage.getItem(DEV_MODE_STORAGE_KEY) === '1'
+  const [selectedNextMinigameId, setSelectedNextMinigameId] = useState<string | null>(null)
+  const availableMinigames = minigameOptions.filter((minigame) => globalScoreboard.length >= minigame.minPlayers)
+  const nextMinigameId = discussionData?.nextMinigame?.id ?? null
+
+  useEffect(() => {
+    setSelectedNextMinigameId((current) => {
+      if (current && availableMinigames.some((minigame) => minigame.id === current)) {
+        return current
+      }
+
+      return nextMinigameId ?? availableMinigames[0]?.id ?? null
+    })
+  }, [nextMinigameId, globalScoreboard.length])
 
   if (!discussionData) return null
 
@@ -210,6 +238,51 @@ export function DiscussionPhase({ onContinue }: Props) {
         </motion.div>
       )}
 
+      {isHost && developerModeActive && nextMinigame && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.08 }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            padding: '12px 24px',
+            border: '1px solid var(--cyan)',
+            background: 'rgba(0,229,255,0.05)',
+            minWidth: 320,
+          }}
+        >
+          <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 2, textAlign: 'center' }}>
+            MODO DESARROLLADOR LOCAL
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.5 }}>
+            Antes de continuar puedes elegir manualmente el siguiente minijuego.
+          </div>
+          {availableMinigames.map((minigame) => (
+            <label
+              key={minigame.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: 11,
+                color: 'var(--white)',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="radio"
+                name="next-dev-minigame"
+                checked={selectedNextMinigameId === minigame.id}
+                onChange={() => setSelectedNextMinigameId(minigame.id)}
+              />
+              {minigame.name}
+            </label>
+          ))}
+        </motion.div>
+      )}
+
       {/* Continue button (host only) */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -219,7 +292,11 @@ export function DiscussionPhase({ onContinue }: Props) {
         {isHost ? (
           <button
             className="btn btn-green"
-            onClick={onContinue}
+            onClick={() => onContinue(
+              developerModeActive && selectedNextMinigameId
+                ? { selectedMinigameIds: [selectedNextMinigameId] }
+                : undefined
+            )}
             style={{ fontSize: 14 }}
           >
             CONTINUAR

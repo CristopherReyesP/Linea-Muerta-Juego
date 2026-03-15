@@ -13,6 +13,19 @@ function getCreatorKey(socket: Socket): string {
   return ip
 }
 
+function isLocalDevSocket(socket: Socket): boolean {
+  if (process.env.NODE_ENV === 'production') return false
+
+  const host = String(socket.handshake.headers.host ?? '')
+  const origin = String(socket.handshake.headers.origin ?? '')
+  const address = String(socket.handshake.address ?? socket.conn.remoteAddress ?? '')
+  const localMarkers = ['localhost', '127.0.0.1', '::1']
+
+  return localMarkers.some((marker) =>
+    host.includes(marker) || origin.includes(marker) || address.includes(marker)
+  )
+}
+
 export function registerEvents(io: Server, gameManager: GameManager): void {
   io.on('connection', (socket: Socket) => {
     console.log(`[Connect] ${socket.id}`)
@@ -102,7 +115,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
       }
 
       result.game.startSession({
-        selectedMinigameIds: data?.selectedMinigameIds,
+        selectedMinigameIds: isLocalDevSocket(socket) ? data?.selectedMinigameIds : undefined,
       })
       gameManager.broadcastPublicRooms()
       gameManager.broadcastGlobalActivity()
@@ -263,11 +276,13 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
       minigame.submitEmergencyResponse(result.metaPlayer.id, optionIndex)
     })
 
-    socket.on('continue_to_next', () => {
+    socket.on('continue_to_next', (data?: { selectedMinigameIds?: string[] }) => {
       const result = gameManager.getGameBySocket(socket.id)
       if (!result) return
 
-      result.game.continueToNext(result.metaPlayer.id)
+      result.game.continueToNext(result.metaPlayer.id, {
+        selectedMinigameIds: isLocalDevSocket(socket) ? data?.selectedMinigameIds : undefined,
+      })
     })
 
     socket.on('skip_to_finish', () => {

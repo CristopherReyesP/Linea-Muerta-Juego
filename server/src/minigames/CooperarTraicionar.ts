@@ -11,7 +11,7 @@ export class CooperarTraicionar extends MiniGame {
   readonly info: MiniGameInfo = {
     id: 'cooperar-traicionar',
     name: 'Cooperar o Traicionar',
-    shortDescription: 'Negocia por telefono y decide: cooperar o traicionar. La mayoria define tu destino.'
+    shortDescription: 'Habla 30 segundos y decide en secreto: cooperar o traicionar. La mayoria define el resultado.'
   }
 
   private phase: GamePhase = GamePhase.CALL_PHASE

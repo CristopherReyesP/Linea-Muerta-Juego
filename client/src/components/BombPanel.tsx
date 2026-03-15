@@ -63,10 +63,31 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
         display: 'grid',
         gridTemplateColumns: '1.4fr 1fr',
         gap: 18,
+        boxShadow: isUrgent ? '0 0 28px rgba(255,23,68,0.18)' : '0 0 24px rgba(0,229,255,0.1)',
       }}
       className={isUrgent ? 'pulse-red' : ''}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          paddingBottom: 6,
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          <div style={{ fontSize: 11, color: 'var(--red-danger)', letterSpacing: 4 }}>
+            ALERTA CRITICA
+          </div>
+          <div style={{ fontSize: 24, color: 'var(--white)', fontWeight: 'bold', textTransform: 'uppercase' }}>
+            {isHolder ? 'La decision esta en tus manos' : `${bombState.holderName} sostiene la bomba`}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--gray-text)', lineHeight: 1.6 }}>
+            {isHolder
+              ? 'Puedes jugartela ahora o condenar a otra cabina con un pase.'
+              : 'Cada segundo que pasa acerca la explosion o una transferencia inesperada.'}
+          </div>
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
             TEMPORIZADOR DE BOMBA
@@ -205,8 +226,8 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
 
         <div style={{ fontSize: 11, color: 'var(--gray-text)', lineHeight: 1.5 }}>
           {isHolder
-            ? 'Tu decides: desactivar ahora o pasar para subir la probabilidad.'
-            : `Esperando decision de ${bombState.holderName}.`}
+            ? 'Cada accion cambia tus probabilidades. Una falla explota de inmediato.'
+            : `Esperando decision de ${bombState.holderName}. Nadie sabe si arriesgara o pasara.`}
         </div>
       </div>
     </div>

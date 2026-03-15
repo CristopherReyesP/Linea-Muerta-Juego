@@ -7,8 +7,10 @@ export function ResultPanel() {
   const lastResult = useGameStore(s => s.lastResult)
   const playerId = useGameStore(s => s.playerId)
   const players = useGameStore(s => s.players)
+  const activeMinigameId = useGameStore(s => s.activeMinigameId)
 
   if (phase !== GamePhase.RESULT_PHASE || !lastResult || !playerId) return null
+  if (activeMinigameId !== 'cooperar-traicionar') return null
 
   const myDecision = lastResult.decisions[playerId]
   const myChange = lastResult.balanceChanges[playerId] ?? 0
@@ -16,6 +18,13 @@ export function ResultPanel() {
   const rachaAmount = myRachaResult?.amount ?? 0
   const totalChange = myChange + rachaAmount
   const isPositive = totalChange > 0
+  const matchedMajority = myDecision === lastResult.majorityDecision
+  const revealCopy = matchedMajority
+    ? 'Tu decision camino con la multitud.'
+    : 'Quedaste del lado equivocado de la mayoria.'
+  const impactCopy = isPositive
+    ? 'La ronda jugo a tu favor.'
+    : 'La ronda te dejo expuesto.'
 
   return (
     <AnimatePresence>
@@ -26,24 +35,50 @@ export function ResultPanel() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 16,
-          padding: 24,
+          gap: 18,
+          padding: 28,
           border: `1px solid ${isPositive ? 'var(--green-neon)' : 'var(--red-danger)'}`,
-          background: isPositive ? 'rgba(0,255,65,0.05)' : 'rgba(255,23,68,0.05)',
+          background: isPositive
+            ? 'linear-gradient(180deg, rgba(0,255,65,0.08), rgba(0,255,65,0.03))'
+            : 'linear-gradient(180deg, rgba(255,23,68,0.08), rgba(255,23,68,0.03))',
+          boxShadow: isPositive
+            ? '0 0 30px rgba(0,255,65,0.14)'
+            : '0 0 30px rgba(255,23,68,0.16)',
+          maxWidth: 620,
         }}
       >
         <div style={{
+          fontSize: 11,
+          color: 'var(--gray-text)',
+          letterSpacing: 4,
+        }}>
+          REVELACION RONDA {lastResult.round}
+        </div>
+
+        <div style={{
+          fontSize: 24,
+          fontWeight: 'bold',
+          color: matchedMajority ? 'var(--white)' : 'var(--red-danger)',
+          textAlign: 'center',
+          textTransform: 'uppercase',
+          letterSpacing: 1,
+        }}>
+          {revealCopy}
+        </div>
+
+        <div style={{
           fontSize: 12,
           color: 'var(--gray-text)',
-          letterSpacing: 3,
+          textAlign: 'center',
+          lineHeight: 1.6,
         }}>
-          RESULTADO RONDA {lastResult.round}
+          {impactCopy}
         </div>
 
         <div style={{ display: 'flex', gap: 40, alignItems: 'center' }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 10, color: 'var(--gray-text)', marginBottom: 4 }}>
-              TU VOTO
+              TU DECISION
             </div>
             <div style={{
               fontSize: 16,
@@ -79,9 +114,10 @@ export function ResultPanel() {
           animate={{ scale: 1 }}
           transition={{ delay: 0.3, type: 'spring' }}
           style={{
-            fontSize: 32,
+            fontSize: 42,
             fontWeight: 'bold',
             color: isPositive ? 'var(--green-neon)' : 'var(--red-danger)',
+            textShadow: isPositive ? '0 0 16px rgba(0,255,65,0.24)' : '0 0 16px rgba(255,23,68,0.24)',
           }}
         >
           {isPositive ? '+' : ''}{totalChange}
@@ -121,6 +157,13 @@ export function ResultPanel() {
         )}
 
         {/* Summary of all players */}
+        <div style={{
+          fontSize: 10,
+          color: 'var(--gray-text)',
+          letterSpacing: 2,
+        }}>
+          ASI JUGO CADA CABINA
+        </div>
         <div style={{
           display: 'flex',
           flexWrap: 'wrap',

@@ -21,7 +21,7 @@ export class LaBomba extends MiniGame {
   readonly info: MiniGameInfo = {
     id: 'la-bomba',
     name: 'La Bomba',
-    shortDescription: 'La bomba corre durante 30s. Desactiva o pasala a otro jugador para aumentar la probabilidad.',
+    shortDescription: 'La partida dura 5 minutos y cada portador tiene 50 segundos. Desactiva o pasa la bomba para subir la probabilidad.',
   }
 
   private phase: GamePhase = GamePhase.CALL_PHASE

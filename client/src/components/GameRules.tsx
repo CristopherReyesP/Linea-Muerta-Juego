@@ -17,8 +17,8 @@ const cooperarTraicionarRules: RuleSection[] = [
     text: 'Sobrevive 10 rondas con el mayor saldo posible. Si tu saldo llega a 0, te conviertes en SOMBRA.',
   },
   {
-    title: 'FASE DE LLAMADA (60s)',
-    text: 'Habla con otros jugadores por voz. Negocia, miente, convince. La informacion es poder.',
+    title: 'FASE DE LLAMADA (30s)',
+    text: 'Habla con otros jugadores por voz. Negocia, miente o convence antes de decidir.',
   },
   {
     title: 'FASE DE DECISION (10s)',
@@ -108,7 +108,7 @@ const adivinaLineaRules: RuleSection[] = [
   },
   {
     title: 'FASE DE LLAMADA (5 min)',
-    text: 'Llama a las diferentes lineas para intentar descubrir quien es cada jugador. Tienes 5 minutos.',
+    text: 'Llama a las diferentes lineas para intentar descubrir quien es cada jugador. Puedes ir llenando tus sospechas mientras hablas.',
   },
   {
     title: 'FASE DE ADIVINANZA (30s)',
@@ -118,7 +118,7 @@ const adivinaLineaRules: RuleSection[] = [
     title: 'RESULTADO',
     items: [
       'Cada adivinanza correcta suma 1 punto',
-      'El jugador con mas aciertos gana +1 punto global',
+      'El jugador o jugadores con mas aciertos ganan +1 punto global',
     ],
   },
 ]
@@ -130,7 +130,7 @@ const laBombaRules: RuleSection[] = [
   },
   {
     title: 'TEMPORIZADORES',
-    text: 'Hay dos relojes: el de partida (general) y el de la bomba por portador.',
+    text: 'Hay dos relojes: la partida completa dura 5 minutos y cada portador tiene su propio timer de decision.',
   },
   {
     title: 'TIMER DE BOMBA (50s)',
@@ -164,7 +164,7 @@ const laBombaRules: RuleSection[] = [
 const centralEmergenciasRules: RuleSection[] = [
   {
     title: 'OBJETIVO',
-    text: 'Los Operadores deben identificar la emergencia correcta con reportes de 2 Tecnicos y 1 Saboteador.',
+    text: 'Los Operadores deben identificar el mensaje correcto usando reportes de 2 Tecnicos y 1 Saboteador.',
   },
   {
     title: 'FORMATO DEL MENSAJE',
@@ -195,7 +195,7 @@ const centralEmergenciasRules: RuleSection[] = [
       'Cada emisor (2 tecnicos + 1 saboteador) puede llamarse para discutir',
       'Todos comparan sus opciones reales/falsas para detectar inconsistencias',
       'Cada emisor envia un reporte de max 3 palabras al Operador',
-      'Los tecnicos NO pueden llamar al Operador',
+      'Los Operadores no pueden llamar ni recibir llamadas durante esta fase',
       'Total de combinaciones de reporte: 8 (2^3)',
     ],
   },

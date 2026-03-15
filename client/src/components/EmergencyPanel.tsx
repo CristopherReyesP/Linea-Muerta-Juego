@@ -159,6 +159,9 @@ export function EmergencyPanel({ onSubmitSabotage: _onSubmitSabotage, onSubmitRe
         <div style={{ fontSize: 22, fontWeight: 'bold', color: style.color, letterSpacing: 3 }}>
           {style.label}
         </div>
+        <div style={{ fontSize: 18, color: 'var(--white)', fontWeight: 'bold', textAlign: 'center', textTransform: 'uppercase' }}>
+          Una pieza falsa puede arruinar toda la operacion
+        </div>
         <div style={{ fontSize: 12, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.6 }}>
           {style.description}
         </div>
@@ -205,6 +208,9 @@ export function EmergencyPanel({ onSubmitSabotage: _onSubmitSabotage, onSubmitRe
         >
           <RoleBadge myRole={myRole} showRules={showRules} onToggleRules={() => setShowRules(v => !v)} />
           <div style={{ fontSize: 10, color: 'var(--red-danger)', letterSpacing: 3 }}>INSTRUCCIONES DEL SABOTEADOR</div>
+          <div style={{ fontSize: 18, color: 'var(--white)', fontWeight: 'bold', textAlign: 'center', textTransform: 'uppercase' }}>
+            Tu mentira debe sonar mas creible que la verdad
+          </div>
 
           <div style={{ padding: '12px 16px', border: '1px solid var(--red-danger)', background: 'rgba(255,0,0,0.05)', width: '100%' }}>
             <div style={{ fontSize: 9, color: 'var(--red-danger)', letterSpacing: 2, marginBottom: 6 }}>
@@ -237,6 +243,9 @@ export function EmergencyPanel({ onSubmitSabotage: _onSubmitSabotage, onSubmitRe
       >
         <RoleBadge myRole={myRole} showRules={showRules} onToggleRules={() => setShowRules(v => !v)} />
         <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 3 }}>PREPARANDO EMERGENCIA</div>
+        <div style={{ fontSize: 17, color: 'var(--white)', textAlign: 'center', fontWeight: 'bold', textTransform: 'uppercase' }}>
+          Pronto alguien intentara contaminar el mensaje
+        </div>
         <div style={{ fontSize: 12, color: 'var(--gray-text)' }} className="pulse">
           Esperando informacion...
         </div>
@@ -262,6 +271,9 @@ export function EmergencyPanel({ onSubmitSabotage: _onSubmitSabotage, onSubmitRe
         >
           <RoleBadge myRole={myRole} showRules={showRules} onToggleRules={() => setShowRules(v => !v)} />
           <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 3 }}>RECIBIENDO REPORTES</div>
+          <div style={{ fontSize: 18, color: 'var(--white)', textAlign: 'center', fontWeight: 'bold', textTransform: 'uppercase' }}>
+            Debes reconstruir la verdad con fragmentos dudosos
+          </div>
           <div style={{ fontSize: 11, color: 'var(--gray-text)', textAlign: 'center' }}>
             Los tecnicos estan coordinando y enviando reportes. No puedes llamar a nadie.
           </div>
@@ -312,6 +324,9 @@ export function EmergencyPanel({ onSubmitSabotage: _onSubmitSabotage, onSubmitRe
       >
         <RoleBadge myRole={myRole} showRules={showRules} onToggleRules={() => setShowRules(v => !v)} />
         <div style={{ fontSize: 10, color: 'var(--green-neon)', letterSpacing: 3 }}>TRANSMISION</div>
+        <div style={{ fontSize: 18, color: 'var(--white)', textAlign: 'center', fontWeight: 'bold', textTransform: 'uppercase' }}>
+          Convencer a los demas vale tanto como tener la pista correcta
+        </div>
 
         {/* Show the player's clue */}
         {emergencyState.myClue && (

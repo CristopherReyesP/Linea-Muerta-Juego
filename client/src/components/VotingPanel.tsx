@@ -14,9 +14,11 @@ export function VotingPanel({ onVotePlayer }: Props) {
   const players = useGameStore(s => s.players)
   const playerId = useGameStore(s => s.playerId)
   const currentMinigameInfo = useGameStore(s => s.currentMinigameInfo)
+  const activeMinigameId = useGameStore(s => s.activeMinigameId)
 
   // During result phase, show vote result
   if (phase === GamePhase.RESULT_PHASE && voteResult) {
+    const isRewardVote = activeMinigameId === 'votacion-merece'
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
@@ -27,24 +29,40 @@ export function VotingPanel({ onVotePlayer }: Props) {
           alignItems: 'center',
           gap: 16,
           padding: 32,
-          border: '1px solid var(--cyan)',
-          background: 'var(--bg-panel)',
+          border: `1px solid ${isRewardVote ? 'var(--green-neon)' : 'var(--red-danger)'}`,
+          background: isRewardVote ? 'rgba(0,255,65,0.06)' : 'rgba(255,23,68,0.06)',
+          boxShadow: isRewardVote ? '0 0 24px rgba(0,255,65,0.12)' : '0 0 24px rgba(255,23,68,0.14)',
+          maxWidth: 520,
         }}
       >
         <div style={{
-          fontSize: 14,
-          color: 'var(--cyan)',
-          letterSpacing: 3,
+          fontSize: 11,
+          color: isRewardVote ? 'var(--green-neon)' : 'var(--red-danger)',
+          letterSpacing: 4,
         }}>
-          RESULTADO DE VOTACION
+          VEREDICTO
         </div>
 
         <div style={{
-          fontSize: 24,
+          fontSize: 26,
           fontWeight: 'bold',
           color: 'var(--white)',
+          textAlign: 'center',
+          textTransform: 'uppercase',
         }}>
           {voteResult.targetName}
+        </div>
+
+        <div style={{
+          fontSize: 12,
+          color: 'var(--gray-text)',
+          textAlign: 'center',
+          maxWidth: 380,
+          lineHeight: 1.6,
+        }}>
+          {isRewardVote
+            ? 'La sala decidio a quien elevar.'
+            : 'La sala ya decidio quien quedo bajo sospecha.'}
         </div>
 
         <div style={{
@@ -58,6 +76,7 @@ export function VotingPanel({ onVotePlayer }: Props) {
           fontSize: 13,
           color: voteResult.effect.includes('+') ? 'var(--green-neon)' : 'var(--red-danger)',
           letterSpacing: 1,
+          textAlign: 'center',
         }}>
           {voteResult.effect}
         </div>
@@ -72,6 +91,7 @@ export function VotingPanel({ onVotePlayer }: Props) {
     p.id !== playerId &&
     p.state !== PlayerState.DISCONNECTED
   )
+  const isRewardVote = activeMinigameId === 'votacion-merece'
 
   return (
     <motion.div
@@ -82,24 +102,37 @@ export function VotingPanel({ onVotePlayer }: Props) {
         flexDirection: 'column',
         alignItems: 'center',
         gap: 16,
-        padding: 24,
-        border: '1px solid var(--cyan)',
-        background: 'rgba(0, 229, 255, 0.05)',
+        padding: 28,
+        border: `1px solid ${isRewardVote ? 'var(--green-neon)' : 'var(--red-danger)'}`,
+        background: isRewardVote ? 'rgba(0,255,65,0.05)' : 'rgba(255,23,68,0.05)',
+        boxShadow: isRewardVote ? '0 0 24px rgba(0,255,65,0.1)' : '0 0 24px rgba(255,23,68,0.12)',
+        maxWidth: 600,
       }}
     >
       <div style={{
-        fontSize: 14,
-        color: 'var(--cyan)',
-        letterSpacing: 3,
+        fontSize: 11,
+        color: isRewardVote ? 'var(--green-neon)' : 'var(--red-danger)',
+        letterSpacing: 4,
       }}>
         {currentMinigameInfo?.name?.toUpperCase() ?? 'VOTACION'}
+      </div>
+
+      <div style={{
+        fontSize: 22,
+        color: 'var(--white)',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        textTransform: 'uppercase',
+        maxWidth: 460,
+      }}>
+        {isRewardVote ? 'Solo un nombre deberia salir fortalecido' : 'Solo un nombre cargara con la sospecha'}
       </div>
 
       <div style={{
         fontSize: 11,
         color: 'var(--gray-text)',
         textAlign: 'center',
-        maxWidth: 300,
+        maxWidth: 360,
         lineHeight: 1.6,
       }}>
         {currentMinigameInfo?.shortDescription ?? 'Vota por un jugador'}
@@ -153,16 +186,17 @@ export function VotingPanel({ onVotePlayer }: Props) {
       ) : (
         <div style={{
           fontSize: 14,
-          color: 'var(--cyan)',
+          color: isRewardVote ? 'var(--green-neon)' : 'var(--red-danger)',
           letterSpacing: 2,
+          textAlign: 'center',
         }}>
-          VOTO ENVIADO
+          TU VOTO YA FUE CONTADO
           <div style={{
             fontSize: 10,
             color: 'var(--gray-text)',
             marginTop: 8,
           }}>
-            Esperando a los demas...
+            Esperando a los demas para revelar el veredicto...
           </div>
         </div>
       )}

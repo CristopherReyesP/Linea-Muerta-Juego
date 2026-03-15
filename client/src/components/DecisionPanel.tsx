@@ -10,9 +10,14 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
   const phase = useGameStore(s => s.phase)
   const myDecision = useGameStore(s => s.myDecision)
   const myPlayer = useGameStore(s => s.getMyPlayer())
+  const players = useGameStore(s => s.players)
+  const activeMinigameId = useGameStore(s => s.activeMinigameId)
 
   if (phase !== GamePhase.DECISION_PHASE) return null
   if (!myPlayer?.isAlive) return null
+  if (activeMinigameId !== 'cooperar-traicionar') return null
+
+  const pendingPlayers = players.filter((player) => player.isAlive && player.state !== 'LOCKED').length
 
   return (
     <motion.div
@@ -23,18 +28,41 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
         flexDirection: 'column',
         alignItems: 'center',
         gap: 16,
-        padding: 24,
+        padding: 28,
         border: '1px solid var(--red-danger)',
-        background: 'rgba(255, 23, 68, 0.05)',
+        background: 'linear-gradient(180deg, rgba(255, 23, 68, 0.08), rgba(255, 23, 68, 0.03))',
+        boxShadow: '0 0 28px rgba(255,23,68,0.16)',
+        maxWidth: 540,
       }}
     >
       <div style={{
-        fontSize: 14,
+        fontSize: 11,
         color: 'var(--red-danger)',
-        letterSpacing: 3,
+        letterSpacing: 4,
         textTransform: 'uppercase',
       }}>
-        VOTA: ELIGE TU ACCION
+        DECISION FINAL
+      </div>
+
+      <div style={{
+        fontSize: 22,
+        color: 'var(--white)',
+        fontWeight: 'bold',
+        letterSpacing: 1,
+        textAlign: 'center',
+        textTransform: 'uppercase',
+      }}>
+        Nadie sabra lo que elegiste hasta que sea demasiado tarde
+      </div>
+
+      <div style={{
+        fontSize: 12,
+        color: 'var(--gray-text)',
+        textAlign: 'center',
+        maxWidth: 420,
+        lineHeight: 1.6,
+      }}>
+        Una mayoria define el castigo. Tu decision define si sobrevives mejor que los demas.
       </div>
 
       {!myDecision ? (
@@ -45,6 +73,7 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
             style={{
               fontSize: 16,
               padding: '16px 32px',
+              minWidth: 170,
             }}
           >
             COOPERAR
@@ -55,6 +84,7 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
             style={{
               fontSize: 16,
               padding: '16px 32px',
+              minWidth: 170,
             }}
           >
             TRAICIONAR
@@ -62,20 +92,49 @@ export function DecisionPanel({ onSubmitDecision }: Props) {
         </div>
       ) : (
         <div style={{
-          fontSize: 14,
-          color: myDecision === Decision.COOPERATE ? 'var(--green-neon)' : 'var(--red-danger)',
-          letterSpacing: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 8,
         }}>
-          DECISION: {myDecision === Decision.COOPERATE ? 'COOPERAR' : 'TRAICIONAR'}
           <div style={{
-            fontSize: 10,
+            fontSize: 14,
             color: 'var(--gray-text)',
-            marginTop: 8,
+            letterSpacing: 2,
+          }}>
+            TU ELECCION QUEDO SELLADA
+          </div>
+          <div style={{
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: myDecision === Decision.COOPERATE ? 'var(--green-neon)' : 'var(--red-danger)',
+            letterSpacing: 2,
+          }}>
+            {myDecision === Decision.COOPERATE ? 'COOPERAR' : 'TRAICIONAR'}
+          </div>
+          <div style={{
+            fontSize: 11,
+            color: 'var(--gray-text)',
           }}>
             Esperando a los demas...
           </div>
         </div>
       )}
+
+      <div style={{
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: 16,
+        paddingTop: 8,
+        borderTop: '1px solid rgba(255,255,255,0.08)',
+        fontSize: 10,
+        color: 'var(--gray-text)',
+        letterSpacing: 1.2,
+      }}>
+        <span>Jugadores pendientes: {Math.max(0, pendingPlayers)}</span>
+        <span>La mayoria decidira el impacto</span>
+      </div>
     </motion.div>
   )
 }

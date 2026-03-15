@@ -30,9 +30,21 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           gap: 16,
           padding: 32,
           maxWidth: 400,
+          border: '1px solid rgba(0,229,255,0.2)',
+          background: 'rgba(0,229,255,0.04)',
         }}
       >
-        <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 3 }}>TU EMOJI</div>
+        <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 4 }}>REVELACION PRIVADA</div>
+
+        <div style={{
+          fontSize: 22,
+          color: 'var(--white)',
+          fontWeight: 'bold',
+          textTransform: 'uppercase',
+          textAlign: 'center',
+        }}>
+          Puede que tengas la pieza que no encaja
+        </div>
 
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
@@ -49,7 +61,7 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
         </motion.div>
 
         <div style={{ fontSize: 12, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.6 }}>
-          Memoriza tu emoji. Pronto deberas descubrir quien tiene uno diferente.
+          Memoriza tu emoji. En unos segundos tendras que defenderlo sin saber si eres el diferente.
         </div>
       </motion.div>
     )
@@ -68,6 +80,8 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           gap: 12,
           padding: 24,
           maxWidth: 400,
+          border: '1px solid rgba(0,229,255,0.2)',
+          background: 'rgba(0,229,255,0.04)',
         }}
       >
         <div style={{
@@ -84,8 +98,12 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           </div>
         </div>
 
-        <div style={{ fontSize: 11, color: 'var(--gray-text)', textAlign: 'center' }}>
-          Llama a otros jugadores para descubrir quien tiene el emoji diferente.
+        <div style={{ fontSize: 18, color: 'var(--white)', textAlign: 'center', textTransform: 'uppercase', fontWeight: 'bold' }}>
+          Todos suenan convincentes hasta que uno no encaja
+        </div>
+
+        <div style={{ fontSize: 11, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.6 }}>
+          Llama, compara descripciones y detecta quien esta fingiendo normalidad.
         </div>
       </motion.div>
     )
@@ -106,6 +124,8 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           gap: 12,
           padding: 24,
           maxWidth: 420,
+          border: '1px solid rgba(255,23,68,0.24)',
+          background: 'rgba(255,23,68,0.05)',
         }}
       >
         <div style={{
@@ -119,8 +139,12 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           <span style={{ fontSize: 32 }}>{myEmoji}</span>
         </div>
 
-        <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 3 }}>
-          QUIEN TIENE EL DIFERENTE?
+        <div style={{ fontSize: 10, color: 'var(--red-danger)', letterSpacing: 4 }}>
+          JUICIO FINAL
+        </div>
+
+        <div style={{ fontSize: 20, color: 'var(--white)', fontWeight: 'bold', textTransform: 'uppercase', textAlign: 'center' }}>
+          Quien no pertenece al patron?
         </div>
 
         <div style={{ fontSize: 11, color: 'var(--cyan)' }}>
@@ -154,8 +178,8 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
             ))}
           </div>
         ) : (
-          <div style={{ fontSize: 11, color: 'var(--green-dim)', letterSpacing: 1 }}>
-            Voto enviado. Esperando a los demas...
+          <div style={{ fontSize: 11, color: 'var(--green-dim)', letterSpacing: 1, textAlign: 'center' }}>
+            Tu acusacion ya fue registrada. Esperando el veredicto...
           </div>
         )}
       </motion.div>
@@ -180,6 +204,9 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           gap: 12,
           padding: 24,
           maxWidth: 420,
+          border: `1px solid ${emojiState.success ? 'var(--green-neon)' : 'var(--red-danger)'}`,
+          background: emojiState.success ? 'rgba(0,255,65,0.06)' : 'rgba(255,23,68,0.06)',
+          boxShadow: emojiState.success ? '0 0 24px rgba(0,255,65,0.12)' : '0 0 24px rgba(255,23,68,0.14)',
         }}
       >
         <div style={{
@@ -189,6 +216,12 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           letterSpacing: 2,
         }}>
           {emojiState.success ? 'DIFERENTE DESCUBIERTO' : 'ENGANO EXITOSO'}
+        </div>
+
+        <div style={{ fontSize: 12, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.6 }}>
+          {emojiState.success
+            ? 'La mayoria encontro la grieta en el patron.'
+            : 'El diferente logro mezclarse con todos los demas.'}
         </div>
 
         {/* Show both emojis side by side */}

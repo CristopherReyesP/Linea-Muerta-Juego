@@ -307,8 +307,8 @@ export function useSocket() {
     socketRef.current?.emit('skip_to_finish')
   }, [])
 
-  const continueToNext = useCallback(() => {
-    socketRef.current?.emit('continue_to_next')
+  const continueToNext = useCallback((data?: { selectedMinigameIds?: string[] }) => {
+    socketRef.current?.emit('continue_to_next', data)
   }, [])
 
   const submitSabotage = useCallback((data: { field: string; value: string }) => {

@@ -17,6 +17,7 @@ import { AudioControls } from './AudioControls'
 import { BombOutcomeOverlay } from './BombOutcomeOverlay'
 import { EmergencyPanel } from './EmergencyPanel'
 import { EmojiPanel } from './EmojiPanel'
+import type { EmergencyStateData, EmojiStateData, PlayerData } from '../types'
 
 interface Props {
   onCallPlayer: (targetId: string) => void
@@ -46,6 +47,85 @@ const phaseLabels: Record<string, string> = {
   [GamePhase.GAME_OVER]: 'FIN DEL PROTOCOLO',
 }
 
+function getPhaseInstruction(params: {
+  activeMinigameId: string | null
+  phase: GamePhase
+  myPlayer: PlayerData | null
+  bombState: import('../types').BombStateData | null
+  emergencyState: EmergencyStateData | null
+  emojiState: EmojiStateData | null
+}): { label: string; text: string } | null {
+  const { activeMinigameId, phase, myPlayer, bombState, emergencyState, emojiState } = params
+
+  if (!activeMinigameId) return null
+
+  if (activeMinigameId === 'cooperar-traicionar') {
+    if (phase === GamePhase.CALL_PHASE) return { label: 'QUE HACER AHORA', text: 'Habla con otros jugadores y negocia tu decision.' }
+    if (phase === GamePhase.DECISION_PHASE) return { label: 'QUE HACER AHORA', text: 'Elige en secreto si cooperas o traicionas.' }
+    if (phase === GamePhase.RESULT_PHASE) return { label: 'QUE HACER AHORA', text: 'Revisa el resultado de la ronda y como cambio cada saldo.' }
+  }
+
+  if (activeMinigameId === 'votacion-sobra') {
+    if (phase === GamePhase.CALL_PHASE) return { label: 'QUE HACER AHORA', text: 'Discute quien esta dominando demasiado la sesion.' }
+    if (phase === GamePhase.DECISION_PHASE) return { label: 'QUE HACER AHORA', text: 'Vota por quien sobra. No puedes votarte a ti mismo.' }
+    if (phase === GamePhase.RESULT_PHASE) return { label: 'QUE HACER AHORA', text: 'Se mostrara quien perdio punto global por la votacion.' }
+  }
+
+  if (activeMinigameId === 'votacion-merece') {
+    if (phase === GamePhase.CALL_PHASE) return { label: 'QUE HACER AHORA', text: 'Habla y decide quien merece ser reconocido.' }
+    if (phase === GamePhase.DECISION_PHASE) return { label: 'QUE HACER AHORA', text: 'Vota por quien merece el punto. No puedes votarte.' }
+    if (phase === GamePhase.RESULT_PHASE) return { label: 'QUE HACER AHORA', text: 'Se mostrara quien gano punto global por la votacion.' }
+  }
+
+  if (activeMinigameId === 'adivina-linea') {
+    if (phase === GamePhase.CALL_PHASE) return { label: 'QUE HACER AHORA', text: 'Llama a las lineas, escucha pistas y ve armando tus sospechas.' }
+    if (phase === GamePhase.DECISION_PHASE) return { label: 'QUE HACER AHORA', text: 'Asigna un nombre a cada linea antes de que termine el tiempo.' }
+    if (phase === GamePhase.RESULT_PHASE) return { label: 'QUE HACER AHORA', text: 'Mira las identidades reales y cuantos aciertos lograste.' }
+  }
+
+  if (activeMinigameId === 'la-bomba') {
+    if (phase === GamePhase.CALL_PHASE) {
+      const isHolder = bombState?.holderId === myPlayer?.id
+      return {
+        label: isHolder ? 'TIENES LA BOMBA' : 'QUE HACER AHORA',
+        text: isHolder
+          ? 'Decide rapido: intenta desactivar o pasa la bomba a otro jugador.'
+          : 'Observa al portador y preparate por si la bomba llega a tu cabina.',
+      }
+    }
+    if (phase === GamePhase.RESULT_PHASE) return { label: 'QUE HACER AHORA', text: 'Se resolvera si alguien la desactivo o si la bomba exploto.' }
+  }
+
+  if (activeMinigameId === 'central-emergencias') {
+    if (!emergencyState) return { label: 'QUE HACER AHORA', text: 'Sigue tu rol y coordina usando la informacion parcial.' }
+    if (emergencyState.internalPhase === 'ROLES') return { label: 'TU MISION', text: 'Lee tu rol y entiende si debes deducir, ayudar o sabotear.' }
+    if (emergencyState.internalPhase === 'SABOTAGE') return { label: 'TU MISION', text: emergencyState.myRole === 'saboteur' ? 'Memoriza tu valor falso: luego tendras que defenderlo.' : 'Revisa tu pista y preparate para compararla en transmision.' }
+    if (emergencyState.internalPhase === 'TRANSMISSION') {
+      if (emergencyState.myRole === 'operator') return { label: 'TU MISION', text: 'Espera reportes escritos y arma el mensaje correcto con esas pistas.' }
+      return { label: 'TU MISION', text: 'Habla con otros emisores y envia un reporte corto al operador.' }
+    }
+    if (emergencyState.internalPhase === 'OPERATOR_RESPONSE') {
+      return {
+        label: 'TU MISION',
+        text: emergencyState.myRole === 'operator'
+          ? 'Elige cual de las 4 opciones coincide con los reportes recibidos.'
+          : 'Espera la decision de los operadores.',
+      }
+    }
+    if (emergencyState.internalPhase === 'RESULT') return { label: 'QUE HACER AHORA', text: 'Se revelara si los operadores acertaron o si gano el saboteador.' }
+  }
+
+  if (activeMinigameId === 'emoji-diferente') {
+    if (!emojiState) return { label: 'QUE HACER AHORA', text: 'Compara tu emoji con los demas y descubre al diferente.' }
+    if (emojiState.internalPhase === 'REVEAL') return { label: 'QUE HACER AHORA', text: 'Memoriza tu emoji. Todavia no puedes llamar a nadie.' }
+    if (emojiState.internalPhase === 'DISCUSSION') return { label: 'QUE HACER AHORA', text: 'Describe tu emoji y compara pistas para encontrar al diferente.' }
+    if (emojiState.internalPhase === 'VOTING') return { label: 'QUE HACER AHORA', text: 'Vota por quien crees que tiene el emoji diferente.' }
+    if (emojiState.internalPhase === 'RESULT') return { label: 'QUE HACER AHORA', text: 'Se mostrara quien era el diferente y si la mayoria acerto.' }
+  }
+
+  return null
+}
+
 export function Cabin({
   onCallPlayer, onAcceptCall, onRejectCall, onHangUp,
   onSubmitDecision, onVotePlayer, onSubmitLineGuesses, onPassBomb, onAttemptDefuse, onSkipToFinish, onInterference,
@@ -68,6 +148,14 @@ export function Cabin({
   const isBombMinigame = activeMinigameId === 'la-bomba'
   const isEmergencyMinigame = activeMinigameId === 'central-emergencias'
   const isEmojiMinigame = activeMinigameId === 'emoji-diferente'
+  const phaseInstruction = getPhaseInstruction({
+    activeMinigameId,
+    phase,
+    myPlayer,
+    bombState,
+    emergencyState,
+    emojiState,
+  })
 
   if (phase === GamePhase.GAME_OVER) {
     return <GameOver />
@@ -219,6 +307,38 @@ export function Cabin({
           position: 'relative',
           zIndex: 1,
         }}>
+          {phaseInstruction && (
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 780,
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  textAlign: 'center',
+                  padding: '12px 18px',
+                  border: '1px solid rgba(0,229,255,0.28)',
+                  background: 'linear-gradient(180deg, rgba(0,229,255,0.08), rgba(0,229,255,0.03))',
+                  boxShadow: '0 12px 28px rgba(0,0,0,0.24)',
+                }}
+              >
+                <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 3, marginBottom: 6 }}>
+                  {phaseInstruction.label}
+                </div>
+                <div style={{ fontSize: 15, color: 'var(--white)', lineHeight: 1.5 }}>
+                  {phaseInstruction.text}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 1.4, marginTop: 8 }}>
+                  Reglas completas en el icono `?`
+                </div>
+              </div>
+            </div>
+          )}
+
           {phase === GamePhase.CALL_PHASE && !isEmergencyMinigame && !isEmojiMinigame && (
             <CallPanel
               onCallPlayer={onCallPlayer}

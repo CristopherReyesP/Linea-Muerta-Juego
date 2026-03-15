@@ -18,7 +18,7 @@ export class AdivinaLinea extends MiniGame {
   readonly info: MiniGameInfo = {
     id: 'adivina-linea',
     name: 'Adivina la Linea',
-    shortDescription: 'Las identidades estan ocultas y las voces distorsionadas. Llama a las lineas y adivina quien esta detras de cada una.'
+    shortDescription: 'Las identidades estan ocultas y las voces distorsionadas. Llama, deduce y asigna quien esta detras de cada linea.'
   }
 
   private phase: AdivinaPhase = AdivinaPhase.CALL_PHASE

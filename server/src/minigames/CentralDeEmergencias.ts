@@ -121,7 +121,7 @@ export class CentralDeEmergencias extends MiniGame {
   readonly info: MiniGameInfo = {
     id: 'central-emergencias',
     name: 'Central de Emergencias',
-    shortDescription: '2 tecnicos y 1 saboteador transmiten pistas al operador. Todos tienen una opcion real y una falsa.',
+    shortDescription: '2 tecnicos y 1 saboteador comparan pistas y mandan reportes cortos. Los operadores deben elegir el mensaje correcto.',
   }
 
   private gameId: string

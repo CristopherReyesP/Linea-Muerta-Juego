@@ -21,7 +21,7 @@ const MINIGAME_REGISTRY: MiniGameInfo[] = [
   {
     id: 'cooperar-traicionar',
     name: 'Cooperar o Traicionar',
-    shortDescription: 'Negocia por telefono y decide: cooperar o traicionar. La mayoria define tu destino.'
+    shortDescription: 'Habla 30 segundos y decide en secreto: cooperar o traicionar. La mayoria define el resultado.'
   },
   {
     id: 'votacion-sobra',
@@ -36,23 +36,23 @@ const MINIGAME_REGISTRY: MiniGameInfo[] = [
   {
     id: 'adivina-linea',
     name: 'Adivina la Linea',
-    shortDescription: 'Las identidades estan ocultas y las voces distorsionadas. Llama a las lineas y adivina quien esta detras de cada una.'
+    shortDescription: 'Las identidades estan ocultas y las voces distorsionadas. Llama, deduce y asigna quien esta detras de cada linea.'
   },
   {
     id: 'la-bomba',
     name: 'La Bomba',
-    shortDescription: 'La bomba corre durante 30s. Desactiva o pasala a otro jugador para aumentar la probabilidad.'
+    shortDescription: 'La partida dura 5 minutos y cada portador tiene 50 segundos. Desactiva o pasa la bomba para subir la probabilidad.'
   },
   {
     id: 'central-emergencias',
     name: 'Central de Emergencias',
-    shortDescription: '2 tecnicos y 1 saboteador transmiten pistas al operador. Todos tienen una opcion real y una falsa.',
+    shortDescription: '2 tecnicos y 1 saboteador comparan pistas y mandan reportes cortos. Los operadores deben elegir el mensaje correcto.',
     minPlayers: 4,
   },
   {
     id: 'emoji-diferente',
     name: 'Emoji Diferente',
-    shortDescription: 'Todos reciben el mismo emoji menos uno. Descubre quien es el diferente.',
+    shortDescription: 'Todos reciben el mismo emoji menos uno. Habla, compara y vota para descubrir quien es el diferente.',
     minPlayers: 3,
   },
 ]
@@ -86,6 +86,7 @@ export class MetaGame {
   private minigameHistory: MinigameResult[] = []
   private phaseTimer: NodeJS.Timeout | null = null
   private lastActivityAt: number = Date.now()
+  private developerModeEnabled: boolean = false
 
   private readonly TOTAL_MINIGAMES = 5
 
@@ -238,6 +239,7 @@ export class MetaGame {
     const playerCount = this.metaPlayers.size
     const requestedIds = options?.selectedMinigameIds ?? []
     const hasDevSelection = requestedIds.length > 0
+    this.developerModeEnabled = hasDevSelection
 
     if (hasDevSelection) {
       const selected = requestedIds
@@ -248,8 +250,17 @@ export class MetaGame {
       if (selected.length === 0) return
 
       this.selectedMinigames = []
-      for (let i = 0; i < this.TOTAL_MINIGAMES; i++) {
-        this.selectedMinigames.push(selected[i % selected.length])
+      for (const minigame of selected.slice(0, this.TOTAL_MINIGAMES)) {
+        this.selectedMinigames.push(minigame)
+      }
+
+      const available = shuffleArray(
+        MINIGAME_REGISTRY.filter((m) => !m.minPlayers || playerCount >= m.minPlayers)
+      )
+      let availableIndex = 0
+      while (this.selectedMinigames.length < this.TOTAL_MINIGAMES) {
+        this.selectedMinigames.push(available[availableIndex % available.length])
+        availableIndex += 1
       }
     } else {
       // Select minigames: shuffle registry and pick up to TOTAL_MINIGAMES
@@ -494,9 +505,25 @@ export class MetaGame {
     this.broadcastMetaState()
   }
 
-  continueToNext(playerId: string): void {
+  continueToNext(playerId: string, options?: { selectedMinigameIds?: string[] }): void {
     if (playerId !== this.hostId) return
     if (this.metaPhase !== MetaGamePhase.DISCUSSION) return
+
+    const nextIndex = this.currentMinigameIndex + 1
+    if (this.developerModeEnabled && nextIndex < this.TOTAL_MINIGAMES) {
+      const requestedIds = options?.selectedMinigameIds ?? []
+      if (requestedIds.length > 0) {
+        const playerCount = this.getConnectedPlayerCount()
+        const selected = requestedIds
+          .map((id) => MINIGAME_REGISTRY.find((minigame) => minigame.id === id))
+          .filter((minigame): minigame is MiniGameInfo => Boolean(minigame))
+          .filter((minigame) => !minigame.minPlayers || playerCount >= minigame.minPlayers)
+
+        if (selected.length > 0) {
+          this.selectedMinigames[nextIndex] = selected[0]
+        }
+      }
+    }
 
     this.currentMinigameIndex++
     this.startMinigameIntro()

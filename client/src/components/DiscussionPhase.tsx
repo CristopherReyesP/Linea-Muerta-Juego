@@ -28,6 +28,9 @@ export function DiscussionPhase({ onContinue }: Props) {
   const micMuted = useGameStore(s => s.micMuted)
   const toggleMic = useGameStore(s => s.toggleMic)
 
+  if (!discussionData) return null
+
+  const globalScoreboard = discussionData.globalScoreboard
   const isHost = playerId === hostId
   const developerModeActive = isLocalMachine && window.sessionStorage.getItem(DEV_MODE_STORAGE_KEY) === '1'
   const [selectedNextMinigameId, setSelectedNextMinigameId] = useState<string | null>(null)
@@ -44,10 +47,7 @@ export function DiscussionPhase({ onContinue }: Props) {
     })
   }, [nextMinigameId, globalScoreboard.length])
 
-  if (!discussionData) return null
-
   const { completedResult, nextMinigame, currentIndex, totalMinigames } = discussionData
-  const globalScoreboard = discussionData.globalScoreboard
 
   return (
     <div style={{

@@ -4,6 +4,17 @@ export type Language = 'es' | 'en'
 
 const LANGUAGE_STORAGE_KEY = 'lm_language'
 
+function detectPreferredLanguage(): Language {
+  if (typeof window === 'undefined') return 'es'
+
+  const browserLanguages = window.navigator.languages ?? [window.navigator.language]
+  const normalized = browserLanguages
+    .filter(Boolean)
+    .map((entry) => entry.toLowerCase())
+
+  return normalized.some((entry) => entry.startsWith('en')) ? 'en' : 'es'
+}
+
 const englishTranslations: Record<string, string> = {
   'Confia en la linea.': 'Trust the line.',
   'Conectando al servidor...': 'Connecting to server...',
@@ -282,7 +293,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>(() => {
     if (typeof window === 'undefined') return 'es'
     const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
-    return stored === 'en' ? 'en' : 'es'
+    if (stored === 'en' || stored === 'es') return stored
+    return detectPreferredLanguage()
   })
 
   useEffect(() => {

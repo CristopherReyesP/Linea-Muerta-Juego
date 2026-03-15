@@ -146,7 +146,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
   const [menuEmojiPhase, setMenuEmojiPhase] = useState<'showing' | 'guessing' | 'result'>('showing')
   const [menuEmojiResult, setMenuEmojiResult] = useState<{ correct: boolean; guessed: string } | null>(null)
   const [menuEmojiScore, setMenuEmojiScore] = useState(0)
-  const [menuEmojiGuessSeconds, setMenuEmojiGuessSeconds] = useState(5)
+  const [menuEmojiGuessSeconds, setMenuEmojiGuessSeconds] = useState(7)
   const gameId = useGameStore(s => s.gameId)
   const lobbyPlayers = useGameStore(s => s.lobbyPlayers)
   const lobbyChat = useGameStore(s => s.lobbyChat)
@@ -235,7 +235,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
     }
 
     if (menuEmojiPhase === 'guessing') {
-      setMenuEmojiGuessSeconds(5)
+      setMenuEmojiGuessSeconds(7)
 
       const countdown = setInterval(() => {
         setMenuEmojiGuessSeconds((current) => {
@@ -258,7 +258,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
       const timer = setTimeout(() => {
         setMenuEmojiResult(null)
         setMenuEmojiRound((current) => createMenuEmojiRound(current.round + 1))
-        setMenuEmojiGuessSeconds(5)
+        setMenuEmojiGuessSeconds(7)
         setMenuEmojiPhase('showing')
       }, 1000)
       return () => clearTimeout(timer)

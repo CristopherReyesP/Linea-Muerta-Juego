@@ -1291,6 +1291,21 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                   Los mensajes aparecen aqui. Puedes pedir codigo, avisar que vas a crear sala o decir a cual entraran.
                 </div>
 
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value.slice(0, 15))}
+                  placeholder="Tu nombre"
+                  maxLength={15}
+                  style={{
+                    ...inputStyle,
+                    width: '100%',
+                    textAlign: 'left',
+                    letterSpacing: 0.5,
+                    padding: '10px 12px',
+                  }}
+                />
+
                 <div
                   ref={menuChatListRef}
                   style={{
@@ -1346,7 +1361,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                         handleSendMenuChat()
                       }
                     }}
-                    placeholder={name.trim() ? 'Escribe al chat principal...' : 'Primero escribe tu nombre arriba'}
+                    placeholder={name.trim() ? 'Escribe al chat principal...' : 'Escribe tu nombre para enviar mensajes'}
                     style={{
                       ...inputStyle,
                       width: '100%',

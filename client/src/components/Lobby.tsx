@@ -536,7 +536,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     maxWidth: 420,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 8,
+                    gap: 0,
                     alignItems: 'center',
                   }}>
                     <input
@@ -548,17 +548,6 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       autoFocus
                       style={inputStyle}
                     />
-                    {globalStats && (
-                      <div style={{
-                        fontSize: 10,
-                        color: 'var(--gray-shadow)',
-                        letterSpacing: 1,
-                        textAlign: 'center',
-                        lineHeight: 1.4,
-                      }}>
-                        {globalStats.totalMenuPlayers} jugador{globalStats.totalMenuPlayers !== 1 ? 'es' : ''} en menu principal
-                      </div>
-                    )}
                   </div>
 
                   <div style={{

@@ -109,6 +109,13 @@ export class MetaGame {
     return `game:${this.id}`
   }
 
+  private emitToConnectedPlayers<EventName extends string>(event: EventName, payload: unknown): void {
+    for (const player of this.metaPlayers.values()) {
+      if (!player.isConnected) continue
+      this.io.to(player.socketId).emit(event, payload)
+    }
+  }
+
   private markActivity(): void {
     this.lastActivityAt = Date.now()
   }
@@ -122,7 +129,7 @@ export class MetaGame {
       .filter(p => p.isConnected)
       .map(p => p.id)
 
-    this.io.to(this.room).emit('open_voice', {
+    this.emitToConnectedPlayers('open_voice', {
       playerIds: connectedIds.length >= 2 ? connectedIds : []
     })
   }
@@ -593,7 +600,7 @@ export class MetaGame {
   }
 
   broadcastMetaState(): void {
-    this.io.to(this.room).emit('meta_state_update', this.getMetaSnapshot())
+    this.emitToConnectedPlayers('meta_state_update', this.getMetaSnapshot())
   }
 
   getPlayerBySocketId(socketId: string): MetaPlayer | undefined {

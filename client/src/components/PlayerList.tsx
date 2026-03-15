@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { PlayerAvatar } from './PlayerAvatar'
+import { ScrollHintBox } from './ScrollHintBox'
 import { PlayerState } from '../types'
 
 const SIGNAL_OPTIONS = [
@@ -28,6 +29,7 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
   const round = useGameStore(s => s.round)
   const playerSignals = useGameStore(s => s.playerSignals)
   const latestSignal = useGameStore(s => s.latestSignal)
+  const signalHistory = useGameStore(s => s.signalHistory)
 
   const [signalPickerOpen, setSignalPickerOpen] = useState(false)
   const [signalCooldownUntil, setSignalCooldownUntil] = useState(0)
@@ -109,26 +111,134 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
       minWidth: mobile ? 0 : 140,
       width: mobile ? '100%' : 'auto',
       maxHeight: mobile ? 98 : '100%',
-      overflowX: mobile ? 'auto' : 'hidden',
-      overflowY: mobile ? 'visible' : 'auto',
+      overflow: 'hidden',
     }}>
+      {mobile ? (
       <div style={{
         display: 'flex',
-        flexDirection: mobile ? 'row' : 'column',
-        alignItems: mobile ? 'stretch' : 'initial',
-        gap: mobile ? 6 : 8,
-        flex: mobile ? '0 0 auto' : 1,
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        gap: 6,
+        flex: '0 0 auto',
+        overflowX: 'auto',
       }}>
         <div style={{
-          fontSize: mobile ? 8 : 10,
+          fontSize: 8,
           color: 'var(--gray-text)',
           letterSpacing: 2,
           textTransform: 'uppercase',
           marginBottom: 4,
-          minWidth: mobile ? 54 : 'auto',
-          paddingTop: mobile ? 18 : 0,
+          minWidth: 54,
+          paddingTop: 18,
         }}>
           RED
+        </div>
+
+        {myPlayer && (
+          <div
+            style={{
+              padding: 6,
+              border: '1px solid var(--cyan)',
+              background: 'rgba(0,229,255,0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+              boxShadow: '0 0 12px rgba(0,229,255,0.2)',
+              minWidth: 64,
+              flexShrink: 0,
+            }}
+          >
+            <PlayerAvatar player={myPlayer} size={32} showName={false} showState={false} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{
+                  fontSize: 8,
+                  color: 'var(--white)',
+                  fontWeight: 'bold',
+                  letterSpacing: 0.6,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: 56,
+                }}>
+                  TU
+                </span>
+                {!isGuessMinigame && playerSignals[myPlayer.id] && (
+                  <span
+                    style={{ fontSize: 14, filter: 'drop-shadow(0 0 8px rgba(0,229,255,0.25))' }}
+                    className="broadcast-pop"
+                  >
+                    {playerSignals[myPlayer.id].emoji}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {sortedPlayers.map(player => (
+          <div
+            key={player.id}
+            style={{
+              padding: 6,
+              border: `1px solid ${player.state === PlayerState.AT_RISK ? 'var(--red-danger)' : player.isShadow ? 'var(--gray-shadow)' : '#222'}`,
+              background: 'var(--bg-panel)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+              minWidth: 60,
+              flexShrink: 0,
+            }}
+            className={player.state === PlayerState.AT_RISK ? 'pulse-red' : ''}
+          >
+            <PlayerAvatar player={player} size={30} showName={false} showState={false} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{
+                  fontSize: 8,
+                  color: 'var(--white)',
+                  fontWeight: 'bold',
+                  letterSpacing: 0.6,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: 48,
+                }}>
+                  {player.name}
+                </span>
+                {!isGuessMinigame && playerSignals[player.id] && (
+                  <span
+                    style={{ fontSize: 14, filter: 'drop-shadow(0 0 8px rgba(0,229,255,0.25))' }}
+                    className="broadcast-pop"
+                  >
+                    {playerSignals[player.id].emoji}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      ) : (
+      <ScrollHintBox style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'initial',
+        gap: 8,
+        flex: 1,
+      }} contentStyle={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{
+          fontSize: 10,
+          color: 'var(--gray-text)',
+          letterSpacing: 2,
+          textTransform: 'uppercase',
+          marginBottom: 4,
+          minWidth: 'auto',
+          paddingTop: 0,
+        }}>
+          JUGADORES
         </div>
 
         {myPlayer && (
@@ -259,7 +369,8 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
             </div>
           </div>
         ))}
-      </div>
+      </ScrollHintBox>
+      )}
 
       {!mobile && (
       <div style={{
@@ -353,7 +464,35 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
               color: 'var(--gray-text)',
               lineHeight: 1.5,
             }}>
-              Publica una senal rapida para llamar la atencion del grupo.
+              El canal esta en espera. Una senal bien puesta puede cambiar la lectura de la sala.
+            </div>
+          )}
+
+          {signalHistory.length > 1 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 1.4 }}>
+                HISTORIAL RECIENTE
+              </div>
+              {signalHistory.slice(0, 3).map((entry, index) => (
+                <div
+                  key={`${entry.playerId}-${entry.emoji}-${entry.label}-${index}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '4px 6px',
+                    background: 'rgba(255,255,255,0.02)',
+                    fontSize: 9,
+                    color: 'var(--gray-text)',
+                  }}
+                >
+                  <span style={{ fontSize: 12 }}>{entry.emoji}</span>
+                  <span style={{ color: 'var(--white)' }}>
+                    {activeMinigameId === 'adivina-linea' ? 'Linea desconocida' : entry.playerName}
+                  </span>
+                  <span>{entry.label}</span>
+                </div>
+              ))}
             </div>
           )}
 

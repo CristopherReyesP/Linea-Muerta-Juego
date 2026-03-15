@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
+import { ScrollHintBox } from './ScrollHintBox'
 import { Decision, GamePhase } from '../types'
 
 type LogTone = 'neutral' | 'good' | 'warn'
@@ -287,58 +288,63 @@ export function AutoLogPanel() {
 
       {!collapsed && (
         <div
-          style={{
-            padding: '10px 14px 14px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 6,
-            maxHeight: 190,
-            overflowY: 'auto',
-            fontFamily: 'var(--font-mono)',
-          }}
+          style={{ padding: '10px 14px 14px' }}
         >
-          <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 1.2 }}>
-            `monitor --session active --feed realtime`
-          </div>
-          {entries.length === 0 ? (
-            <div style={{ fontSize: 10, color: 'var(--gray-text)', lineHeight: 1.5 }}>
-              &gt; esperando eventos de cabina...
+          <ScrollHintBox
+            maxHeight={190}
+            contentStyle={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              fontFamily: 'var(--font-mono)',
+              paddingRight: 4,
+            }}
+          >
+            <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 1.2 }}>
+              `monitor --session active --feed realtime`
             </div>
-          ) : (
-            entries.map((entry, index) => {
-              const toneColor =
-                entry.tone === 'good'
-                  ? 'var(--green-neon)'
-                  : entry.tone === 'warn'
-                    ? 'var(--red-danger)'
-                    : 'var(--cyan)'
+            {entries.length === 0 ? (
+              <div style={{ fontSize: 10, color: 'var(--gray-text)', lineHeight: 1.5 }}>
+                &gt; esperando eventos de cabina...
+                <br />
+                &gt; el feed se activara cuando la sala genere tension.
+              </div>
+            ) : (
+              entries.map((entry, index) => {
+                const toneColor =
+                  entry.tone === 'good'
+                    ? 'var(--green-neon)'
+                    : entry.tone === 'warn'
+                      ? 'var(--red-danger)'
+                      : 'var(--cyan)'
 
-              return (
-                <div
-                  key={entry.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 10,
-                    padding: '4px 6px',
-                    background: index === entries.length - 1 ? 'rgba(0,255,65,0.04)' : 'rgba(255,255,255,0.015)',
-                    borderLeft: `2px solid ${toneColor}`,
-                    fontSize: 10,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  <span style={{ color: 'var(--gray-text)', whiteSpace: 'nowrap' }}>
-                    [{String(index + 1).padStart(2, '0')}]
-                  </span>
-                  <span style={{ color: toneColor }}>&gt;</span>
-                  <span style={{ color: 'var(--white)' }}>{entry.text}</span>
-                </div>
-              )
-            })
-          )}
-          <div style={{ fontSize: 9, color: 'var(--green-neon)', opacity: 0.8 }}>
-            &gt; feed_status: listening...
-          </div>
+                return (
+                  <div
+                    key={entry.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 10,
+                      padding: '4px 6px',
+                      background: index === entries.length - 1 ? 'rgba(0,255,65,0.04)' : 'rgba(255,255,255,0.015)',
+                      borderLeft: `2px solid ${toneColor}`,
+                      fontSize: 10,
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    <span style={{ color: 'var(--gray-text)', whiteSpace: 'nowrap' }}>
+                      [{String(index + 1).padStart(2, '0')}]
+                    </span>
+                    <span style={{ color: toneColor }}>&gt;</span>
+                    <span style={{ color: 'var(--white)' }}>{entry.text}</span>
+                  </div>
+                )
+              })
+            )}
+            <div style={{ fontSize: 9, color: 'var(--green-neon)', opacity: 0.8 }}>
+              &gt; feed_status: listening...
+            </div>
+          </ScrollHintBox>
         </div>
       )}
     </div>

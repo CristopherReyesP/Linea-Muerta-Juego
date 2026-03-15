@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { Decision, GamePhase } from '../types'
 
@@ -8,6 +9,7 @@ export function ResultPanel() {
   const playerId = useGameStore(s => s.playerId)
   const players = useGameStore(s => s.players)
   const activeMinigameId = useGameStore(s => s.activeMinigameId)
+  const [revealStep, setRevealStep] = useState(0)
 
   if (phase !== GamePhase.RESULT_PHASE || !lastResult || !playerId) return null
   if (activeMinigameId !== 'cooperar-traicionar') return null
@@ -25,6 +27,18 @@ export function ResultPanel() {
   const impactCopy = isPositive
     ? 'La ronda jugo a tu favor.'
     : 'La ronda te dejo expuesto.'
+
+  useEffect(() => {
+    setRevealStep(0)
+    const first = window.setTimeout(() => setRevealStep(1), 250)
+    const second = window.setTimeout(() => setRevealStep(2), 900)
+    const third = window.setTimeout(() => setRevealStep(3), 1450)
+    return () => {
+      window.clearTimeout(first)
+      window.clearTimeout(second)
+      window.clearTimeout(third)
+    }
+  }, [lastResult?.round, playerId])
 
   return (
     <AnimatePresence>
@@ -55,26 +69,31 @@ export function ResultPanel() {
           REVELACION RONDA {lastResult.round}
         </div>
 
-        <div style={{
-          fontSize: 24,
-          fontWeight: 'bold',
-          color: matchedMajority ? 'var(--white)' : 'var(--red-danger)',
-          textAlign: 'center',
-          textTransform: 'uppercase',
-          letterSpacing: 1,
-        }}>
-          {revealCopy}
-        </div>
+        {revealStep >= 1 && (
+          <div style={{
+            fontSize: 24,
+            fontWeight: 'bold',
+            color: matchedMajority ? 'var(--white)' : 'var(--red-danger)',
+            textAlign: 'center',
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+          }}>
+            {revealCopy}
+          </div>
+        )}
 
-        <div style={{
-          fontSize: 12,
-          color: 'var(--gray-text)',
-          textAlign: 'center',
-          lineHeight: 1.6,
-        }}>
-          {impactCopy}
-        </div>
+        {revealStep >= 1 && (
+          <div style={{
+            fontSize: 12,
+            color: 'var(--gray-text)',
+            textAlign: 'center',
+            lineHeight: 1.6,
+          }}>
+            {impactCopy}
+          </div>
+        )}
 
+        {revealStep >= 2 && (
         <div style={{ display: 'flex', gap: 40, alignItems: 'center' }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 10, color: 'var(--gray-text)', marginBottom: 4 }}>
@@ -108,7 +127,9 @@ export function ResultPanel() {
             </div>
           </div>
         </div>
+        )}
 
+        {revealStep >= 3 && (
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -122,8 +143,10 @@ export function ResultPanel() {
         >
           {isPositive ? '+' : ''}{totalChange}
         </motion.div>
+        )}
 
         {/* Desglose de cambios */}
+        {revealStep >= 3 && (
         <div style={{ display: 'flex', gap: 16, fontSize: 10, color: 'var(--gray-text)' }}>
           <span>Ronda: {myChange > 0 ? '+' : ''}{myChange}</span>
           {rachaAmount !== 0 && (
@@ -132,9 +155,10 @@ export function ResultPanel() {
             </span>
           )}
         </div>
+        )}
 
         {/* Racha bonus/penalizacion */}
-        {myRachaResult && myRachaResult.type && (
+        {revealStep >= 3 && myRachaResult && myRachaResult.type && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -157,6 +181,7 @@ export function ResultPanel() {
         )}
 
         {/* Summary of all players */}
+        {revealStep >= 2 && (
         <div style={{
           fontSize: 10,
           color: 'var(--gray-text)',
@@ -164,6 +189,8 @@ export function ResultPanel() {
         }}>
           ASI JUGO CADA CABINA
         </div>
+        )}
+        {revealStep >= 2 && (
         <div style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -200,6 +227,7 @@ export function ResultPanel() {
             )
           })}
         </div>
+        )}
       </motion.div>
     </AnimatePresence>
   )

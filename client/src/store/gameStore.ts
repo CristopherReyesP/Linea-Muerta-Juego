@@ -118,6 +118,7 @@ interface GameStore {
   emojiState: EmojiStateData | null
   playerSignals: Record<string, CabinSignalData>
   latestSignal: CabinSignalData | null
+  signalHistory: CabinSignalData[]
 
   // Global activity (welcome screen)
   globalStats: {
@@ -240,6 +241,7 @@ const initialState = {
   emojiState: null,
   playerSignals: {},
   latestSignal: null,
+  signalHistory: [],
   globalStats: null,
   globalNotifications: [],
   publicRooms: [],
@@ -330,6 +332,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     emojiState: null,
     playerSignals: {},
     latestSignal: null,
+    signalHistory: [],
   }),
 
   setOpenVoicePlayerIds: (ids) => set({ openVoicePlayerIds: ids, micMuted: false }),
@@ -351,6 +354,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       [data.playerId]: data,
     },
     latestSignal: data,
+    signalHistory: [data, ...state.signalHistory.filter((entry) =>
+      !(entry.playerId === data.playerId && entry.emoji === data.emoji && entry.label === data.label)
+    )].slice(0, 3),
   })),
   clearPlayerSignal: (playerId) => set((state) => {
     const nextSignals = { ...state.playerSignals }

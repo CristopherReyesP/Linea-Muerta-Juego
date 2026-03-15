@@ -20,6 +20,9 @@ import { EmergencyPanel } from './EmergencyPanel'
 import { EmojiPanel } from './EmojiPanel'
 import { AutoLogPanel } from './AutoLogPanel'
 import { IdleNotesPanel } from './IdleNotesPanel'
+import { MobileToolsDrawer } from './MobileToolsDrawer'
+import { ScrollHintBox } from './ScrollHintBox'
+import { SystemToasts } from './SystemToasts'
 import type { EmergencyStateData, EmojiStateData, PlayerData } from '../types'
 
 interface Props {
@@ -49,6 +52,24 @@ const phaseLabels: Record<string, string> = {
   [GamePhase.DECISION_PHASE]: 'FASE DE DECISION',
   [GamePhase.RESULT_PHASE]: 'RESULTADOS',
   [GamePhase.GAME_OVER]: 'FIN DEL PROTOCOLO',
+}
+
+function getMinigameAccent(activeMinigameId: string | null) {
+  if (activeMinigameId === 'la-bomba') return 'rgba(255,23,68,0.2)'
+  if (activeMinigameId === 'adivina-linea') return 'rgba(0,229,255,0.2)'
+  if (activeMinigameId === 'central-emergencias') return 'rgba(255,214,102,0.18)'
+  if (activeMinigameId === 'emoji-diferente') return 'rgba(0,255,65,0.18)'
+  return 'rgba(0,229,255,0.14)'
+}
+
+function getTutorialCopy(activeMinigameId: string | null) {
+  if (activeMinigameId === 'cooperar-traicionar') return 'Habla poco, escucha mucho y decide en secreto.'
+  if (activeMinigameId === 'adivina-linea') return 'En este juego la identidad importa: no reveles demasiado pronto.'
+  if (activeMinigameId === 'la-bomba') return 'Si tienes la bomba, cada segundo cuenta. Mira primero tus acciones.'
+  if (activeMinigameId === 'central-emergencias') return 'No todos tienen la misma informacion. Compara antes de concluir.'
+  if (activeMinigameId === 'emoji-diferente') return 'Observa patrones: el diferente suele dudar mas al describirse.'
+  if (activeMinigameId?.startsWith('votacion')) return 'Escucha a todos antes de votar: la sala castiga decisiones impulsivas.'
+  return null
 }
 
 function getPhaseInstruction(params: {
@@ -148,6 +169,8 @@ export function Cabin({
   const emojiState = useGameStore(s => s.emojiState)
   const [consoleExpanded, setConsoleExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false)
+  const [showTutorial, setShowTutorial] = useState(false)
 
   const activePlayers = players.filter(p => p.isAlive).length
   const isVotingMinigame = activeMinigameId?.startsWith('votacion') ?? false
@@ -155,6 +178,8 @@ export function Cabin({
   const isBombMinigame = activeMinigameId === 'la-bomba'
   const isEmergencyMinigame = activeMinigameId === 'central-emergencias'
   const isEmojiMinigame = activeMinigameId === 'emoji-diferente'
+  const minigameAccent = getMinigameAccent(activeMinigameId)
+  const tutorialCopy = getTutorialCopy(activeMinigameId)
   const phaseInstruction = getPhaseInstruction({
     activeMinigameId,
     phase,
@@ -177,6 +202,14 @@ export function Cabin({
   }, [])
 
   useEffect(() => {
+    if (!activeMinigameId || typeof window === 'undefined') return
+    const key = `lm_tutorial_seen:${activeMinigameId}`
+    const seen = window.sessionStorage.getItem(key) === '1'
+    setShowTutorial(!seen)
+    if (!seen) window.sessionStorage.setItem(key, '1')
+  }, [activeMinigameId])
+
+  useEffect(() => {
     if (typeof window === 'undefined') return
 
     const syncViewport = () => setIsMobile(window.innerWidth <= 900)
@@ -196,7 +229,7 @@ export function Cabin({
       height: '100%',
       width: '100%',
       background: `
-        radial-gradient(circle at 12% 18%, rgba(0, 180, 255, 0.12), transparent 34%),
+        radial-gradient(circle at 12% 18%, ${minigameAccent}, transparent 34%),
         radial-gradient(circle at 88% 22%, rgba(255, 40, 40, 0.11), transparent 36%),
         radial-gradient(circle at 50% 120%, rgba(0, 0, 0, 0.55), transparent 55%),
         linear-gradient(180deg, #05080e 0%, #03050a 58%, #020307 100%)
@@ -215,6 +248,7 @@ export function Cabin({
         borderTop: isMobile ? '1px solid rgba(0, 229, 255, 0.12)' : 'none',
         boxShadow: 'inset 0 0 38px rgba(0, 229, 255, 0.06), inset 0 -36px 80px rgba(0,0,0,0.42)',
       }}>
+        {!isMobile && <SystemToasts />}
         <div
           style={{
             position: 'absolute',
@@ -315,17 +349,21 @@ export function Cabin({
           <div style={{
             fontSize: 15,
             fontWeight: 'bold',
-            color: phase === GamePhase.DECISION_PHASE ? 'var(--red-danger)' : 'var(--green-dim)',
+            color: phase === GamePhase.DECISION_PHASE ? 'var(--red-danger)' : phase === GamePhase.RESULT_PHASE ? 'var(--cyan)' : 'var(--green-dim)',
             letterSpacing: 2.6,
             textTransform: 'uppercase',
-            border: `1px solid ${phase === GamePhase.DECISION_PHASE ? 'rgba(255,23,68,0.5)' : 'rgba(0,255,65,0.42)'}`,
+            border: `1px solid ${phase === GamePhase.DECISION_PHASE ? 'rgba(255,23,68,0.5)' : phase === GamePhase.RESULT_PHASE ? 'rgba(0,229,255,0.45)' : 'rgba(0,255,65,0.42)'}`,
             background: phase === GamePhase.DECISION_PHASE
               ? 'rgba(255,23,68,0.09)'
-              : 'rgba(0,255,65,0.08)',
+              : phase === GamePhase.RESULT_PHASE
+                ? 'rgba(0,229,255,0.08)'
+                : 'rgba(0,255,65,0.08)',
             padding: '5px 12px',
             boxShadow: phase === GamePhase.DECISION_PHASE
               ? '0 0 14px rgba(255,23,68,0.18)'
-              : '0 0 14px rgba(0,255,65,0.16)',
+              : phase === GamePhase.RESULT_PHASE
+                ? '0 0 14px rgba(0,229,255,0.16)'
+                : '0 0 14px rgba(0,255,65,0.16)',
           }}
           className={phase === GamePhase.DECISION_PHASE ? 'pulse' : ''}
           >
@@ -335,21 +373,55 @@ export function Cabin({
         </div>
 
         {/* Content area */}
-        <div style={{
+        <ScrollHintBox
+          style={{
           flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          gap: 20,
-          padding: consoleExpanded
+          }}
+          contentStyle={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: 20,
+            padding: consoleExpanded
             ? (isMobile ? '16px 12px 250px' : '24px 24px 250px')
             : (isMobile ? '16px 12px 104px' : '24px 24px 104px'),
-          overflowY: 'auto',
-          position: 'relative',
-          zIndex: 1,
-          transition: 'padding-bottom 0.22s ease',
-        }}>
+            position: 'relative',
+            zIndex: 1,
+            transition: 'padding-bottom 0.22s ease',
+          }}
+        >
+          {showTutorial && tutorialCopy && (
+            <div style={{ width: '100%', maxWidth: isMobile ? 420 : 760 }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+                padding: isMobile ? '8px 10px' : '10px 12px',
+                border: '1px solid rgba(255,255,255,0.14)',
+                background: 'rgba(255,255,255,0.03)',
+              }}>
+                <div>
+                  <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2 }}>TIP RAPIDO</div>
+                  <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--white)', marginTop: 4, lineHeight: 1.45 }}>{tutorialCopy}</div>
+                </div>
+                <button
+                  onClick={() => setShowTutorial(false)}
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'transparent',
+                    color: 'var(--gray-text)',
+                    width: 28,
+                    height: 28,
+                    fontFamily: 'var(--font-mono)',
+                  }}
+                >
+                  x
+                </button>
+              </div>
+            </div>
+          )}
           {phaseInstruction && (
             <div
               style={{
@@ -473,10 +545,18 @@ export function Cabin({
           {myPlayer?.isShadow && (
             <ShadowPanel onInterference={onInterference} />
           )}
-        </div>
+        </ScrollHintBox>
 
         {!isMobile && <AutoLogPanel />}
         {!isMobile && <IdleNotesPanel />}
+        {isMobile && (
+          <MobileToolsDrawer
+            open={mobileToolsOpen}
+            onToggle={() => setMobileToolsOpen((value) => !value)}
+            onShowRules={onShowRules}
+            onSendSignal={onSendSignal}
+          />
+        )}
         {isBombMinigame && <BombOutcomeOverlay />}
       </div>
 

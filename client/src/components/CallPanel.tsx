@@ -364,8 +364,12 @@ export function CallPanel({
               fontSize: 11,
               color: 'var(--gray-shadow)',
               letterSpacing: 1,
+              lineHeight: 1.6,
+              textAlign: 'center',
             }}>
-              No hay jugadores disponibles
+              No hay jugadores disponibles.
+              <br />
+              La cabina esta en silencio por ahora.
             </div>
           )}
         </motion.div>

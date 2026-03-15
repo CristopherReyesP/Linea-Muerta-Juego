@@ -93,6 +93,18 @@ export class MetaGame {
 
   // --- Lobby ---
 
+  private broadcastLobbyVoice(): void {
+    if (this.metaPhase !== MetaGamePhase.LOBBY) return
+
+    const connectedIds = Array.from(this.metaPlayers.values())
+      .filter(p => p.isConnected)
+      .map(p => p.id)
+
+    this.io.to(this.room).emit('open_voice', {
+      playerIds: connectedIds.length >= 2 ? connectedIds : []
+    })
+  }
+
   addPlayer(
     socketId: string,
     name: string,
@@ -110,6 +122,7 @@ export class MetaGame {
 
     this.io.to(socketId).socketsJoin(this.room)
     this.broadcastMetaState()
+    this.broadcastLobbyVoice()
     return player
   }
 
@@ -140,6 +153,7 @@ export class MetaGame {
     }
 
     this.broadcastMetaState()
+    this.broadcastLobbyVoice()
   }
 
   reconnectPlayer(playerId: string, newSocketId: string): boolean {
@@ -150,6 +164,7 @@ export class MetaGame {
     mp.isConnected = true
     this.io.to(newSocketId).socketsJoin(this.room)
     this.broadcastMetaState()
+    this.broadcastLobbyVoice()
     return true
   }
 
@@ -186,6 +201,9 @@ export class MetaGame {
         this.selectedMinigames.push(shuffled[i % shuffled.length])
       }
     }
+
+    // Close lobby voice before starting
+    this.io.to(this.room).emit('open_voice', { playerIds: [] })
 
     this.currentMinigameIndex = 0
     this.startMinigameIntro()

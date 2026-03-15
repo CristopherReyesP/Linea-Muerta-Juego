@@ -113,6 +113,9 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
   const setError = useGameStore(s => s.setError)
 
   const hostId = useGameStore(s => s.hostId)
+  const micMuted = useGameStore(s => s.micMuted)
+  const toggleMic = useGameStore(s => s.toggleMic)
+  const openVoicePlayerIds = useGameStore(s => s.openVoicePlayerIds)
   const isHost = playerId === hostId
   const hasJoined = !!playerId
 
@@ -867,6 +870,56 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
               <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>
                 {globalScoreboard.length} jugador{globalScoreboard.length !== 1 ? 'es' : ''} conectado{globalScoreboard.length !== 1 ? 's' : ''}
               </div>
+
+              {openVoicePlayerIds.length >= 2 && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 10px',
+                    border: '1px solid var(--green-dim)',
+                    background: 'rgba(0,255,65,0.05)',
+                  }}>
+                    <div
+                      className="pulse"
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: 'var(--green-neon)',
+                        boxShadow: '0 0 6px var(--green-neon)',
+                      }}
+                    />
+                    <span style={{ fontSize: 9, color: 'var(--green-dim)', letterSpacing: 1 }}>
+                      VOZ ABIERTA
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={toggleMic}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 14px',
+                      border: `1px solid ${micMuted ? 'var(--red-danger)' : 'var(--green-dim)'}`,
+                      background: micMuted ? 'rgba(255,0,0,0.1)' : 'rgba(0,255,65,0.05)',
+                      color: micMuted ? 'var(--red-danger)' : 'var(--green-dim)',
+                      cursor: 'pointer',
+                      fontSize: 10,
+                      letterSpacing: 1,
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {micMuted ? 'MIC OFF' : 'MIC ON'}
+                  </button>
+                </div>
+              )}
 
               {isHost ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>

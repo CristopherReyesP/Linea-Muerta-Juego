@@ -317,8 +317,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setVoteResult: (result) => set({ voteResult: result }),
   setShadowInterference: (active) => set({ shadowInterference: active }),
   setGameOver: (data) => set({ gameOver: data, bombOutcome: null }),
-  setDiscussionData: (data) => set({ discussionData: data }),
-  setSessionComplete: (data) => set({ sessionComplete: data }),
+  setDiscussionData: (data) => set({
+    discussionData: data,
+    globalScoreboard: data.globalScoreboard,
+  }),
+  setSessionComplete: (data) => set({
+    sessionComplete: data,
+    globalScoreboard: data.globalScoreboard,
+  }),
 
   setMinigameIntro: (info, index, total) => set({
     currentMinigameInfo: info,

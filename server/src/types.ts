@@ -249,6 +249,7 @@ export interface EmojiStateData {
 export interface ClientToServerEvents {
   create_game: (data: { name: string; isPublic?: boolean; avatarId?: string; avatarColor?: string; accessoryId?: string }) => void
   join_game: (data: { name: string; gameId: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => void
+  leave_game: () => void
   start_game: (data?: { selectedMinigameIds?: string[] }) => void
   call_player: (targetId: string) => void
   accept_call: (callId: string) => void
@@ -276,6 +277,7 @@ export interface ClientToServerEvents {
 
 export interface ServerToClientEvents {
   game_joined: (data: { gameId: string; playerId: string }) => void
+  game_left: () => void
   public_rooms_update: (data: { rooms: PublicRoomSummary[] }) => void
   game_state_update: (state: GameStateSnapshot) => void
   meta_state_update: (state: MetaGameStateSnapshot) => void

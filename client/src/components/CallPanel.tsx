@@ -12,11 +12,13 @@ interface Props {
   onHangUp: () => void
   audioData: Uint8Array
   isSpeaking: boolean
+  showDialTargets?: boolean
 }
 
 export function CallPanel({
   onCallPlayer, onAcceptCall, onRejectCall, onHangUp,
   audioData, isSpeaking,
+  showDialTargets = true,
 }: Props) {
   const { tr } = useI18n()
   const phase = useGameStore(s => s.phase)
@@ -278,7 +280,7 @@ export function CallPanel({
       </AnimatePresence>
 
       {/* Idle state - player selection (only when no pending call, no incoming, no active) */}
-      {!hasIncomingCalls && !activeCallPeerId && !pendingCall && phase === GamePhase.CALL_PHASE && (
+      {showDialTargets && !hasIncomingCalls && !activeCallPeerId && !pendingCall && phase === GamePhase.CALL_PHASE && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

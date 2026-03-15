@@ -23,7 +23,6 @@ const minigameOptions = [
 export function DiscussionPhase({ onContinue }: Props) {
   const { tr, trMinigameDescription, trMinigameName } = useI18n()
   const discussionData = useGameStore(s => s.discussionData)
-  const globalScoreboard = useGameStore(s => s.globalScoreboard)
   const playerId = useGameStore(s => s.playerId)
   const hostId = useGameStore(s => s.hostId)
   const micMuted = useGameStore(s => s.micMuted)
@@ -48,6 +47,7 @@ export function DiscussionPhase({ onContinue }: Props) {
   if (!discussionData) return null
 
   const { completedResult, nextMinigame, currentIndex, totalMinigames } = discussionData
+  const globalScoreboard = discussionData.globalScoreboard
 
   return (
     <div style={{
@@ -58,6 +58,11 @@ export function DiscussionPhase({ onContinue }: Props) {
       height: '100%',
       gap: 24,
       padding: 32,
+      background: `
+        radial-gradient(circle at top, rgba(99, 217, 255, 0.08), transparent 24%),
+        radial-gradient(circle at bottom, rgba(127, 255, 199, 0.05), transparent 28%),
+        linear-gradient(180deg, rgba(3,7,13,0.82), rgba(2,5,9,0.92))
+      `,
     }}>
       {/* Completed minigame result */}
       <motion.div
@@ -67,7 +72,12 @@ export function DiscussionPhase({ onContinue }: Props) {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 8,
+          gap: 10,
+          width: 'min(960px, 100%)',
+          padding: '22px 24px',
+          border: '1px solid rgba(130,214,255,0.18)',
+          background: 'linear-gradient(180deg, rgba(7,12,20,0.72), rgba(4,8,14,0.86))',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.34)',
         }}
       >
         <div style={{
@@ -75,10 +85,10 @@ export function DiscussionPhase({ onContinue }: Props) {
           color: 'var(--gray-text)',
           letterSpacing: 3,
         }}>
-          {tr('MINIJUEGO')} {currentIndex + 1}/{totalMinigames} {tr('COMPLETADO')}
+          {tr('TRANSMISION')} {currentIndex + 1}/{totalMinigames} {tr('COMPLETADA')}
         </div>
         <div style={{
-          fontSize: 16,
+          fontSize: 18,
           color: 'var(--cyan)',
           letterSpacing: 2,
         }}>
@@ -98,63 +108,119 @@ export function DiscussionPhase({ onContinue }: Props) {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 4,
-          width: '100%',
-          maxWidth: 340,
+          display: 'grid',
+          gridTemplateColumns: 'minmax(320px, 380px) minmax(280px, 360px)',
+          gap: 24,
+          width: 'min(960px, 100%)',
+          alignItems: 'start',
         }}
       >
         <div style={{
-          fontSize: 10,
-          color: 'var(--gray-text)',
-          letterSpacing: 3,
-          textAlign: 'center',
-          marginBottom: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          padding: '18px',
+          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'linear-gradient(180deg, rgba(7,12,20,0.72), rgba(4,8,14,0.86))',
         }}>
-          {tr('SCOREBOARD GLOBAL')}
+          <div style={{
+            fontSize: 10,
+            color: 'var(--gray-text)',
+            letterSpacing: 3,
+            textAlign: 'center',
+            marginBottom: 8,
+          }}>
+            {tr('SCOREBOARD GLOBAL')}
+          </div>
+
+          {globalScoreboard.map((p, i) => (
+            <motion.div
+              key={p.playerId}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 + i * 0.1 }}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 14px',
+                border: `1px solid ${p.playerId === playerId ? 'var(--green-neon)' : 'rgba(255,255,255,0.08)'}`,
+                background: p.playerId === playerId ? 'rgba(0,255,65,0.05)' : 'rgba(255,255,255,0.02)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{
+                  fontSize: 14,
+                  fontWeight: 'bold',
+                  color: i === 0 ? 'var(--green-neon)' : 'var(--gray-text)',
+                  width: 24,
+                }}>
+                  #{i + 1}
+                </span>
+                <span style={{
+                  fontSize: 13,
+                  color: 'var(--white)',
+                }}>
+                  {p.name}
+                </span>
+              </div>
+              <span style={{
+                fontSize: 18,
+                fontWeight: 'bold',
+                color: p.globalScore < 0 ? 'var(--red-danger)' : 'var(--green-neon)',
+              }}>
+                {p.globalScore}
+              </span>
+            </motion.div>
+          ))}
         </div>
 
-        {globalScoreboard.map((p, i) => (
-          <motion.div
-            key={p.playerId}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 + i * 0.1 }}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '8px 16px',
-              border: `1px solid ${p.playerId === playerId ? 'var(--green-neon)' : '#222'}`,
-              background: p.playerId === playerId ? 'rgba(0,255,65,0.05)' : 'var(--bg-panel)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{
-                fontSize: 14,
-                fontWeight: 'bold',
-                color: i === 0 ? 'var(--green-neon)' : 'var(--gray-text)',
-                width: 24,
-              }}>
-                #{i + 1}
-              </span>
-              <span style={{
-                fontSize: 13,
-                color: 'var(--white)',
-              }}>
-                {p.name}
-              </span>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+          padding: '18px',
+          border: '1px solid rgba(130,214,255,0.14)',
+          background: 'linear-gradient(180deg, rgba(7,12,20,0.72), rgba(4,8,14,0.86))',
+        }}>
+          <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 3, textAlign: 'center' }}>
+            {tr('ESTADO DE FLOTILLA')}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ padding: '12px 14px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+              <div style={{ fontSize: 10, color: 'var(--gray-text)' }}>{tr('Cabinas conectadas')}</div>
+              <div style={{ marginTop: 8, fontSize: 24, color: 'var(--cyan)' }}>{globalScoreboard.length}</div>
             </div>
-            <span style={{
-              fontSize: 18,
-              fontWeight: 'bold',
-              color: p.globalScore < 0 ? 'var(--red-danger)' : 'var(--green-neon)',
-            }}>
-              {p.globalScore}
-            </span>
-          </motion.div>
-        ))}
+            <div style={{ padding: '12px 14px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+              <div style={{ fontSize: 10, color: 'var(--gray-text)' }}>{tr('Minijuegos restantes')}</div>
+              <div style={{ marginTop: 8, fontSize: 24, color: 'var(--green-neon)' }}>{Math.max(0, totalMinigames - currentIndex - 1)}</div>
+            </div>
+          </div>
+
+          {/* Next minigame preview */}
+          {nextMinigame && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                padding: '14px 16px',
+                border: '1px solid rgba(130,214,255,0.18)',
+                background: 'rgba(130,214,255,0.04)',
+              }}
+            >
+              <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 2 }}>
+                {tr('SIGUIENTE MINIJUEGO')}
+              </div>
+              <div style={{ fontSize: 14, color: 'var(--cyan)', letterSpacing: 1 }}>
+                {trMinigameName(nextMinigame.id, nextMinigame.name)}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--gray-text)', lineHeight: 1.5 }}>
+                {trMinigameDescription(nextMinigame.id, nextMinigame.shortDescription)}
+              </div>
+            </div>
+          )}
+        </div>
       </motion.div>
 
       {/* Open voice indicator + mic toggle */}
@@ -211,34 +277,6 @@ export function DiscussionPhase({ onContinue }: Props) {
           {micMuted ? tr('MICROFONO APAGADO') : tr('MICROFONO ENCENDIDO')}
         </button>
       </motion.div>
-
-      {/* Next minigame preview */}
-      {nextMinigame && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 6,
-            padding: '12px 24px',
-            border: '1px solid var(--gray-shadow)',
-            background: 'var(--bg-panel)',
-          }}
-        >
-          <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 2 }}>
-            {tr('SIGUIENTE MINIJUEGO')}
-          </div>
-          <div style={{ fontSize: 14, color: 'var(--cyan)', letterSpacing: 1 }}>
-            {trMinigameName(nextMinigame.id, nextMinigame.name)}
-          </div>
-          <div style={{ fontSize: 10, color: 'var(--gray-text)', textAlign: 'center', maxWidth: 280 }}>
-            {trMinigameDescription(nextMinigame.id, nextMinigame.shortDescription)}
-          </div>
-        </motion.div>
-      )}
 
       {isHost && developerModeActive && nextMinigame && (
         <motion.div

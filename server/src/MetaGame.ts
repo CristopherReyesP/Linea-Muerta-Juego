@@ -68,6 +68,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export class MetaGame {
   static readonly EMPTY_PUBLIC_ROOM_TTL_MS = 10 * 60 * 1000
+  private static readonly DISCUSSION_DURATION_MS = 12000
 
   id: string
   isPublic: boolean
@@ -143,8 +144,15 @@ export class MetaGame {
     avatarColor: string = '#00e5ff',
     accessoryId: string = 'none'
   ): MetaPlayer | null {
-    if (this.metaPlayers.size >= DEFAULT_CONFIG.maxPlayers) return null
     if (this.metaPhase !== MetaGamePhase.LOBBY) return null
+
+    for (const [id, player] of this.metaPlayers) {
+      if (!player.isConnected) {
+        this.metaPlayers.delete(id)
+      }
+    }
+
+    if (this.getConnectedPlayerCount() >= DEFAULT_CONFIG.maxPlayers) return null
 
     const player = new MetaPlayer(uuid(), socketId, name, avatarId, avatarColor, accessoryId)
     this.metaPlayers.set(player.id, player)
@@ -182,6 +190,32 @@ export class MetaGame {
       this.hostId = null
       for (const [id, p] of this.metaPlayers) {
         if (id !== playerId && p.isConnected) {
+          this.hostId = id
+          break
+        }
+      }
+    }
+
+    this.markActivity()
+    this.broadcastMetaState()
+    this.broadcastLobbyVoice()
+  }
+
+  leavePlayer(playerId: string): void {
+    const mp = this.metaPlayers.get(playerId)
+    if (!mp) return
+
+    if (this.metaPhase !== MetaGamePhase.LOBBY) {
+      this.removePlayer(playerId)
+      return
+    }
+
+    this.metaPlayers.delete(playerId)
+
+    if (this.hostId === playerId) {
+      this.hostId = null
+      for (const [id, p] of this.metaPlayers) {
+        if (p.isConnected) {
           this.hostId = id
           break
         }
@@ -256,10 +290,16 @@ export class MetaGame {
   // --- Session flow ---
 
   startSession(options?: { selectedMinigameIds?: string[] }): void {
-    if (this.metaPlayers.size < DEFAULT_CONFIG.minPlayers) return
     if (this.metaPhase !== MetaGamePhase.LOBBY) return
+    if (this.phaseTimer) {
+      clearTimeout(this.phaseTimer)
+      this.phaseTimer = null
+    }
 
-    const playerCount = this.metaPlayers.size
+    const connectedPlayerCount = this.getConnectedPlayerCount()
+    if (connectedPlayerCount < DEFAULT_CONFIG.minPlayers) return
+
+    const playerCount = connectedPlayerCount
     const requestedIds = options?.selectedMinigameIds ?? []
     const hasDevSelection = requestedIds.length > 0
     this.developerModeEnabled = hasDevSelection
@@ -349,7 +389,7 @@ export class MetaGame {
   private createMinigame(id: string, players: Map<string, Player>): MiniGame | null {
     switch (id) {
       case 'cooperar-traicionar':
-        return new CooperarTraicionar(this.io, this.room, players, this.callManager, this.id)
+        return new CooperarTraicionar(this.io, this.room, players, this.callManager, this.id, { maxRounds: 5 })
       case 'votacion-sobra':
         return new VotacionSobra(this.io, this.room, players, this.callManager, this.id)
       case 'votacion-merece':
@@ -527,11 +567,24 @@ export class MetaGame {
     this.io.to(this.room).emit('open_voice', { playerIds })
 
     this.broadcastMetaState()
+
+    if (this.phaseTimer) clearTimeout(this.phaseTimer)
+    this.phaseTimer = setTimeout(() => this.advanceFromDiscussion(), MetaGame.DISCUSSION_DURATION_MS)
   }
 
   continueToNext(playerId: string, options?: { selectedMinigameIds?: string[] }): void {
     if (playerId !== this.hostId) return
     if (this.metaPhase !== MetaGamePhase.DISCUSSION) return
+
+    this.advanceFromDiscussion(options)
+  }
+
+  private advanceFromDiscussion(options?: { selectedMinigameIds?: string[] }): void {
+    if (this.metaPhase !== MetaGamePhase.DISCUSSION) return
+    if (this.phaseTimer) {
+      clearTimeout(this.phaseTimer)
+      this.phaseTimer = null
+    }
 
     const nextIndex = this.currentMinigameIndex + 1
     if (this.developerModeEnabled && nextIndex < this.TOTAL_MINIGAMES) {
@@ -555,6 +608,10 @@ export class MetaGame {
 
   private endSession(): void {
     this.metaPhase = MetaGamePhase.SESSION_COMPLETE
+    if (this.phaseTimer) {
+      clearTimeout(this.phaseTimer)
+      this.phaseTimer = null
+    }
 
     const scoreboard = this.getGlobalScoreboard()
     const sorted = [...scoreboard].sort((a, b) => b.globalScore - a.globalScore)

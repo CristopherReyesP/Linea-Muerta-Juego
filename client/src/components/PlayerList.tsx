@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { PlayerAvatar } from './PlayerAvatar'
 import { ScrollHintBox } from './ScrollHintBox'
-import { PlayerState } from '../types'
+import { GamePhase, PlayerState } from '../types'
 
 const SIGNAL_OPTIONS = [
   { emoji: '👀', label: 'OJO' },
@@ -18,18 +18,33 @@ const SIGNAL_OPTIONS = [
 interface Props {
   onSendSignal: (data: { emoji: string; label: string }) => void
   mobile?: boolean
+  onCallPlayer?: (targetId: string) => void
+  onAcceptCall?: (callId: string) => void
+  onRejectCall?: (callId: string) => void
+  onHangUp?: () => void
 }
 
-export function PlayerList({ onSendSignal, mobile = false }: Props) {
+export function PlayerList({
+  onSendSignal,
+  mobile = false,
+  onCallPlayer,
+  onAcceptCall,
+  onRejectCall,
+  onHangUp,
+}: Props) {
   const players = useGameStore(s => s.players)
   const playerId = useGameStore(s => s.playerId)
   const myPlayer = useGameStore(s => s.getMyPlayer())
   const activeMinigameId = useGameStore(s => s.activeMinigameId)
+  const phase = useGameStore(s => s.phase)
   const bombState = useGameStore(s => s.bombState)
   const round = useGameStore(s => s.round)
   const playerSignals = useGameStore(s => s.playerSignals)
   const latestSignal = useGameStore(s => s.latestSignal)
   const signalHistory = useGameStore(s => s.signalHistory)
+  const incomingCalls = useGameStore(s => s.incomingCalls)
+  const pendingCall = useGameStore(s => s.pendingCall)
+  const activeCallPeerId = useGameStore(s => s.activeCallPeerId)
 
   const [signalPickerOpen, setSignalPickerOpen] = useState(false)
   const [signalCooldownUntil, setSignalCooldownUntil] = useState(0)
@@ -56,6 +71,7 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
   const isGuessMinigame = activeMinigameId === 'adivina-linea'
   const hideCabinNumber = activeMinigameId === 'adivina-linea'
   const signalCooldownRemaining = Math.max(0, Math.ceil((signalCooldownUntil - now) / 1000))
+  const canUseSidebarCalls = Boolean(onCallPlayer && onAcceptCall && onRejectCall && onHangUp) && phase === GamePhase.CALL_PHASE
 
   useEffect(() => {
     if (signalCooldownUntil <= Date.now()) return
@@ -96,6 +112,15 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
     })
     return map
   }, [players, activeMinigameId, round])
+
+  const canCallTarget = (player: typeof players[number]) => {
+    if (!canUseSidebarCalls || !myPlayer) return false
+    if (player.id === myPlayer.id) return false
+    if (player.state === PlayerState.DISCONNECTED || player.state === PlayerState.IN_CALL) return false
+    if (!player.isAlive && !player.isShadow) return false
+    if (activeCallPeerId || pendingCall) return false
+    return myPlayer.state === PlayerState.ACTIVE || myPlayer.state === PlayerState.AT_RISK || myPlayer.isShadow
+  }
 
   return (
     <div style={{
@@ -273,6 +298,19 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
               }}>
                 {mobile ? 'TU' : `TU • ${myPlayer.name}`}
               </span>
+              {(pendingCall || activeCallPeerId) && (
+                <span
+                  style={{
+                    fontSize: 14,
+                    color: activeCallPeerId ? 'var(--cyan)' : 'var(--green-neon)',
+                    filter: 'drop-shadow(0 0 8px rgba(0,229,255,0.25))',
+                  }}
+                  className={activeCallPeerId ? 'pulse' : ''}
+                  title={activeCallPeerId ? 'En llamada' : 'Llamando'}
+                >
+                  ☎
+                </span>
+              )}
               {!isGuessMinigame && playerSignals[myPlayer.id] && (
                 <span
                   style={{ fontSize: 14, filter: 'drop-shadow(0 0 8px rgba(0,229,255,0.25))' }}
@@ -303,6 +341,50 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
               {getStatusLabel(myPlayer, isBombMinigame, bombState?.holderId)}
             </span>
             )}
+            {!mobile && canUseSidebarCalls && incomingCalls.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                {incomingCalls.map((call) => (
+                  <div key={call.callId} style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={() => onAcceptCall?.(call.callId)}
+                      style={sidebarActionButton('var(--green-dim)', 'rgba(0,255,65,0.08)')}
+                      title="Aceptar llamada"
+                    >
+                      ☎ Aceptar
+                    </button>
+                    <button
+                      onClick={() => onRejectCall?.(call.callId)}
+                      style={sidebarActionButton('var(--red-danger)', 'rgba(255,23,68,0.08)')}
+                      title="Rechazar llamada"
+                    >
+                      ✕ Rechazar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!mobile && canUseSidebarCalls && pendingCall && (
+              <div style={{ marginTop: 6 }}>
+                <button
+                  onClick={() => onHangUp?.()}
+                  style={sidebarActionButton('var(--red-danger)', 'rgba(255,23,68,0.08)')}
+                  title="Cancelar llamada saliente"
+                >
+                  ☎ Cancelar llamada
+                </button>
+              </div>
+            )}
+            {!mobile && canUseSidebarCalls && activeCallPeerId && (
+              <div style={{ marginTop: 6 }}>
+                <button
+                  onClick={() => onHangUp?.()}
+                  style={sidebarActionButton('var(--red-danger)', 'rgba(255,23,68,0.08)')}
+                  title="Colgar llamada activa"
+                >
+                  ☎ Colgar
+                </button>
+              </div>
+            )}
           </div>
           </div>
         )}
@@ -321,7 +403,7 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
               minWidth: mobile ? 60 : 'auto',
               flexShrink: 0,
             }}
-            className={player.state === PlayerState.AT_RISK ? 'pulse-red' : ''}
+            className={`${player.state === PlayerState.AT_RISK ? 'pulse-red' : ''} ${incomingCalls.some((call) => call.callerId === player.id) ? 'vibrate' : ''}`.trim()}
           >
             <PlayerAvatar player={player} size={mobile ? 30 : 40} showName={false} showState={false} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
@@ -367,6 +449,52 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
               >
                 {getStatusLabel(player, isBombMinigame, bombState?.holderId)}
               </span>
+              )}
+              {!mobile && canUseSidebarCalls && (
+                <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                  {incomingCalls
+                    .filter((call) => call.callerId === player.id)
+                    .map((call) => (
+                      <div key={call.callId} style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          onClick={() => onAcceptCall?.(call.callId)}
+                          style={sidebarActionButton('var(--green-dim)', 'rgba(0,255,65,0.08)')}
+                          className="vibrate"
+                        >
+                          Aceptar
+                        </button>
+                        <button
+                          onClick={() => onRejectCall?.(call.callId)}
+                          style={sidebarActionButton('var(--red-danger)', 'rgba(255,23,68,0.08)')}
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    ))}
+                  {activeCallPeerId === player.id && (
+                    <span style={sidebarBadge('var(--cyan)', 'rgba(0,229,255,0.08)')}>
+                      ☎ En llamada
+                    </span>
+                  )}
+                  {pendingCall?.targetId === player.id && (
+                    <span style={sidebarBadge('var(--green-dim)', 'rgba(0,255,65,0.08)')}>
+                      ☎ Llamando
+                    </span>
+                  )}
+                  {!incomingCalls.some((call) => call.callerId === player.id) && activeCallPeerId !== player.id && pendingCall?.targetId !== player.id && (
+                    <button
+                      onClick={() => canCallTarget(player) && onCallPlayer?.(player.id)}
+                      disabled={!canCallTarget(player)}
+                      style={sidebarActionButton(
+                        canCallTarget(player) ? 'var(--cyan)' : 'var(--gray-shadow)',
+                        canCallTarget(player) ? 'rgba(0,229,255,0.08)' : 'rgba(255,255,255,0.03)',
+                        !canCallTarget(player)
+                      )}
+                    >
+                      Llamar
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -587,6 +715,34 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
       )}
     </div>
   )
+}
+
+function sidebarActionButton(color: string, background: string, disabled = false) {
+  return {
+    border: `1px solid ${color}`,
+    background,
+    color,
+    padding: '4px 8px',
+    fontSize: 9,
+    letterSpacing: 0.8,
+    fontFamily: 'var(--font-mono)',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.45 : 1,
+  } as const
+}
+
+function sidebarBadge(color: string, background: string) {
+  return {
+    border: `1px solid ${color}`,
+    background,
+    color,
+    padding: '4px 8px',
+    fontSize: 9,
+    letterSpacing: 0.8,
+    fontFamily: 'var(--font-mono)',
+    display: 'inline-flex',
+    alignItems: 'center',
+  } as const
 }
 
 function getStatusColor(player: { isShadow: boolean; state: PlayerState }) {

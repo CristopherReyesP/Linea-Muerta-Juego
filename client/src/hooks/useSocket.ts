@@ -36,6 +36,11 @@ export function useSocket() {
       store.setPlayerInfo(playerId, gameId)
     })
 
+    socket.on('game_left', () => {
+      store.reset()
+      store.setConnected(socket.connected)
+    })
+
     socket.on('public_rooms_update', ({ rooms }) => {
       store.setPublicRooms(rooms)
     })
@@ -264,6 +269,10 @@ export function useSocket() {
     socketRef.current?.emit('start_game', data)
   }, [])
 
+  const leaveGame = useCallback(() => {
+    socketRef.current?.emit('leave_game')
+  }, [])
+
   const callPlayer = useCallback((targetId: string) => {
     socketRef.current?.emit('call_player', targetId)
   }, [])
@@ -342,6 +351,23 @@ export function useSocket() {
   }, [])
 
   const sendSignal = useCallback((data: { emoji: string; label: string }) => {
+    const state = useGameStore.getState()
+    if (state.playerId) {
+      state.setPlayerSignal({
+        playerId: state.playerId,
+        playerName: state.getMyPlayer()?.name ?? 'Tu cabina',
+        emoji: data.emoji,
+        label: data.label,
+      })
+
+      setTimeout(() => {
+        const current = useGameStore.getState().playerSignals[state.playerId!]
+        if (current?.emoji === data.emoji && current?.label === data.label) {
+          useGameStore.getState().clearPlayerSignal(state.playerId!)
+        }
+      }, 3000)
+    }
+
     socketRef.current?.emit('send_signal', data)
   }, [])
 
@@ -357,6 +383,7 @@ export function useSocket() {
     socket: socketRef,
     createGame,
     joinGame,
+    leaveGame,
     startGame,
     callPlayer,
     acceptCall,

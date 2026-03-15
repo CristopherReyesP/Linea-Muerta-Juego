@@ -107,6 +107,21 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
       gameManager.broadcastGlobalActivity({ playerName: name, action: 'se unio a una sala' })
     })
 
+    socket.on('leave_game', () => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) {
+        socket.emit('game_left')
+        return
+      }
+
+      socket.leave(`game:${result.game.id}`)
+      result.game.leavePlayer(result.metaPlayer.id)
+      socket.emit('game_left')
+      gameManager.cleanupEmptyGames()
+      gameManager.broadcastPublicRooms()
+      gameManager.broadcastGlobalActivity()
+    })
+
     socket.on('start_game', (data?: { selectedMinigameIds?: string[] }) => {
       const result = gameManager.getGameBySocket(socket.id)
       if (!result) return

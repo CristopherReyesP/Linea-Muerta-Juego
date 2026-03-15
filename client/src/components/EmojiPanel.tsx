@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
+import { GamePhase } from '../types'
 import { useI18n } from '../i18n'
 
 interface Props {
@@ -12,15 +13,31 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
   const emojiState = useGameStore(s => s.emojiState)
   const players = useGameStore(s => s.players)
   const myPlayerId = useGameStore(s => s.playerId)
+  const phase = useGameStore(s => s.phase)
+  const phaseEndTime = useGameStore(s => s.phaseEndTime)
 
   const [voted, setVoted] = useState(false)
 
   if (!emojiState) return null
 
   const { internalPhase, myEmoji } = emojiState
+  const effectiveInternalPhase =
+    phase === GamePhase.DECISION_PHASE
+      ? 'VOTING'
+      : phase === GamePhase.RESULT_PHASE
+        ? 'RESULT'
+        : phase === GamePhase.CALL_PHASE && internalPhase === 'REVEAL' && phaseEndTime - Date.now() > 10000
+          ? 'DISCUSSION'
+        : internalPhase
+
+  useEffect(() => {
+    if (effectiveInternalPhase !== 'VOTING') {
+      setVoted(false)
+    }
+  }, [effectiveInternalPhase])
 
   // --- REVEAL PHASE ---
-  if (internalPhase === 'REVEAL') {
+  if (effectiveInternalPhase === 'REVEAL') {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
@@ -70,7 +87,7 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
   }
 
   // --- DISCUSSION PHASE ---
-  if (internalPhase === 'DISCUSSION') {
+  if (effectiveInternalPhase === 'DISCUSSION') {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -86,6 +103,17 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
           background: 'rgba(0,229,255,0.04)',
         }}
       >
+        <div
+          style={{
+            fontSize: 10,
+            color: 'var(--cyan)',
+            letterSpacing: 2.4,
+            textTransform: 'uppercase',
+          }}
+        >
+          {tr('Fase de conversacion')}
+        </div>
+
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -107,12 +135,27 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
         <div style={{ fontSize: 11, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.6 }}>
           {tr('Llama, compara descripciones y detecta quien esta fingiendo normalidad.')}
         </div>
+
+        <div
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            border: '1px solid rgba(0,255,65,0.18)',
+            background: 'rgba(0,255,65,0.05)',
+            fontSize: 11,
+            color: 'var(--white)',
+            textAlign: 'center',
+            lineHeight: 1.55,
+          }}
+        >
+          {tr('Las llamadas ya estan habilitadas. Usa el panel de abajo para hablar con otra nave.')}
+        </div>
       </motion.div>
     )
   }
 
   // --- VOTING PHASE ---
-  if (internalPhase === 'VOTING') {
+  if (effectiveInternalPhase === 'VOTING') {
     const otherPlayers = players.filter(p => p.id !== myPlayerId)
 
     return (
@@ -189,7 +232,7 @@ export function EmojiPanel({ onVoteEmoji }: Props) {
   }
 
   // --- RESULT PHASE ---
-  if (internalPhase === 'RESULT') {
+  if (effectiveInternalPhase === 'RESULT') {
     const playerNames: Record<string, string> = {}
     for (const p of players) {
       playerNames[p.id] = p.name

@@ -335,34 +335,6 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                       {globalStats.totalRooms} sala{globalStats.totalRooms !== 1 ? 's' : ''} activa{globalStats.totalRooms !== 1 ? 's' : ''} · {globalStats.totalPlayers} jugador{globalStats.totalPlayers !== 1 ? 'es' : ''} en linea
                     </div>
                   )}
-
-                  {globalNotifications.length > 0 && (
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 4,
-                      width: 280,
-                    }}>
-                      {globalNotifications.map((n) => (
-                        <motion.div
-                          key={n.id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0 }}
-                          style={{
-                            fontSize: 9,
-                            color: 'var(--green-dim)',
-                            padding: '3px 8px',
-                            border: '1px solid rgba(0,255,65,0.1)',
-                            background: 'rgba(0,255,65,0.03)',
-                            letterSpacing: 0.5,
-                          }}
-                        >
-                          <span style={{ color: 'var(--green-neon)' }}>{n.playerName}</span> {n.action}
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
                 </motion.div>
               )}
 
@@ -1043,6 +1015,45 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
           )}
         </motion.div>
       </div>
+
+      {/* Global activity notifications - fixed at bottom */}
+      {!hasJoined && globalNotifications.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          bottom: 20,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 6,
+          pointerEvents: 'none',
+        }}>
+          <AnimatePresence>
+            {globalNotifications.map((n) => (
+              <motion.div
+                key={n.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.35 }}
+                style={{
+                  fontSize: 10,
+                  color: 'var(--green-dim)',
+                  padding: '4px 14px',
+                  border: '1px solid rgba(0,255,65,0.15)',
+                  background: 'rgba(6,10,16,0.85)',
+                  letterSpacing: 0.5,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span style={{ color: 'var(--green-neon)' }}>{n.playerName}</span> {n.action}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   )
 }

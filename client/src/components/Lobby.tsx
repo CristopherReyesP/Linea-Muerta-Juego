@@ -543,7 +543,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       type="text"
                       value={name}
                       onChange={e => setName(e.target.value.slice(0, 15))}
-                      placeholder="Tu nombre para entrar o chatear"
+                      placeholder="Tu nombre"
                       maxLength={15}
                       autoFocus
                       style={inputStyle}
@@ -675,20 +675,6 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       </div>
                     )}
                   </div>
-
-                  {globalStats && (globalStats.totalRooms > 0 || globalStats.totalPlayers > 0) && (
-                    <div style={{
-                      fontSize: 10,
-                      color: 'var(--gray-shadow)',
-                      letterSpacing: 1,
-                      textAlign: 'center',
-                      lineHeight: 1.5,
-                    }}>
-                      {globalStats.totalLobbyRooms} sala{globalStats.totalLobbyRooms !== 1 ? 's' : ''} en lobby · {globalStats.totalLobbyPlayers} jugador{globalStats.totalLobbyPlayers !== 1 ? 'es' : ''} en espera
-                      {' · '}
-                      {globalStats.totalActiveRooms} sala{globalStats.totalActiveRooms !== 1 ? 's' : ''} en partida · {globalStats.totalActivePlayers} jugador{globalStats.totalActivePlayers !== 1 ? 'es' : ''} jugando
-                    </div>
-                  )}
 
                   <div style={{
                     width: '100%',

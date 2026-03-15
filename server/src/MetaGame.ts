@@ -71,7 +71,9 @@ export class MetaGame {
 
   id: string
   isPublic: boolean
+  isGeneralPublic: boolean
   creatorKey: string | null
+  publicColorVariant: number
   metaPhase: MetaGamePhase = MetaGamePhase.LOBBY
   metaPlayers: Map<string, MetaPlayer> = new Map()
   hostId: string | null = null
@@ -87,11 +89,20 @@ export class MetaGame {
 
   private readonly TOTAL_MINIGAMES = 5
 
-  constructor(id: string, io: Server, isPublic: boolean = false, creatorKey: string | null = null) {
+  constructor(
+    id: string,
+    io: Server,
+    isPublic: boolean = false,
+    creatorKey: string | null = null,
+    isGeneralPublic: boolean = false,
+    publicColorVariant: number = 0
+  ) {
     this.id = id
     this.io = io
     this.isPublic = isPublic
+    this.isGeneralPublic = isGeneralPublic
     this.creatorKey = creatorKey
+    this.publicColorVariant = publicColorVariant
   }
 
   private get room(): string {
@@ -524,6 +535,7 @@ export class MetaGame {
 
   isStaleEmptyPublicRoom(now: number = Date.now()): boolean {
     return this.isPublic
+      && !this.isGeneralPublic
       && this.getConnectedPlayerCount() === 0
       && now - this.lastActivityAt >= MetaGame.EMPTY_PUBLIC_ROOM_TTL_MS
   }
@@ -533,20 +545,22 @@ export class MetaGame {
 
     const host = this.hostId ? this.metaPlayers.get(this.hostId) : null
     const playerCount = this.getConnectedPlayerCount()
-    const expiresAt = playerCount === 0
+    const expiresAt = !this.isGeneralPublic && playerCount === 0
       ? this.lastActivityAt + MetaGame.EMPTY_PUBLIC_ROOM_TTL_MS
       : null
 
-    if (!host || playerCount >= DEFAULT_CONFIG.maxPlayers) {
+    if ((!host && !this.isGeneralPublic) || playerCount >= DEFAULT_CONFIG.maxPlayers) {
       return null
     }
 
     return {
       gameId: this.id,
-      hostName: host.name,
+      hostName: this.isGeneralPublic ? 'Sala publica general' : (host?.name ?? 'Sala publica'),
       playerCount,
       maxPlayers: DEFAULT_CONFIG.maxPlayers,
       expiresAt,
+      colorVariant: this.publicColorVariant,
+      isGeneral: this.isGeneralPublic,
     }
   }
 

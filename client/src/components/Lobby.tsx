@@ -204,6 +204,28 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
     return `${minutes}:${String(seconds).padStart(2, '0')}`
   }
 
+  const getPublicRoomColors = (colorVariant: number) => {
+    const palettes = [
+      {
+        border: 'rgba(0,229,255,0.24)',
+        background: 'rgba(0,229,255,0.06)',
+        text: 'var(--cyan)',
+      },
+      {
+        border: 'rgba(132, 152, 178, 0.28)',
+        background: 'rgba(132, 152, 178, 0.08)',
+        text: '#c8d4e3',
+      },
+      {
+        border: 'rgba(120, 148, 128, 0.28)',
+        background: 'rgba(120, 148, 128, 0.08)',
+        text: '#c7d6c8',
+      },
+    ]
+
+    return palettes[colorVariant % palettes.length]
+  }
+
   const toggleMinigameSelection = (id: string) => {
     setSelectedMinigameIds((prev) => {
       if (prev.includes(id)) return prev.filter((existing) => existing !== id)
@@ -428,44 +450,55 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                         overflowY: 'auto',
                       }}>
                         {publicRooms.map((room) => (
-                          <button
-                            key={room.gameId}
-                            type="button"
-                            onClick={() => openSetupForAction('join-public', room.gameId)}
-                            style={{
-                              width: '100%',
-                              border: '1px solid rgba(0,229,255,0.3)',
-                              background: 'rgba(0,229,255,0.08)',
-                              color: 'var(--cyan)',
-                              padding: '10px 12px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: 12,
-                            }}
-                          >
-                            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, textAlign: 'left' }}>
-                              <span style={{ fontSize: 11, letterSpacing: 1 }}>
-                                {room.hostName}
-                              </span>
-                              {room.expiresAt !== null && (
-                                <span style={{ fontSize: 9, color: '#ffd666', letterSpacing: 1.2 }}>
-                                  Expira en {formatRemainingTime(room.expiresAt)}
+                          (() => {
+                            const roomColors = getPublicRoomColors(room.colorVariant)
+
+                            return (
+                              <button
+                                key={room.gameId}
+                                type="button"
+                                onClick={() => openSetupForAction('join-public', room.gameId)}
+                                style={{
+                                  width: '100%',
+                                  border: `1px solid ${roomColors.border}`,
+                                  background: roomColors.background,
+                                  color: roomColors.text,
+                                  padding: '10px 12px',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  gap: 12,
+                                }}
+                              >
+                                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, textAlign: 'left' }}>
+                                  <span style={{ fontSize: 11, letterSpacing: 1 }}>
+                                    {room.hostName}
+                                  </span>
+                                  {room.expiresAt !== null && (
+                                    <span style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 1.2 }}>
+                                      Expira en {formatRemainingTime(room.expiresAt)}
+                                    </span>
+                                  )}
+                                  {room.isGeneral && (
+                                    <span style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 1.2 }}>
+                                      disponible siempre mientras este en lobby
+                                    </span>
+                                  )}
                                 </span>
-                              )}
-                            </span>
-                            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                              <span style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 1.5 }}>
-                                {room.playerCount}/{room.maxPlayers}
-                              </span>
-                              {room.playerCount === 0 && (
-                                <span style={{ fontSize: 9, color: 'var(--gray-shadow)', letterSpacing: 1.2 }}>
-                                  sala vacia
+                                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                                  <span style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 1.5 }}>
+                                    {room.playerCount}/{room.maxPlayers}
+                                  </span>
+                                  {room.playerCount === 0 && (
+                                    <span style={{ fontSize: 9, color: 'var(--gray-shadow)', letterSpacing: 1.2 }}>
+                                      sala vacia
+                                    </span>
+                                  )}
                                 </span>
-                              )}
-                            </span>
-                          </button>
+                              </button>
+                            )
+                          })()
                         ))}
                       </div>
                     )}

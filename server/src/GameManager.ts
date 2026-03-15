@@ -1,16 +1,20 @@
 import { Server } from 'socket.io'
 import { MetaGame } from './MetaGame'
 import { MetaPlayer } from './MetaPlayer'
-import { PublicRoomSummary } from './types'
+import { MetaGamePhase, PublicRoomSummary } from './types'
 import { v4 as uuid } from 'uuid'
 
 export class GameManager {
+  private static readonly GENERAL_PUBLIC_CREATOR_KEY = '__general_public_room__'
+
   private games: Map<string, MetaGame> = new Map()
   private io: Server
   private cleanupTimer: NodeJS.Timeout
+  private nextPublicColorVariant: number = 0
 
   constructor(io: Server) {
     this.io = io
+    this.ensureGeneralPublicRoom()
     this.cleanupTimer = setInterval(() => {
       if (this.cleanupEmptyGames()) {
         this.broadcastPublicRooms()
@@ -18,9 +22,26 @@ export class GameManager {
     }, 5 * 1000)
   }
 
-  createGame(isPublic: boolean = false, creatorKey: string | null = null): MetaGame {
+  private allocatePublicColorVariant(): number {
+    const variant = this.nextPublicColorVariant % 3
+    this.nextPublicColorVariant += 1
+    return variant
+  }
+
+  createGame(
+    isPublic: boolean = false,
+    creatorKey: string | null = null,
+    options?: { isGeneralPublic?: boolean }
+  ): MetaGame {
     const id = uuid().slice(0, 6).toUpperCase()
-    const game = new MetaGame(id, this.io, isPublic, creatorKey)
+    const game = new MetaGame(
+      id,
+      this.io,
+      isPublic,
+      creatorKey,
+      options?.isGeneralPublic ?? false,
+      isPublic ? this.allocatePublicColorVariant() : 0
+    )
     this.games.set(id, game)
     return game
   }
@@ -59,13 +80,19 @@ export class GameManager {
 
     for (const [id, game] of this.games) {
       const hasConnected = Array.from(game.players.values()).some(p => p.isConnected)
-      const shouldDelete = !hasConnected && (!game.isPublic || game.isStaleEmptyPublicRoom(now))
+      const shouldDelete = !hasConnected && (
+        game.metaPhase !== MetaGamePhase.LOBBY
+        || !game.isPublic
+        || game.isStaleEmptyPublicRoom(now)
+      )
 
       if (shouldDelete) {
         this.games.delete(id)
         removedAny = true
       }
     }
+
+    this.ensureGeneralPublicRoom()
 
     return removedAny
   }
@@ -87,10 +114,13 @@ export class GameManager {
   }
 
   getPublicRooms(): PublicRoomSummary[] {
+    this.ensureGeneralPublicRoom()
+
     return Array.from(this.games.values())
       .map((game) => game.getPublicSummary())
       .filter((room): room is PublicRoomSummary => Boolean(room))
       .sort((a, b) => {
+        if (a.isGeneral !== b.isGeneral) return a.isGeneral ? -1 : 1
         const aEmpty = a.playerCount === 0 ? 1 : 0
         const bEmpty = b.playerCount === 0 ? 1 : 0
         if (aEmpty !== bEmpty) return aEmpty - bEmpty
@@ -106,6 +136,16 @@ export class GameManager {
 
   canCreatePublicGame(creatorKey: string): boolean {
     return !this.getPublicGameByCreatorKey(creatorKey)
+  }
+
+  private ensureGeneralPublicRoom(): void {
+    const existingGeneralRoom = Array.from(this.games.values()).find(
+      (game) => game.isGeneralPublic && game.metaPhase === MetaGamePhase.LOBBY
+    )
+
+    if (existingGeneralRoom) return
+
+    this.createGame(true, GameManager.GENERAL_PUBLIC_CREATOR_KEY, { isGeneralPublic: true })
   }
 
   broadcastGlobalActivity(notification?: { playerName: string; action: string }): void {

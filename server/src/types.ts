@@ -144,6 +144,8 @@ export interface PublicRoomSummary {
   playerCount: number
   maxPlayers: number
   expiresAt: number | null
+  colorVariant: number
+  isGeneral: boolean
 }
 
 export interface BombStateData {

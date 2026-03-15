@@ -105,12 +105,12 @@ const inputStyle: React.CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: 16,
   padding: '12px 24px',
-  background: 'var(--bg-panel)',
-  border: '1px solid var(--green-dim)',
-  color: 'var(--green-neon)',
+  background: 'rgba(12, 16, 23, 0.82)',
+  border: '1px solid rgba(150, 165, 186, 0.26)',
+  color: '#e4ebf5',
   outline: 'none',
   textAlign: 'center',
-  letterSpacing: 2,
+  letterSpacing: 1.2,
   width: 280,
 }
 
@@ -364,14 +364,14 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
     width: 'min(560px, 100%)',
     maxHeight: 'min(90vh, 920px)',
     overflowY: 'auto',
-    border: '1px solid rgba(0, 229, 255, 0.62)',
-    background: 'linear-gradient(180deg, rgba(7,12,19,0.78), rgba(8,13,20,0.88))',
-    backdropFilter: 'blur(6px)',
+    border: '1px solid rgba(140, 155, 176, 0.24)',
+    background: 'linear-gradient(180deg, rgba(10,14,20,0.84), rgba(9,12,18,0.94))',
+    backdropFilter: 'blur(10px)',
     boxShadow: `
-      0 20px 50px rgba(0,0,0,0.55),
-      0 0 42px rgba(0,229,255,0.2),
-      0 0 16px rgba(0,255,65,0.14),
-      inset 0 0 18px rgba(0,229,255,0.12)
+      0 24px 60px rgba(0,0,0,0.58),
+      0 8px 24px rgba(4,8,14,0.36),
+      inset 0 1px 0 rgba(255,255,255,0.05),
+      inset 0 0 0 1px rgba(255,255,255,0.02)
     `,
     padding: 'clamp(18px, 2.6vw, 30px)',
     display: 'flex',
@@ -447,9 +447,9 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
               style={{
                 fontSize: 38,
                 fontWeight: 'bold',
-                color: 'var(--white)',
-                letterSpacing: 6,
-                textShadow: '0 0 20px rgba(0,255,65,0.25)',
+                color: '#f1f5fb',
+                letterSpacing: 4,
+                textShadow: '0 2px 12px rgba(0,0,0,0.28)',
                 textAlign: 'center',
                 width: '100%',
               }}

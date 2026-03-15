@@ -169,35 +169,41 @@ body {
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 2px;
-  transition: all 0.2s;
-  background: transparent;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .btn-green {
   color: var(--green-neon);
-  border-color: var(--green-neon);
+  border-color: rgba(0, 255, 65, 0.44);
 }
 .btn-green:hover {
-  background: var(--green-dark);
-  box-shadow: 0 0 15px var(--green-dark);
+  background: rgba(0, 78, 30, 0.28);
+  border-color: rgba(92, 214, 128, 0.54);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  transform: translateY(-1px);
 }
 
 .btn-red {
   color: var(--red-danger);
-  border-color: var(--red-danger);
+  border-color: rgba(255, 23, 68, 0.44);
 }
 .btn-red:hover {
-  background: var(--red-dark);
-  box-shadow: 0 0 15px var(--red-dark);
+  background: rgba(90, 12, 33, 0.26);
+  border-color: rgba(255, 109, 143, 0.54);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  transform: translateY(-1px);
 }
 
 .btn-cyan {
   color: var(--cyan);
-  border-color: var(--cyan);
+  border-color: rgba(0, 229, 255, 0.34);
 }
 .btn-cyan:hover {
-  background: rgba(0, 229, 255, 0.1);
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+  background: rgba(20, 54, 72, 0.32);
+  border-color: rgba(123, 211, 227, 0.48);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  transform: translateY(-1px);
 }
 
 .btn:disabled {

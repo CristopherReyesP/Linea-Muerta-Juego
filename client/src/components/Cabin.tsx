@@ -228,9 +228,11 @@ export function Cabin({
           }}
         />
         {/* Minigame header bar */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <MinigameHeader />
-        </div>
+        {!isMobile && (
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <MinigameHeader />
+          </div>
+        )}
 
         {/* Header */}
         <div style={{
@@ -246,7 +248,7 @@ export function Cabin({
           position: 'relative',
           zIndex: 1,
         }}>
-          <BalanceDisplay />
+          {!isMobile && <BalanceDisplay />}
 
           <div style={{
             display: 'flex',
@@ -255,13 +257,13 @@ export function Cabin({
             justifyContent: 'center',
             flexWrap: 'wrap',
           }}>
-            <AudioControls />
+            {!isMobile && <AudioControls />}
 
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2 }}>
                 JUGADORES ACTIVOS
               </div>
-              <div style={{ fontSize: 24, color: 'var(--green-neon)' }}>
+              <div style={{ fontSize: isMobile ? 18 : 24, color: 'var(--green-neon)' }}>
                 {activePlayers}
               </div>
             </div>
@@ -270,7 +272,7 @@ export function Cabin({
               <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2 }}>
                 RONDA
               </div>
-              <div style={{ fontSize: 24, color: 'var(--white)' }}>
+              <div style={{ fontSize: isMobile ? 18 : 24, color: 'var(--white)' }}>
                 {round}<span style={{ fontSize: 14, color: 'var(--gray-text)' }}>/{maxRounds}</span>
               </div>
             <button
@@ -281,8 +283,8 @@ export function Cabin({
                 color: 'var(--gray-text)',
                 fontFamily: 'var(--font-mono)',
                 fontSize: 14,
-                width: 32,
-                height: 32,
+                width: isMobile ? 30 : 32,
+                height: isMobile ? 30 : 32,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -352,7 +354,7 @@ export function Cabin({
             <div
               style={{
                 width: '100%',
-                maxWidth: 780,
+                maxWidth: isMobile ? 420 : 780,
                 display: 'flex',
                 justifyContent: 'center',
               }}
@@ -361,21 +363,23 @@ export function Cabin({
                 style={{
                   width: '100%',
                   textAlign: 'center',
-                  padding: '12px 18px',
+                  padding: isMobile ? '10px 12px' : '12px 18px',
                   border: '1px solid rgba(0,229,255,0.28)',
                   background: 'linear-gradient(180deg, rgba(0,229,255,0.08), rgba(0,229,255,0.03))',
                   boxShadow: '0 12px 28px rgba(0,0,0,0.24)',
                 }}
               >
-                <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 3, marginBottom: 6 }}>
+                <div style={{ fontSize: isMobile ? 9 : 10, color: 'var(--cyan)', letterSpacing: isMobile ? 2 : 3, marginBottom: 6 }}>
                   {phaseInstruction.label}
                 </div>
-                <div style={{ fontSize: 15, color: 'var(--white)', lineHeight: 1.5 }}>
+                <div style={{ fontSize: isMobile ? 13 : 15, color: 'var(--white)', lineHeight: 1.45 }}>
                   {phaseInstruction.text}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 1.4, marginTop: 8 }}>
+                {!isMobile && (
+                  <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 1.4, marginTop: 8 }}>
                   Reglas completas en el icono `?`
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -471,8 +475,8 @@ export function Cabin({
           )}
         </div>
 
-        <AutoLogPanel />
-        <IdleNotesPanel />
+        {!isMobile && <AutoLogPanel />}
+        {!isMobile && <IdleNotesPanel />}
         {isBombMinigame && <BombOutcomeOverlay />}
       </div>
 

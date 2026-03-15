@@ -100,15 +100,15 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
       display: 'flex',
       flexDirection: mobile ? 'row' : 'column',
       alignItems: mobile ? 'stretch' : 'initial',
-      gap: 8,
-      padding: mobile ? 10 : 12,
+      gap: mobile ? 6 : 8,
+      padding: mobile ? 8 : 12,
       background: 'linear-gradient(180deg, rgba(6,10,16,0.92), rgba(4,7,12,0.95))',
       borderLeft: mobile ? 'none' : '1px solid rgba(0,229,255,0.2)',
       borderBottom: mobile ? '1px solid rgba(0,229,255,0.16)' : 'none',
       boxShadow: 'inset 0 0 16px rgba(0,229,255,0.08)',
       minWidth: mobile ? 0 : 140,
       width: mobile ? '100%' : 'auto',
-      maxHeight: mobile ? 188 : '100%',
+      maxHeight: mobile ? 98 : '100%',
       overflowX: mobile ? 'auto' : 'hidden',
       overflowY: mobile ? 'visible' : 'auto',
     }}>
@@ -116,48 +116,50 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
         display: 'flex',
         flexDirection: mobile ? 'row' : 'column',
         alignItems: mobile ? 'stretch' : 'initial',
-        gap: 8,
+        gap: mobile ? 6 : 8,
         flex: mobile ? '0 0 auto' : 1,
       }}>
         <div style={{
-          fontSize: 10,
+          fontSize: mobile ? 8 : 10,
           color: 'var(--gray-text)',
           letterSpacing: 2,
           textTransform: 'uppercase',
           marginBottom: 4,
-          minWidth: mobile ? 84 : 'auto',
-          paddingTop: mobile ? 6 : 0,
+          minWidth: mobile ? 54 : 'auto',
+          paddingTop: mobile ? 18 : 0,
         }}>
-          JUGADORES
+          RED
         </div>
 
         {myPlayer && (
           <div
             style={{
-              padding: 8,
+              padding: mobile ? 6 : 8,
               border: '1px solid var(--cyan)',
               background: 'rgba(0,229,255,0.08)',
               display: 'flex',
+              flexDirection: mobile ? 'column' : 'row',
               alignItems: 'center',
-              gap: 8,
+              gap: mobile ? 4 : 8,
               boxShadow: '0 0 12px rgba(0,229,255,0.2)',
-              minWidth: mobile ? 180 : 'auto',
+              minWidth: mobile ? 64 : 'auto',
               flexShrink: 0,
             }}
           >
-          <PlayerAvatar player={myPlayer} size={40} showName={false} showState={false} />
+          <PlayerAvatar player={myPlayer} size={mobile ? 32 : 40} showName={false} showState={false} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{
-                fontSize: 11,
+                fontSize: mobile ? 8 : 11,
                 color: 'var(--white)',
                 fontWeight: 'bold',
                 letterSpacing: 0.6,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
+                maxWidth: mobile ? 56 : 'none',
               }}>
-                TU • {myPlayer.name}
+                {mobile ? 'TU' : `TU • ${myPlayer.name}`}
               </span>
               {!isGuessMinigame && playerSignals[myPlayer.id] && (
                 <span
@@ -168,6 +170,7 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
                 </span>
               )}
             </div>
+            {!mobile && (
             <span style={{
               fontSize: 9,
               color: 'var(--gray-text)',
@@ -175,6 +178,8 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
             }}>
               CABINA {hideCabinNumber ? '?' : (cabinByPlayerId[myPlayer.id] ?? '?')}
             </span>
+            )}
+            {!mobile && (
             <span style={{
               fontSize: 9,
               color: getStatusColor(myPlayer),
@@ -185,6 +190,7 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
             >
               {getStatusLabel(myPlayer, isBombMinigame, bombState?.holderId)}
             </span>
+            )}
           </div>
           </div>
         )}
@@ -193,28 +199,30 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
           <div
             key={player.id}
             style={{
-              padding: 8,
+              padding: mobile ? 6 : 8,
               border: `1px solid ${player.state === PlayerState.AT_RISK ? 'var(--red-danger)' : player.isShadow ? 'var(--gray-shadow)' : '#222'}`,
               background: 'var(--bg-panel)',
               display: 'flex',
+              flexDirection: mobile ? 'column' : 'row',
               alignItems: 'center',
-              gap: 8,
-              minWidth: mobile ? 164 : 'auto',
+              gap: mobile ? 4 : 8,
+              minWidth: mobile ? 60 : 'auto',
               flexShrink: 0,
             }}
             className={player.state === PlayerState.AT_RISK ? 'pulse-red' : ''}
           >
-            <PlayerAvatar player={player} size={40} showName={false} showState={false} />
+            <PlayerAvatar player={player} size={mobile ? 30 : 40} showName={false} showState={false} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{
-                  fontSize: 11,
+                  fontSize: mobile ? 8 : 11,
                   color: 'var(--white)',
                   fontWeight: 'bold',
                   letterSpacing: 0.6,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
+                  maxWidth: mobile ? 48 : 'none',
                 }}>
                   {player.name}
                 </span>
@@ -227,6 +235,7 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
                   </span>
                 )}
               </div>
+              {!mobile && (
               <span style={{
                 fontSize: 9,
                 color: 'var(--gray-text)',
@@ -234,6 +243,8 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
               }}>
                 CABINA {hideCabinNumber ? '?' : (cabinByPlayerId[player.id] ?? '?')}
               </span>
+              )}
+              {!mobile && (
               <span style={{
                 fontSize: 9,
                 color: getStatusColor(player),
@@ -244,11 +255,13 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
               >
                 {getStatusLabel(player, isBombMinigame, bombState?.holderId)}
               </span>
+              )}
             </div>
           </div>
         ))}
       </div>
 
+      {!mobile && (
       <div style={{
         borderTop: mobile ? 'none' : '1px solid rgba(0,229,255,0.14)',
         paddingTop: mobile ? 6 : 10,
@@ -430,6 +443,7 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
           )}
         </div>
       </div>
+      )}
     </div>
   )
 }

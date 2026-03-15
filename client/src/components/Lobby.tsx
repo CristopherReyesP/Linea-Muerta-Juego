@@ -141,6 +141,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
   const [selectedMinigameIds, setSelectedMinigameIds] = useState<string[]>([])
   const [lobbyChatDraft, setLobbyChatDraft] = useState('')
   const [menuChatDraft, setMenuChatDraft] = useState('')
+  const [showMenuChatModal, setShowMenuChatModal] = useState(false)
   const [menuEmojiRound, setMenuEmojiRound] = useState<MenuEmojiMemoryRound>(() => createMenuEmojiRound(1))
   const [menuEmojiPhase, setMenuEmojiPhase] = useState<'showing' | 'guessing' | 'result'>('showing')
   const [menuEmojiResult, setMenuEmojiResult] = useState<{ correct: boolean; guessed: string } | null>(null)
@@ -207,6 +208,12 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
   }, [devMode])
 
   useEffect(() => {
+    if (hasJoined || view !== 'welcome') {
+      setShowMenuChatModal(false)
+    }
+  }, [hasJoined, view])
+
+  useEffect(() => {
     const element = chatListRef.current
     if (!element) return
     element.scrollTop = element.scrollHeight
@@ -222,7 +229,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
     if (hasJoined || view !== 'welcome') return
 
     if (menuEmojiPhase === 'showing') {
-      const timer = setTimeout(() => setMenuEmojiPhase('guessing'), 1300)
+      const timer = setTimeout(() => setMenuEmojiPhase('guessing'), 700)
       return () => clearTimeout(timer)
     }
 
@@ -231,7 +238,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
         setMenuEmojiResult(null)
         setMenuEmojiRound((current) => createMenuEmojiRound(current.round + 1))
         setMenuEmojiPhase('showing')
-      }, 1400)
+      }, 1000)
       return () => clearTimeout(timer)
     }
   }, [hasJoined, menuEmojiPhase, view])
@@ -645,9 +652,25 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     width: '100%',
                     maxWidth: 420,
                     display: 'flex',
+                    justifyContent: 'center',
+                  }}>
+                    <button
+                      type="button"
+                      className="btn btn-cyan"
+                      onClick={() => setShowMenuChatModal(true)}
+                      style={{ width: '100%', maxWidth: 280, fontSize: 13 }}
+                    >
+                      ABRIR CHAT PRINCIPAL
+                    </button>
+                  </div>
+
+                  <div style={{
+                    width: '100%',
+                    maxWidth: 360,
+                    display: 'flex',
                     flexDirection: 'column',
-                    gap: 10,
-                    padding: 12,
+                    gap: 8,
+                    padding: 10,
                     border: '1px solid rgba(0,229,255,0.18)',
                     background: 'rgba(0,0,0,0.28)',
                   }}>
@@ -670,16 +693,16 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     </div>
 
                     <div style={{
-                      minHeight: 84,
+                      minHeight: 66,
                       border: '1px solid rgba(255,255,255,0.06)',
                       background: 'linear-gradient(180deg, rgba(0,229,255,0.06), rgba(0,0,0,0.18))',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: 10,
+                      padding: 8,
                     }}>
                       {menuEmojiPhase === 'showing' && (
-                        <div className="broadcast-pop" style={{ fontSize: 42, filter: 'drop-shadow(0 0 12px rgba(0,229,255,0.35))' }}>
+                        <div className="broadcast-pop" style={{ fontSize: 34, filter: 'drop-shadow(0 0 10px rgba(0,229,255,0.28))' }}>
                           {menuEmojiRound.target}
                         </div>
                       )}
@@ -705,7 +728,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     <div style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-                      gap: 8,
+                      gap: 6,
                     }}>
                       {menuEmojiRound.options.map((emoji) => (
                         <button
@@ -723,108 +746,14 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                               ? 'rgba(0,229,255,0.08)'
                               : 'rgba(255,255,255,0.03)',
                             color: 'var(--white)',
-                            minHeight: 48,
+                            minHeight: 40,
                             cursor: menuEmojiPhase === 'guessing' ? 'pointer' : 'default',
-                            fontSize: 24,
+                            fontSize: 20,
                           }}
                         >
                           {emoji}
                         </button>
                       ))}
-                    </div>
-                  </div>
-
-                  <div style={{
-                    width: '100%',
-                    maxWidth: 420,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 10,
-                    padding: 12,
-                    border: '1px solid rgba(0,255,65,0.18)',
-                    background: 'rgba(0,0,0,0.28)',
-                  }}>
-                    <div style={{
-                      fontSize: 10,
-                      color: 'var(--green-neon)',
-                      letterSpacing: 2,
-                      textAlign: 'center',
-                    }}>
-                      CHAT PRINCIPAL
-                    </div>
-
-                    <div
-                      ref={menuChatListRef}
-                      style={{
-                        minHeight: 120,
-                        maxHeight: 180,
-                        overflowY: 'auto',
-                        border: '1px solid rgba(255,255,255,0.06)',
-                        background: 'rgba(0,0,0,0.22)',
-                        padding: 10,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 8,
-                      }}
-                    >
-                      {menuChat.length === 0 ? (
-                        <div style={{ fontSize: 11, color: 'var(--gray-shadow)', lineHeight: 1.5 }}>
-                          Aqui puedes decir que vas a crear sala, pedir codigo o avisar en cual van a entrar.
-                        </div>
-                      ) : (
-                        menuChat.map((message) => {
-                          const isOwnMessage = message.playerName === name.trim()
-
-                          return (
-                            <div key={message.id} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <div style={{
-                                fontSize: 10,
-                                color: isOwnMessage ? 'var(--green-neon)' : 'var(--cyan)',
-                                letterSpacing: 1,
-                              }}>
-                                {message.playerName.toUpperCase()}
-                              </div>
-                              <div style={{
-                                fontSize: 12,
-                                color: 'var(--white)',
-                                lineHeight: 1.45,
-                                wordBreak: 'break-word',
-                              }}>
-                                {message.text}
-                              </div>
-                            </div>
-                          )
-                        })
-                      )}
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        value={menuChatDraft}
-                        onChange={(e) => setMenuChatDraft(e.target.value.slice(0, 140))}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault()
-                            handleSendMenuChat()
-                          }
-                        }}
-                        placeholder={name.trim() ? 'Escribe al chat principal...' : 'Primero escribe tu nombre arriba'}
-                        style={{
-                          ...inputStyle,
-                          width: '100%',
-                          textAlign: 'left',
-                          letterSpacing: 0.5,
-                          padding: '10px 12px',
-                        }}
-                      />
-                      <button
-                        className="btn btn-green"
-                        onClick={handleSendMenuChat}
-                        disabled={!name.trim() || !menuChatDraft.trim()}
-                        style={{ minWidth: 92 }}
-                      >
-                        ENVIAR
-                      </button>
                     </div>
                   </div>
                 </motion.div>
@@ -1280,6 +1209,139 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                 </motion.div>
               )}
             </AnimatePresence>
+          )}
+
+          {!hasJoined && view === 'welcome' && showMenuChatModal && (
+            <div
+              onClick={() => setShowMenuChatModal(false)}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 30,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 20,
+                background: 'rgba(4, 7, 12, 0.72)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              <div
+                onClick={(event) => event.stopPropagation()}
+                style={{
+                  width: 'min(460px, 100%)',
+                  maxHeight: 'min(80vh, 680px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                  padding: 16,
+                  border: '1px solid rgba(140, 155, 176, 0.24)',
+                  background: 'linear-gradient(180deg, rgba(11,15,22,0.96), rgba(8,12,18,0.98))',
+                  boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+                }}
+              >
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}>
+                  <div style={{
+                    fontSize: 11,
+                    color: 'var(--green-neon)',
+                    letterSpacing: 2,
+                  }}>
+                    CHAT PRINCIPAL
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-red"
+                    onClick={() => setShowMenuChatModal(false)}
+                    style={{ padding: '6px 14px', fontSize: 11 }}
+                  >
+                    CERRAR
+                  </button>
+                </div>
+
+                <div style={{ fontSize: 10, color: 'var(--gray-text)', lineHeight: 1.5 }}>
+                  Los mensajes aparecen aqui. Puedes pedir codigo, avisar que vas a crear sala o decir a cual entraran.
+                </div>
+
+                <div
+                  ref={menuChatListRef}
+                  style={{
+                    minHeight: 180,
+                    maxHeight: 320,
+                    overflowY: 'auto',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    background: 'rgba(0,0,0,0.22)',
+                    padding: 10,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                  }}
+                >
+                  {menuChat.length === 0 ? (
+                    <div style={{ fontSize: 11, color: 'var(--gray-shadow)', lineHeight: 1.5 }}>
+                      Aun no hay mensajes en el chat principal.
+                    </div>
+                  ) : (
+                    menuChat.map((message) => {
+                      const isOwnMessage = message.playerName === name.trim()
+
+                      return (
+                        <div key={message.id} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <div style={{
+                            fontSize: 10,
+                            color: isOwnMessage ? 'var(--green-neon)' : 'var(--cyan)',
+                            letterSpacing: 1,
+                          }}>
+                            {message.playerName.toUpperCase()}
+                          </div>
+                          <div style={{
+                            fontSize: 12,
+                            color: 'var(--white)',
+                            lineHeight: 1.45,
+                            wordBreak: 'break-word',
+                          }}>
+                            {message.text}
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    value={menuChatDraft}
+                    onChange={(e) => setMenuChatDraft(e.target.value.slice(0, 140))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        handleSendMenuChat()
+                      }
+                    }}
+                    placeholder={name.trim() ? 'Escribe al chat principal...' : 'Primero escribe tu nombre arriba'}
+                    style={{
+                      ...inputStyle,
+                      width: '100%',
+                      textAlign: 'left',
+                      letterSpacing: 0.5,
+                      padding: '10px 12px',
+                    }}
+                  />
+                  <button
+                    className="btn btn-green"
+                    onClick={handleSendMenuChat}
+                    disabled={!name.trim() || !menuChatDraft.trim()}
+                    style={{ minWidth: 92 }}
+                  >
+                    ENVIAR
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {hasJoined && (

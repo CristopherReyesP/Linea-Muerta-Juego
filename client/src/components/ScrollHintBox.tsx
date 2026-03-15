@@ -35,7 +35,7 @@ export function ScrollHintBox({ children, maxHeight, style, contentStyle }: Prop
   }, [children])
 
   return (
-    <div style={{ position: 'relative', width: '100%', ...style }}>
+    <div style={{ position: 'relative', width: '100%', minHeight: 0, ...style }}>
       {showTop && (
         <div
           style={{
@@ -70,6 +70,8 @@ export function ScrollHintBox({ children, maxHeight, style, contentStyle }: Prop
           overflowY: 'auto',
           maxHeight,
           position: 'relative',
+          minHeight: 0,
+          height: '100%',
           ...contentStyle,
         }}
       >

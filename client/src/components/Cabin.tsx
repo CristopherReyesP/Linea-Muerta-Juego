@@ -379,6 +379,7 @@ export function Cabin({
         <ScrollHintBox
           style={{
           flex: 1,
+          minHeight: 0,
           }}
           contentStyle={{
             display: 'flex',
@@ -386,6 +387,7 @@ export function Cabin({
             alignItems: 'center',
             justifyContent: 'flex-start',
             gap: 20,
+            minHeight: '100%',
             padding: consoleExpanded
             ? (isMobile ? '16px 12px 250px' : '24px 24px 250px')
             : (isMobile ? '16px 12px 104px' : '24px 24px 104px'),

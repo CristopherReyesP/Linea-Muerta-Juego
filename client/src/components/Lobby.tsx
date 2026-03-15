@@ -226,7 +226,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
   }, [menuChat.length])
 
   useEffect(() => {
-    if (hasJoined || view !== 'welcome') return
+    if (!hasJoined) return
 
     if (menuEmojiPhase === 'showing') {
       const timer = setTimeout(() => setMenuEmojiPhase('guessing'), 350)
@@ -262,7 +262,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
       }, 1000)
       return () => clearTimeout(timer)
     }
-  }, [hasJoined, menuEmojiPhase, view])
+  }, [hasJoined, menuEmojiPhase])
 
   const handleCreate = (isPublic: boolean = false) => {
     if (!name.trim()) return
@@ -688,94 +688,6 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     >
                       ABRIR CHAT PRINCIPAL
                     </button>
-
-                    <div style={{
-                      width: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 6,
-                      padding: 8,
-                      border: '1px solid rgba(140,155,176,0.14)',
-                      background: 'rgba(0,0,0,0.18)',
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        gap: 8,
-                        alignItems: 'center',
-                      }}>
-                        <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 1.4 }}>
-                          Minijuego de espera
-                        </div>
-                        <div style={{ fontSize: 9, color: 'var(--gray-text)' }}>
-                          {menuEmojiPhase === 'guessing' ? `${menuEmojiGuessSeconds}s` : `score ${menuEmojiScore}`}
-                        </div>
-                      </div>
-
-                      <div style={{
-                        minHeight: 48,
-                        border: '1px solid rgba(255,255,255,0.06)',
-                        background: 'linear-gradient(180deg, rgba(0,229,255,0.05), rgba(0,0,0,0.16))',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 6,
-                      }}>
-                        {menuEmojiPhase === 'showing' && (
-                          <div className="broadcast-pop" style={{ fontSize: 24 }}>
-                            {menuEmojiRound.target}
-                          </div>
-                        )}
-
-                        {menuEmojiPhase === 'guessing' && (
-                          <div style={{ fontSize: 9, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.4 }}>
-                            ¿Cual fue?
-                          </div>
-                        )}
-
-                        {menuEmojiPhase === 'result' && menuEmojiResult && (
-                          <div style={{
-                            fontSize: 9,
-                            color: menuEmojiResult.correct ? 'var(--green-neon)' : 'var(--red-danger)',
-                            textAlign: 'center',
-                            lineHeight: 1.4,
-                          }}>
-                            {menuEmojiResult.correct ? 'Bien' : menuEmojiRound.target}
-                          </div>
-                        )}
-                      </div>
-
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-                        gap: 6,
-                      }}>
-                        {menuEmojiRound.options.map((emoji) => (
-                          <button
-                            key={`${menuEmojiRound.round}-${emoji}`}
-                            type="button"
-                            onClick={() => handleMenuEmojiGuess(emoji)}
-                            disabled={menuEmojiPhase !== 'guessing'}
-                            style={{
-                              border: `1px solid ${
-                                menuEmojiPhase === 'result' && emoji === menuEmojiRound.target
-                                  ? 'var(--green-neon)'
-                                  : 'rgba(0,229,255,0.18)'
-                              }`,
-                              background: menuEmojiPhase === 'guessing'
-                                ? 'rgba(0,229,255,0.06)'
-                                : 'rgba(255,255,255,0.03)',
-                              color: 'var(--white)',
-                              minHeight: 34,
-                              cursor: menuEmojiPhase === 'guessing' ? 'pointer' : 'default',
-                              fontSize: 18,
-                            }}
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   </div>
                 </motion.div>
               )}
@@ -1484,6 +1396,94 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
 
               <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>
                 {connectedLobbyPlayers.length} jugador{connectedLobbyPlayers.length !== 1 ? 'es' : ''} conectado{connectedLobbyPlayers.length !== 1 ? 's' : ''}
+              </div>
+
+              <div style={{
+                width: 'min(520px, 100%)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                padding: 10,
+                border: '1px solid rgba(140,155,176,0.14)',
+                background: 'rgba(0,0,0,0.18)',
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  alignItems: 'center',
+                }}>
+                  <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 1.4 }}>
+                    Minijuego de espera
+                  </div>
+                  <div style={{ fontSize: 9, color: 'var(--gray-text)' }}>
+                    {menuEmojiPhase === 'guessing' ? `${menuEmojiGuessSeconds}s` : `score ${menuEmojiScore}`}
+                  </div>
+                </div>
+
+                <div style={{
+                  minHeight: 48,
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  background: 'linear-gradient(180deg, rgba(0,229,255,0.05), rgba(0,0,0,0.16))',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 6,
+                }}>
+                  {menuEmojiPhase === 'showing' && (
+                    <div className="broadcast-pop" style={{ fontSize: 24 }}>
+                      {menuEmojiRound.target}
+                    </div>
+                  )}
+
+                  {menuEmojiPhase === 'guessing' && (
+                    <div style={{ fontSize: 9, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.4 }}>
+                      ¿Cual fue?
+                    </div>
+                  )}
+
+                  {menuEmojiPhase === 'result' && menuEmojiResult && (
+                    <div style={{
+                      fontSize: 9,
+                      color: menuEmojiResult.correct ? 'var(--green-neon)' : 'var(--red-danger)',
+                      textAlign: 'center',
+                      lineHeight: 1.4,
+                    }}>
+                      {menuEmojiResult.correct ? 'Bien' : menuEmojiRound.target}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                  gap: 6,
+                }}>
+                  {menuEmojiRound.options.map((emoji) => (
+                    <button
+                      key={`${menuEmojiRound.round}-${emoji}`}
+                      type="button"
+                      onClick={() => handleMenuEmojiGuess(emoji)}
+                      disabled={menuEmojiPhase !== 'guessing'}
+                      style={{
+                        border: `1px solid ${
+                          menuEmojiPhase === 'result' && emoji === menuEmojiRound.target
+                            ? 'var(--green-neon)'
+                            : 'rgba(0,229,255,0.18)'
+                        }`,
+                        background: menuEmojiPhase === 'guessing'
+                          ? 'rgba(0,229,255,0.06)'
+                          : 'rgba(255,255,255,0.03)',
+                        color: 'var(--white)',
+                        minHeight: 34,
+                        cursor: menuEmojiPhase === 'guessing' ? 'pointer' : 'default',
+                        fontSize: 18,
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div style={{

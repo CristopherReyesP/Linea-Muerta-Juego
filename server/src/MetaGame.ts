@@ -182,6 +182,31 @@ export class MetaGame {
     return true
   }
 
+  reclaimPublicRoom(
+    socketId: string,
+    name: string,
+    avatarId: string,
+    avatarColor: string,
+    accessoryId: string
+  ): MetaPlayer | null {
+    if (!this.isPublic || this.metaPhase !== MetaGamePhase.LOBBY) return null
+
+    const disconnectedHost = this.hostId ? this.metaPlayers.get(this.hostId) : null
+    const target = disconnectedHost && !disconnectedHost.isConnected
+      ? disconnectedHost
+      : Array.from(this.metaPlayers.values()).find((player) => !player.isConnected) ?? null
+
+    if (!target) return null
+
+    target.name = name
+    target.avatarId = avatarId
+    target.avatarColor = avatarColor
+    target.accessoryId = accessoryId
+
+    const reconnected = this.reconnectPlayer(target.id, socketId)
+    return reconnected ? target : null
+  }
+
   // --- Session flow ---
 
   startSession(options?: { selectedMinigameIds?: string[] }): void {
@@ -508,8 +533,11 @@ export class MetaGame {
 
     const host = this.hostId ? this.metaPlayers.get(this.hostId) : null
     const playerCount = this.getConnectedPlayerCount()
+    const expiresAt = playerCount === 0
+      ? this.lastActivityAt + MetaGame.EMPTY_PUBLIC_ROOM_TTL_MS
+      : null
 
-    if (!host || !host.isConnected || playerCount === 0 || playerCount >= DEFAULT_CONFIG.maxPlayers) {
+    if (!host || playerCount >= DEFAULT_CONFIG.maxPlayers) {
       return null
     }
 
@@ -518,6 +546,7 @@ export class MetaGame {
       hostName: host.name,
       playerCount,
       maxPlayers: DEFAULT_CONFIG.maxPlayers,
+      expiresAt,
     }
   }
 

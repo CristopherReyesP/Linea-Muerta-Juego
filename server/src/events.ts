@@ -24,14 +24,33 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
 
     socket.on('create_game', ({ name, isPublic, avatarId, avatarColor, accessoryId }: { name: string; isPublic?: boolean; avatarId?: string; avatarColor?: string; accessoryId?: string }) => {
       const creatorKey = getCreatorKey(socket)
+      const normalizedAvatarId = avatarId ?? 'neon-eyes'
+      const normalizedAvatarColor = avatarColor ?? '#00e5ff'
+      const normalizedAccessoryId = accessoryId ?? 'none'
 
       if (isPublic && !gameManager.canCreatePublicGame(creatorKey)) {
+        const existingGame = gameManager.getPublicGameByCreatorKey(creatorKey)
+        const reclaimedPlayer = existingGame?.reclaimPublicRoom(
+          socket.id,
+          name,
+          normalizedAvatarId,
+          normalizedAvatarColor,
+          normalizedAccessoryId
+        ) ?? null
+
+        if (existingGame && reclaimedPlayer) {
+          socket.emit('game_joined', { gameId: existingGame.id, playerId: reclaimedPlayer.id })
+          existingGame.broadcastMetaState()
+          gameManager.broadcastPublicRooms()
+          return
+        }
+
         socket.emit('error', 'Ya tienes una sala publica activa o en enfriamiento. Reutilizala o espera a que expire.')
         return
       }
 
       const game = gameManager.createGame(Boolean(isPublic), creatorKey)
-      const metaPlayer = game.addPlayer(socket.id, name, avatarId ?? 'neon-eyes', avatarColor ?? '#00e5ff', accessoryId ?? 'none')
+      const metaPlayer = game.addPlayer(socket.id, name, normalizedAvatarId, normalizedAvatarColor, normalizedAccessoryId)
 
       if (!metaPlayer) {
         socket.emit('error', 'No se pudo crear la partida')

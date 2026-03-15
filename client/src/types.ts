@@ -119,6 +119,7 @@ export interface PublicRoomSummary {
   hostName: string
   playerCount: number
   maxPlayers: number
+  expiresAt: number | null
 }
 
 export interface BombStateData {

@@ -15,7 +15,7 @@ export class GameManager {
       if (this.cleanupEmptyGames()) {
         this.broadcastPublicRooms()
       }
-    }, 60 * 1000)
+    }, 5 * 1000)
   }
 
   createGame(isPublic: boolean = false, creatorKey: string | null = null): MetaGame {
@@ -27,6 +27,15 @@ export class GameManager {
 
   getGame(id: string): MetaGame | undefined {
     return this.games.get(id)
+  }
+
+  getPublicGameByCreatorKey(creatorKey: string): MetaGame | null {
+    for (const game of this.games.values()) {
+      if (game.isPublic && game.creatorKey === creatorKey) {
+        return game
+      }
+    }
+    return null
   }
 
   getGameBySocket(socketId: string): { game: MetaGame; metaPlayer: MetaPlayer } | null {
@@ -82,18 +91,21 @@ export class GameManager {
       .map((game) => game.getPublicSummary())
       .filter((room): room is PublicRoomSummary => Boolean(room))
       .sort((a, b) => {
+        const aEmpty = a.playerCount === 0 ? 1 : 0
+        const bEmpty = b.playerCount === 0 ? 1 : 0
+        if (aEmpty !== bEmpty) return aEmpty - bEmpty
         if (b.playerCount !== a.playerCount) return b.playerCount - a.playerCount
+        if (a.expiresAt !== b.expiresAt) {
+          if (a.expiresAt === null) return -1
+          if (b.expiresAt === null) return 1
+          return a.expiresAt - b.expiresAt
+        }
         return a.gameId.localeCompare(b.gameId)
       })
   }
 
   canCreatePublicGame(creatorKey: string): boolean {
-    for (const game of this.games.values()) {
-      if (game.isPublic && game.creatorKey === creatorKey) {
-        return false
-      }
-    }
-    return true
+    return !this.getPublicGameByCreatorKey(creatorKey)
   }
 
   broadcastGlobalActivity(notification?: { playerName: string; action: string }): void {

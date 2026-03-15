@@ -1445,7 +1445,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                   onClick={() => {
                     navigator.clipboard.writeText(gameId ?? '')
                   }}
-                  title="Click para copiar"
+                  title={tr('Click para copiar')}
                 >
                   {gameId}
                 </div>
@@ -1454,7 +1454,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                   color: 'var(--gray-shadow)',
                   letterSpacing: 1,
                 }}>
-                  Click para copiar
+                  {tr('Click para copiar')}
                 </div>
               </div>
 
@@ -1510,7 +1510,9 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
               </div>
 
               <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>
-                {connectedLobbyPlayers.length} jugador{connectedLobbyPlayers.length !== 1 ? 'es' : ''} conectado{connectedLobbyPlayers.length !== 1 ? 's' : ''}
+                {language === 'en'
+                  ? `${connectedLobbyPlayers.length} ${connectedLobbyPlayers.length !== 1 ? tr('jugadores') : tr('jugador')} ${tr('conectados')}`
+                  : `${connectedLobbyPlayers.length} jugador${connectedLobbyPlayers.length !== 1 ? 'es' : ''} conectado${connectedLobbyPlayers.length !== 1 ? 's' : ''}`}
               </div>
 
               <div style={{
@@ -1529,7 +1531,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                   alignItems: 'center',
                 }}>
                   <div style={{ fontSize: 9, color: 'var(--gray-text)', letterSpacing: 1.4 }}>
-                    Minijuego de espera
+                    {tr('Minijuego de espera')}
                   </div>
                   <div style={{ fontSize: 9, color: 'var(--gray-text)' }}>
                     {menuEmojiPhase === 'guessing' ? `${menuEmojiGuessSeconds}s` : `score ${menuEmojiScore}`}
@@ -1553,7 +1555,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
 
                   {menuEmojiPhase === 'guessing' && (
                     <div style={{ fontSize: 9, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.4 }}>
-                      ¿Cual fue?
+                      {tr('¿Cual fue?')}
                     </div>
                   )}
 
@@ -1564,7 +1566,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       textAlign: 'center',
                       lineHeight: 1.4,
                     }}>
-                      {menuEmojiResult.correct ? 'Bien' : menuEmojiRound.target}
+                      {menuEmojiResult.correct ? tr('Bien') : menuEmojiRound.target}
                     </div>
                   )}
                 </div>
@@ -1617,10 +1619,10 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                   gap: 12,
                 }}>
                   <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 2 }}>
-                    CHAT DEL LOBBY
+                    {tr('CHAT DEL LOBBY')}
                   </div>
                   <div style={{ fontSize: 9, color: 'var(--gray-shadow)', letterSpacing: 1 }}>
-                    para coordinar sala o mientras esperan
+                    {tr('para coordinar sala o mientras esperan')}
                   </div>
                 </div>
 
@@ -1640,7 +1642,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                 >
                   {lobbyChat.length === 0 ? (
                     <div style={{ fontSize: 11, color: 'var(--gray-shadow)', lineHeight: 1.5 }}>
-                      Todavia no hay mensajes. Puedes decir en que sala vas, avisar que faltan jugadores o romper el hielo.
+                      {tr('Todavia no hay mensajes. Puedes decir en que sala vas, avisar que faltan jugadores o romper el hielo.')}
                     </div>
                   ) : (
                     lobbyChat.map((message) => {
@@ -1654,7 +1656,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                             color: isOwnMessage ? 'var(--green-neon)' : 'var(--cyan)',
                             letterSpacing: 1,
                           }}>
-                            {isOwnMessage ? 'TU' : currentName.toUpperCase()}
+                            {isOwnMessage ? tr('TU') : currentName.toUpperCase()}
                           </div>
                           <div style={{
                             fontSize: 12,
@@ -1680,7 +1682,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                         handleSendLobbyChat()
                       }
                     }}
-                    placeholder="Escribe algo corto..."
+                    placeholder={tr('Escribe algo corto...')}
                     style={{
                       ...inputStyle,
                       width: '100%',
@@ -1695,7 +1697,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     disabled={!lobbyChatDraft.trim()}
                     style={{ minWidth: 92 }}
                   >
-                    ENVIAR
+                    {tr('ENVIAR')}
                   </button>
                 </div>
               </div>
@@ -1725,7 +1727,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       }}
                     />
                     <span style={{ fontSize: 9, color: 'var(--green-dim)', letterSpacing: 1 }}>
-                      VOZ ABIERTA
+                      {tr('VOZ ABIERTA')}
                     </span>
                   </div>
 
@@ -1760,7 +1762,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                           checked={devMode}
                           onChange={e => setDevMode(e.target.checked)}
                         />
-                        MODO DESARROLLADOR
+                        {tr('MODO DESARROLLADOR')}
                       </label>
 
                       {devMode && (
@@ -1802,7 +1804,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     disabled={connectedLobbyPlayers.length < 2 || (devMode && selectedMinigameIds.length === 0)}
                     style={{ fontSize: 16 }}
                   >
-                    INICIAR PARTIDA
+                    {tr('INICIAR PARTIDA')}
                   </button>
                 </div>
               ) : (
@@ -1813,13 +1815,13 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                 }}
                 className="pulse"
                 >
-                  Esperando al anfitrion...
+                  {tr('Esperando al anfitrion...')}
                 </div>
               )}
 
               {isHost && connectedLobbyPlayers.length < 2 && (
                 <div style={{ fontSize: 10, color: 'var(--gray-text)' }}>
-                  Comparte el codigo para que otros se unan
+                  {tr('Comparte el codigo para que otros se unan')}
                 </div>
               )}
             </motion.div>

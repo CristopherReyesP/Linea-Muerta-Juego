@@ -257,6 +257,17 @@ const englishTranslations: Record<string, string> = {
   'creo una sala publica': 'created a public room',
   'creo una sala': 'created a room',
   'se unio a una sala': 'joined a room',
+  'jugador': 'player',
+  'jugadores': 'players',
+  'conectado': 'connected',
+  'conectados': 'connected',
+  'Minijuego de espera': 'Waiting minigame',
+  '¿Cual fue?': 'Which one was it?',
+  'Bien': 'Correct',
+  'CHAT DEL LOBBY': 'LOBBY CHAT',
+  'para coordinar sala o mientras esperan': 'to coordinate the room or while they wait',
+  'TU': 'YOU',
+  'MODO DESARROLLADOR': 'DEVELOPER MODE',
 }
 
 const minigameNamesEn: Record<string, string> = {

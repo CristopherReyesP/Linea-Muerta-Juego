@@ -196,6 +196,16 @@ export function useSocket() {
       store.setEmojiState(data)
     })
 
+    socket.on('signal_broadcast', (data) => {
+      store.setPlayerSignal(data)
+      setTimeout(() => {
+        const current = useGameStore.getState().playerSignals[data.playerId]
+        if (current?.emoji === data.emoji && current?.label === data.label) {
+          useGameStore.getState().clearPlayerSignal(data.playerId)
+        }
+      }, 3000)
+    })
+
     socket.on('shadow_interference', ({ duration }) => {
       store.setShadowInterference(true)
       setTimeout(() => store.setShadowInterference(false), duration * 1000)
@@ -327,6 +337,10 @@ export function useSocket() {
     socketRef.current?.emit('vote_emoji', targetPlayerId)
   }, [])
 
+  const sendSignal = useCallback((data: { emoji: string; label: string }) => {
+    socketRef.current?.emit('send_signal', data)
+  }, [])
+
   return {
     socket: socketRef,
     createGame,
@@ -348,5 +362,6 @@ export function useSocket() {
     submitReport,
     submitEmergencyResponse,
     voteEmoji,
+    sendSignal,
   }
 }

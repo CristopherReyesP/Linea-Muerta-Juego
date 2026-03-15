@@ -157,6 +157,13 @@ export interface BombStateData {
   endTime: number
 }
 
+export interface CabinSignalData {
+  playerId: string
+  playerName: string
+  emoji: string
+  label: string
+}
+
 export interface MetaGameStateSnapshot {
   gameId: string
   metaPhase: MetaGamePhase
@@ -232,7 +239,7 @@ export interface ClientToServerEvents {
   hang_up: () => void
   submit_decision: (decision: Decision) => void
   use_shadow_interference: (targetPlayerId: string) => void
-  continue_to_next: () => void
+  continue_to_next: (data?: { selectedMinigameIds?: string[] }) => void
   vote_player: (targetPlayerId: string) => void
   submit_line_guesses: (guesses: Record<string, string>) => void // lineNumber -> guessedPlayerId
   pass_bomb: (targetPlayerId: string) => void
@@ -241,6 +248,7 @@ export interface ClientToServerEvents {
   submit_report: (text: string) => void
   submit_emergency_response: (optionIndex: number) => void
   vote_emoji: (targetPlayerId: string) => void
+  send_signal: (data: { emoji: string; label: string }) => void
   // WebRTC signaling
   webrtc_offer: (data: { targetId: string; offer: unknown }) => void
   webrtc_answer: (data: { targetId: string; answer: unknown }) => void
@@ -278,6 +286,7 @@ export interface ServerToClientEvents {
   voice_distortion: (data: { enabled: boolean }) => void
   emergency_state: (data: EmergencyStateData) => void
   emoji_state: (data: EmojiStateData) => void
+  signal_broadcast: (data: CabinSignalData) => void
   error: (message: string) => void
   shadow_interference: (data: { duration: number }) => void
   // WebRTC signaling

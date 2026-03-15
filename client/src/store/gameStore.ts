@@ -5,7 +5,8 @@ import {
   MiniGameInfo, MinigameResult, DiscussionData, SessionCompleteData,
   MetaGameStateSnapshot, BombStateData, BombOutcomeData, EmergencyStateData,
   PublicRoomSummary,
-  EmojiStateData
+  EmojiStateData,
+  CabinSignalData
 } from '../types'
 
 interface IncomingCall {
@@ -115,6 +116,8 @@ interface GameStore {
 
   // Emoji Diferente
   emojiState: EmojiStateData | null
+  playerSignals: Record<string, CabinSignalData>
+  latestSignal: CabinSignalData | null
 
   // Global activity (welcome screen)
   globalStats: {
@@ -168,6 +171,8 @@ interface GameStore {
   setBombOutcome: (data: BombOutcomeData | null) => void
   setEmergencyState: (data: EmergencyStateData | null) => void
   setEmojiState: (data: EmojiStateData | null) => void
+  setPlayerSignal: (data: CabinSignalData) => void
+  clearPlayerSignal: (playerId: string) => void
   setGlobalStats: (stats: {
     totalRooms: number
     totalPlayers: number
@@ -233,6 +238,8 @@ const initialState = {
   bombOutcome: null,
   emergencyState: null,
   emojiState: null,
+  playerSignals: {},
+  latestSignal: null,
   globalStats: null,
   globalNotifications: [],
   publicRooms: [],
@@ -321,6 +328,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     bombLastDefuseResult: null,
     bombOutcome: null,
     emojiState: null,
+    playerSignals: {},
+    latestSignal: null,
   }),
 
   setOpenVoicePlayerIds: (ids) => set({ openVoicePlayerIds: ids, micMuted: false }),
@@ -336,6 +345,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setBombOutcome: (data) => set({ bombOutcome: data }),
   setEmergencyState: (data) => set({ emergencyState: data }),
   setEmojiState: (data) => set({ emojiState: data }),
+  setPlayerSignal: (data) => set((state) => ({
+    playerSignals: {
+      ...state.playerSignals,
+      [data.playerId]: data,
+    },
+    latestSignal: data,
+  })),
+  clearPlayerSignal: (playerId) => set((state) => {
+    const nextSignals = { ...state.playerSignals }
+    delete nextSignals[playerId]
+    return { playerSignals: nextSignals }
+  }),
   setGlobalStats: (stats) => set({ globalStats: stats }),
   setPublicRooms: (rooms) => set({ publicRooms: rooms }),
   addGlobalNotification: (notification) => set((s) => ({

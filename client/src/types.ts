@@ -140,6 +140,13 @@ export interface BombOutcomeData {
   chance?: number
 }
 
+export interface CabinSignalData {
+  playerId: string
+  playerName: string
+  emoji: string
+  label: string
+}
+
 export interface EmergencyStateData {
   internalPhase: 'ROLES' | 'SABOTAGE' | 'TRANSMISSION' | 'OPERATOR_RESPONSE' | 'RESULT'
   operatorIds: string[]

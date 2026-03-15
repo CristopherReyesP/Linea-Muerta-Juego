@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { GamePhase } from '../types'
 import { BalanceDisplay } from './BalanceDisplay'
@@ -17,6 +18,8 @@ import { AudioControls } from './AudioControls'
 import { BombOutcomeOverlay } from './BombOutcomeOverlay'
 import { EmergencyPanel } from './EmergencyPanel'
 import { EmojiPanel } from './EmojiPanel'
+import { AutoLogPanel } from './AutoLogPanel'
+import { IdleNotesPanel } from './IdleNotesPanel'
 import type { EmergencyStateData, EmojiStateData, PlayerData } from '../types'
 
 interface Props {
@@ -35,6 +38,7 @@ interface Props {
   onSubmitReport: (text: string) => void
   onSubmitEmergencyResponse: (optionIndex: number) => void
   onVoteEmoji: (targetId: string) => void
+  onSendSignal: (data: { emoji: string; label: string }) => void
   audioData: Uint8Array
   isSpeaking: boolean
   onShowRules: () => void
@@ -130,6 +134,7 @@ export function Cabin({
   onCallPlayer, onAcceptCall, onRejectCall, onHangUp,
   onSubmitDecision, onVotePlayer, onSubmitLineGuesses, onPassBomb, onAttemptDefuse, onSkipToFinish, onInterference,
   onSubmitSabotage, onSubmitReport, onSubmitEmergencyResponse, onVoteEmoji,
+  onSendSignal,
   audioData, isSpeaking, onShowRules,
 }: Props) {
   const phase = useGameStore(s => s.phase)
@@ -141,6 +146,8 @@ export function Cabin({
   const bombState = useGameStore(s => s.bombState)
   const emergencyState = useGameStore(s => s.emergencyState)
   const emojiState = useGameStore(s => s.emojiState)
+  const [consoleExpanded, setConsoleExpanded] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   const activePlayers = players.filter(p => p.isAlive).length
   const isVotingMinigame = activeMinigameId?.startsWith('votacion') ?? false
@@ -157,6 +164,27 @@ export function Cabin({
     emojiState,
   })
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const handleVisibility = (event: Event) => {
+      const customEvent = event as CustomEvent<{ expanded?: boolean }>
+      setConsoleExpanded(Boolean(customEvent.detail?.expanded))
+    }
+
+    window.addEventListener('lm-autolog-visibility', handleVisibility as EventListener)
+    return () => window.removeEventListener('lm-autolog-visibility', handleVisibility as EventListener)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const syncViewport = () => setIsMobile(window.innerWidth <= 900)
+    syncViewport()
+    window.addEventListener('resize', syncViewport)
+    return () => window.removeEventListener('resize', syncViewport)
+  }, [])
+
   if (phase === GamePhase.GAME_OVER) {
     return <GameOver />
   }
@@ -164,6 +192,7 @@ export function Cabin({
   return (
     <div style={{
       display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
       height: '100%',
       width: '100%',
       background: `
@@ -173,13 +202,17 @@ export function Cabin({
         linear-gradient(180deg, #05080e 0%, #03050a 58%, #020307 100%)
       `,
     }}>
+      {isMobile && <PlayerList onSendSignal={onSendSignal} mobile />}
+
       {/* Main area */}
       <div style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        borderRight: '1px solid rgba(0, 229, 255, 0.1)',
+        minHeight: 0,
+        borderRight: isMobile ? 'none' : '1px solid rgba(0, 229, 255, 0.1)',
+        borderTop: isMobile ? '1px solid rgba(0, 229, 255, 0.12)' : 'none',
         boxShadow: 'inset 0 0 38px rgba(0, 229, 255, 0.06), inset 0 -36px 80px rgba(0,0,0,0.42)',
       }}>
         <div
@@ -202,9 +235,11 @@ export function Cabin({
         {/* Header */}
         <div style={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: isMobile ? 'center' : 'space-between',
           alignItems: 'center',
-          padding: '12px 24px',
+          flexWrap: 'wrap',
+          gap: isMobile ? 12 : 0,
+          padding: isMobile ? '12px 14px' : '12px 24px',
           borderBottom: '1px solid rgba(0, 229, 255, 0.2)',
           background: 'linear-gradient(180deg, rgba(7,12,20,0.92), rgba(4,8,14,0.88))',
           boxShadow: '0 10px 22px rgba(0,0,0,0.35)',
@@ -215,8 +250,10 @@ export function Cabin({
 
           <div style={{
             display: 'flex',
-            gap: 32,
+            gap: isMobile ? 18 : 32,
             alignItems: 'center',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
           }}>
             <AudioControls />
 
@@ -265,8 +302,9 @@ export function Cabin({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
+          flexWrap: 'wrap',
           gap: 16,
-          padding: '8px 24px',
+          padding: isMobile ? '8px 14px' : '8px 24px',
           borderBottom: '1px solid rgba(0,229,255,0.14)',
           background: 'linear-gradient(180deg, rgba(0,229,255,0.08), rgba(0,229,255,0.02))',
           position: 'relative',
@@ -300,12 +338,15 @@ export function Cabin({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'flex-start',
           gap: 20,
-          padding: 24,
+          padding: consoleExpanded
+            ? (isMobile ? '16px 12px 250px' : '24px 24px 250px')
+            : (isMobile ? '16px 12px 104px' : '24px 24px 104px'),
           overflowY: 'auto',
           position: 'relative',
           zIndex: 1,
+          transition: 'padding-bottom 0.22s ease',
         }}>
           {phaseInstruction && (
             <div
@@ -430,11 +471,13 @@ export function Cabin({
           )}
         </div>
 
+        <AutoLogPanel />
+        <IdleNotesPanel />
         {isBombMinigame && <BombOutcomeOverlay />}
       </div>
 
       {/* Player sidebar */}
-      <PlayerList />
+      {!isMobile && <PlayerList onSendSignal={onSendSignal} />}
     </div>
   )
 }

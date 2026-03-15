@@ -10,7 +10,7 @@ type LobbyView = 'welcome' | 'setup' | 'join'
 type LobbyAction = 'create-private' | 'create-public' | 'join-public'
 type CustomizeTab = 'masks' | 'accessories'
 const DEV_MODE_STORAGE_KEY = 'lm_dev_mode'
-const isLocalMachine = typeof window !== 'undefined'
+const isLocalMachine = import.meta.env.DEV && typeof window !== 'undefined'
   && ['localhost', '127.0.0.1', '[::1]', '::1'].includes(window.location.hostname)
 
 interface Props {

@@ -7,7 +7,7 @@ interface Props {
 }
 
 const DEV_MODE_STORAGE_KEY = 'lm_dev_mode'
-const isLocalMachine = typeof window !== 'undefined'
+const isLocalMachine = import.meta.env.DEV && typeof window !== 'undefined'
   && ['localhost', '127.0.0.1', '[::1]', '::1'].includes(window.location.hostname)
 const minigameOptions = [
   { id: 'cooperar-traicionar', name: 'Cooperar o Traicionar', minPlayers: 2 },

@@ -20,7 +20,9 @@ export function MinigameHeader() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '8px 24px',
+        flexWrap: 'wrap',
+        gap: 10,
+        padding: '8px 16px',
         background: 'rgba(0, 229, 255, 0.05)',
         borderBottom: '1px solid var(--cyan)',
       }}

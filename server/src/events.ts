@@ -30,6 +30,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
   io.on('connection', (socket: Socket) => {
     console.log(`[Connect] ${socket.id}`)
     gameManager.registerConnection(socket.id)
+    let lastSignalAt = 0
 
     // Send current global stats to the newly connected socket
     const initialStats = gameManager.getGlobalStats()
@@ -274,6 +275,43 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
       if (!minigame || !(minigame instanceof CentralDeEmergencias)) return
 
       minigame.submitEmergencyResponse(result.metaPlayer.id, optionIndex)
+    })
+
+    socket.on('send_signal', (data: { emoji: string; label: string }) => {
+      const result = gameManager.getGameBySocket(socket.id)
+      if (!result) return
+
+      const now = Date.now()
+      if (now - lastSignalAt < 8000) {
+        socket.emit('error', 'Espera un momento antes de enviar otra senal.')
+        return
+      }
+
+      const emoji = String(data.emoji ?? '').slice(0, 4)
+      const label = String(data.label ?? '').slice(0, 24)
+      const allowedSignals = new Set([
+        '👀|OJO',
+        '⚠️|CUIDADO',
+        '🤝|CONFIA',
+        '❌|MENTIRA',
+        '❓|DUDA',
+        '🔥|TENSION',
+        '🧨|PELIGRO',
+        '📡|ESCUCHEN',
+      ])
+
+      if (!allowedSignals.has(`${emoji}|${label}`)) {
+        socket.emit('error', 'Senal invalida.')
+        return
+      }
+
+      lastSignalAt = now
+      io.to(`game:${result.game.id}`).emit('signal_broadcast', {
+        playerId: result.metaPlayer.id,
+        playerName: result.metaPlayer.name,
+        emoji,
+        label,
+      })
     })
 
     socket.on('continue_to_next', (data?: { selectedMinigameIds?: string[] }) => {

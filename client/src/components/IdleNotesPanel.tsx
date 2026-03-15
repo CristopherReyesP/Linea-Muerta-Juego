@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
+import { useI18n } from '../i18n'
 
 export function IdleNotesPanel() {
+  const { tr } = useI18n()
   const gameId = useGameStore((s) => s.gameId)
   const activeMinigameId = useGameStore((s) => s.activeMinigameId)
   const currentMinigameIndex = useGameStore((s) => s.currentMinigameIndex)
@@ -88,7 +90,7 @@ export function IdleNotesPanel() {
             fontFamily: 'var(--font-mono)',
           }}
         >
-          {collapsed ? 'ABRIR' : 'OCULTAR'}
+          {collapsed ? tr('ABRIR') : tr('OCULTAR')}
         </button>
       </div>
 
@@ -97,7 +99,7 @@ export function IdleNotesPanel() {
           <textarea
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
-            placeholder="Anota sospechas, promesas, pistas o nombres..."
+            placeholder={tr('Anota sospechas, promesas, pistas o nombres...')}
             style={{
               width: '100%',
               minHeight: 112,
@@ -113,7 +115,7 @@ export function IdleNotesPanel() {
             }}
           />
           <div style={{ fontSize: 9, color: 'var(--gray-text)', marginTop: 8 }}>
-            Se guarda durante esta sesion del navegador.
+            {tr('Se guarda durante esta sesion del navegador.')}
           </div>
         </div>
       )}

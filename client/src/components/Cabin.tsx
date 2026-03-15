@@ -311,6 +311,8 @@ export function Cabin({
               <div style={{ fontSize: isMobile ? 18 : 24, color: 'var(--white)' }}>
                 {round}<span style={{ fontSize: 14, color: 'var(--gray-text)' }}>/{maxRounds}</span>
               </div>
+            </div>
+
             <button
               onClick={onShowRules}
               style={{
@@ -330,7 +332,6 @@ export function Cabin({
             >
               ?
             </button>
-            </div>
 
           </div>
         </div>

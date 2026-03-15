@@ -108,8 +108,8 @@ export function PlayerList({ onSendSignal, mobile = false }: Props) {
       borderLeft: mobile ? 'none' : '1px solid rgba(0,229,255,0.2)',
       borderBottom: mobile ? '1px solid rgba(0,229,255,0.16)' : 'none',
       boxShadow: 'inset 0 0 16px rgba(0,229,255,0.08)',
-      minWidth: mobile ? 0 : 140,
-      width: mobile ? '100%' : 'auto',
+      minWidth: mobile ? 0 : 304,
+      width: mobile ? '100%' : 304,
       maxHeight: mobile ? 98 : '100%',
       overflow: 'hidden',
     }}>

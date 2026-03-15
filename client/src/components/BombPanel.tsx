@@ -18,6 +18,7 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
 
   const [selectedTargetId, setSelectedTargetId] = useState<string>('')
   const [remainingSeconds, setRemainingSeconds] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     if (!bombState) return
@@ -40,6 +41,14 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
     if (!exists) setSelectedTargetId('')
   }, [players, selectedTargetId])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const syncViewport = () => setIsMobile(window.innerWidth <= 900)
+    syncViewport()
+    window.addEventListener('resize', syncViewport)
+    return () => window.removeEventListener('resize', syncViewport)
+  }, [])
+
   const isHolder = bombState?.holderId === myPlayer?.id
   const isUrgent = remainingSeconds <= 10
 
@@ -59,10 +68,10 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
         maxWidth: 880,
         border: `1px solid ${isUrgent ? 'var(--red-danger)' : 'var(--cyan)'}`,
         background: isUrgent ? 'rgba(255, 23, 68, 0.08)' : 'rgba(0, 229, 255, 0.04)',
-        padding: 20,
+        padding: isMobile ? 14 : 20,
         display: 'grid',
-        gridTemplateColumns: '1.4fr 1fr',
-        gap: 18,
+        gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr',
+        gap: isMobile ? 14 : 18,
         boxShadow: isUrgent ? '0 0 28px rgba(255,23,68,0.18)' : '0 0 24px rgba(0,229,255,0.1)',
       }}
       className={isUrgent ? 'pulse-red' : ''}
@@ -75,37 +84,38 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
           paddingBottom: 6,
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}>
-          <div style={{ fontSize: 11, color: 'var(--red-danger)', letterSpacing: 4 }}>
+          <div style={{ fontSize: isMobile ? 9 : 11, color: 'var(--red-danger)', letterSpacing: isMobile ? 2.6 : 4 }}>
             ALERTA CRITICA
           </div>
-          <div style={{ fontSize: 24, color: 'var(--white)', fontWeight: 'bold', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: isMobile ? 18 : 24, color: 'var(--white)', fontWeight: 'bold', textTransform: 'uppercase', lineHeight: 1.15 }}>
             {isHolder ? 'La decision esta en tus manos' : `${bombState.holderName} sostiene la bomba`}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--gray-text)', lineHeight: 1.6 }}>
+          <div style={{ fontSize: isMobile ? 11 : 12, color: 'var(--gray-text)', lineHeight: 1.5 }}>
             {isHolder
               ? 'Puedes jugartela ahora o condenar a otra cabina con un pase.'
               : 'Cada segundo que pasa acerca la explosion o una transferencia inesperada.'}
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
             TEMPORIZADOR DE BOMBA
           </div>
-          <div style={{ fontSize: 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
+          <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
             LLAMADAS ACTIVAS: {activeCalls.length}
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <BombIllustration urgent={isUrgent} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: isMobile ? 12 : 18, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+          <BombIllustration urgent={isUrgent} compact={isMobile} />
           <div
             style={{
-              fontSize: 56,
+              fontSize: isMobile ? 40 : 56,
               fontWeight: 'bold',
-              letterSpacing: 5,
+              letterSpacing: isMobile ? 2 : 5,
               color: isUrgent ? 'var(--red-danger)' : 'var(--green-neon)',
               textShadow: isUrgent ? '0 0 20px rgba(255,23,68,0.5)' : '0 0 20px rgba(0,255,65,0.3)',
+              textAlign: isMobile ? 'center' : 'left',
             }}
             className={isUrgent ? 'flicker' : ''}
           >
@@ -125,26 +135,28 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            gap: 10,
+            flexWrap: 'wrap',
           }}
         >
-          <span style={{ fontSize: 11, color: 'var(--gray-text)', letterSpacing: 2 }}>TIENE LA BOMBA</span>
-          <span style={{ fontSize: 14, color: 'var(--red-danger)', fontWeight: 'bold' }}>{bombState.holderName}</span>
+          <span style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>TIENE LA BOMBA</span>
+          <span style={{ fontSize: isMobile ? 12 : 14, color: 'var(--red-danger)', fontWeight: 'bold' }}>{bombState.holderName}</span>
         </motion.div>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <span style={{ fontSize: 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
             PROB. DESACTIVACION
           </span>
-          <span style={{ fontSize: 24, color: 'var(--cyan)', fontWeight: 'bold' }}>
+          <span style={{ fontSize: isMobile ? 20 : 24, color: 'var(--cyan)', fontWeight: 'bold' }}>
             {bombState.disarmChance}%
           </span>
-          <span style={{ fontSize: 11, color: 'var(--gray-text)' }}>
+          <span style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)' }}>
             ({bombState.passCount} pases)
           </span>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 2 }}>
+          <div style={{ fontSize: isMobile ? 9 : 10, color: 'var(--gray-text)', letterSpacing: 2 }}>
             HISTORIAL DE PASES
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -156,7 +168,7 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
                   background: 'var(--bg-panel)',
                   color: 'var(--white)',
                   padding: '4px 8px',
-                  fontSize: 10,
+                  fontSize: isMobile ? 9 : 10,
                 }}
               >
                 {name}
@@ -166,13 +178,13 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
         </div>
 
         {bombLastPass && (
-          <div style={{ fontSize: 11, color: 'var(--cyan)' }}>
+          <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--cyan)', lineHeight: 1.4 }}>
             Pase reciente: {bombLastPass.fromName} {'->'} {bombLastPass.toName}
           </div>
         )}
 
         {bombLastDefuseResult && (
-          <div style={{ fontSize: 11, color: bombLastDefuseResult.success ? 'var(--green-neon)' : 'var(--red-danger)' }}>
+          <div style={{ fontSize: isMobile ? 10 : 11, color: bombLastDefuseResult.success ? 'var(--green-neon)' : 'var(--red-danger)', lineHeight: 1.4 }}>
             {bombLastDefuseResult.playerName} intento desactivar ({bombLastDefuseResult.chance}%):{' '}
             {bombLastDefuseResult.success ? 'EXITO' : 'FALLO'}
           </div>
@@ -180,7 +192,7 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ fontSize: 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
+        <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', letterSpacing: 2 }}>
           ACCIONES
         </div>
 
@@ -188,6 +200,7 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
           className="btn btn-red"
           onClick={onAttemptDefuse}
           disabled={!isHolder}
+          style={isMobile ? { width: '100%', padding: '10px 14px', fontSize: 12 } : undefined}
         >
           DESACTIVAR
         </button>
@@ -200,8 +213,10 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
             background: 'var(--bg-panel)',
             color: 'var(--white)',
             border: '1px solid #333',
-            padding: 10,
+            padding: isMobile ? 12 : 10,
             fontFamily: 'var(--font-mono)',
+            fontSize: isMobile ? 12 : 14,
+            width: '100%',
           }}
         >
           <option value="">Seleccionar destino</option>
@@ -220,11 +235,12 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
             setSelectedTargetId('')
           }}
           disabled={!isHolder || !selectedTargetId}
+          style={isMobile ? { width: '100%', padding: '10px 14px', fontSize: 12 } : undefined}
         >
           PASAR BOMBA
         </button>
 
-        <div style={{ fontSize: 11, color: 'var(--gray-text)', lineHeight: 1.5 }}>
+        <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', lineHeight: 1.5 }}>
           {isHolder
             ? 'Cada accion cambia tus probabilidades. Una falla explota de inmediato.'
             : `Esperando decision de ${bombState.holderName}. Nadie sabe si arriesgara o pasara.`}
@@ -234,12 +250,12 @@ export function BombPanel({ onPassBomb, onAttemptDefuse }: Props) {
   )
 }
 
-function BombIllustration({ urgent }: { urgent: boolean }) {
+function BombIllustration({ urgent, compact = false }: { urgent: boolean; compact?: boolean }) {
   return (
     <div
       style={{
-        width: 122,
-        height: 102,
+        width: compact ? 96 : 122,
+        height: compact ? 80 : 102,
         border: `1px solid ${urgent ? 'rgba(255,23,68,0.75)' : 'rgba(0,229,255,0.55)'}`,
         background: urgent ? 'rgba(255,23,68,0.08)' : 'rgba(0,229,255,0.05)',
         display: 'flex',
@@ -247,7 +263,7 @@ function BombIllustration({ urgent }: { urgent: boolean }) {
         justifyContent: 'center',
       }}
     >
-      <svg width="96" height="78" viewBox="0 0 96 78" role="img" aria-label="Bomba">
+      <svg width={compact ? 76 : 96} height={compact ? 62 : 78} viewBox="0 0 96 78" role="img" aria-label="Bomba">
         <defs>
           <radialGradient id="bombBody" cx="38%" cy="35%" r="68%">
             <stop offset="0%" stopColor="#48576d" />

@@ -4,6 +4,7 @@ import { useGameStore } from '../store/gameStore'
 export function BombSpectatorPanel() {
   const bombState = useGameStore((s) => s.bombState)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     if (!bombState) return
@@ -18,6 +19,14 @@ export function BombSpectatorPanel() {
     return () => clearInterval(interval)
   }, [bombState])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const syncViewport = () => setIsMobile(window.innerWidth <= 900)
+    syncViewport()
+    window.addEventListener('resize', syncViewport)
+    return () => window.removeEventListener('resize', syncViewport)
+  }, [])
+
   if (!bombState) return null
   const isUrgent = remainingSeconds <= 10
 
@@ -28,18 +37,18 @@ export function BombSpectatorPanel() {
         maxWidth: 560,
         border: `1px solid ${isUrgent ? 'var(--red-danger)' : 'var(--cyan)'}`,
         background: isUrgent ? 'rgba(255, 23, 68, 0.06)' : 'rgba(0, 229, 255, 0.04)',
-        padding: 18,
+        padding: isMobile ? 14 : 18,
         display: 'flex',
         flexDirection: 'column',
-        gap: 10,
+        gap: isMobile ? 8 : 10,
         boxShadow: isUrgent ? '0 0 24px rgba(255,23,68,0.16)' : '0 0 20px rgba(0,229,255,0.08)',
       }}
     >
-      <div style={{ fontSize: 10, color: isUrgent ? 'var(--red-danger)' : 'var(--gray-text)', letterSpacing: 3 }}>
+      <div style={{ fontSize: isMobile ? 9 : 10, color: isUrgent ? 'var(--red-danger)' : 'var(--gray-text)', letterSpacing: isMobile ? 2 : 3 }}>
         {isUrgent ? 'ULTIMOS SEGUNDOS' : 'ESTADO DE BOMBA'}
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', padding: '2px 0 4px' }}>
-        <svg width="84" height="66" viewBox="0 0 96 78" role="img" aria-label="Bomba">
+        <svg width={isMobile ? 64 : 84} height={isMobile ? 50 : 66} viewBox="0 0 96 78" role="img" aria-label="Bomba">
           <defs>
             <radialGradient id="bombBodyMini" cx="38%" cy="35%" r="68%">
               <stop offset="0%" stopColor="#48576d" />
@@ -60,16 +69,16 @@ export function BombSpectatorPanel() {
           <circle cx="92" cy="24" r="3.8" fill="#ffd36e" className="pulse" />
         </svg>
       </div>
-      <div style={{ fontSize: 18, color: 'var(--red-danger)', fontWeight: 'bold', textTransform: 'uppercase' }}>
+      <div style={{ fontSize: isMobile ? 15 : 18, color: 'var(--red-danger)', fontWeight: 'bold', textTransform: 'uppercase', lineHeight: 1.2 }}>
         Portador actual: {bombState.holderName}
       </div>
-      <div style={{ fontSize: 12, color: 'var(--cyan)' }}>
+      <div style={{ fontSize: isMobile ? 11 : 12, color: 'var(--cyan)' }}>
         Tiempo del portador: {remainingSeconds}s
       </div>
-      <div style={{ fontSize: 12, color: 'var(--white)' }}>
+      <div style={{ fontSize: isMobile ? 11 : 12, color: 'var(--white)' }}>
         Probabilidad actual: {bombState.disarmChance}% ({bombState.passCount} pases)
       </div>
-      <div style={{ fontSize: 11, color: 'var(--gray-text)', lineHeight: 1.6 }}>
+      <div style={{ fontSize: isMobile ? 10 : 11, color: 'var(--gray-text)', lineHeight: 1.5 }}>
         {isUrgent
           ? 'Cualquier decision ahora puede terminar la ronda de inmediato.'
           : 'Observa el reloj. La siguiente transferencia puede caer sobre cualquiera.'}

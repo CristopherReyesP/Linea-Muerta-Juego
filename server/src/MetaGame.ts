@@ -13,7 +13,7 @@ import { EmojiDiferente } from './minigames/EmojiDiferente'
 import { v4 as uuid } from 'uuid'
 import {
   MetaGamePhase, PlayerState, MiniGameInfo, MinigameResult,
-  MetaGameStateSnapshot, DEFAULT_CONFIG
+  MetaGameStateSnapshot, PublicRoomSummary, DEFAULT_CONFIG
 } from './types'
 
 // Registry of all available minigames
@@ -67,7 +67,11 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 export class MetaGame {
+  static readonly EMPTY_PUBLIC_ROOM_TTL_MS = 10 * 60 * 1000
+
   id: string
+  isPublic: boolean
+  creatorKey: string | null
   metaPhase: MetaGamePhase = MetaGamePhase.LOBBY
   metaPlayers: Map<string, MetaPlayer> = new Map()
   hostId: string | null = null
@@ -79,16 +83,23 @@ export class MetaGame {
   private currentMinigame: MiniGame | null = null
   private minigameHistory: MinigameResult[] = []
   private phaseTimer: NodeJS.Timeout | null = null
+  private lastActivityAt: number = Date.now()
 
   private readonly TOTAL_MINIGAMES = 5
 
-  constructor(id: string, io: Server) {
+  constructor(id: string, io: Server, isPublic: boolean = false, creatorKey: string | null = null) {
     this.id = id
     this.io = io
+    this.isPublic = isPublic
+    this.creatorKey = creatorKey
   }
 
   private get room(): string {
     return `game:${this.id}`
+  }
+
+  private markActivity(): void {
+    this.lastActivityAt = Date.now()
   }
 
   // --- Lobby ---
@@ -121,6 +132,7 @@ export class MetaGame {
     if (!this.hostId) this.hostId = player.id
 
     this.io.to(socketId).socketsJoin(this.room)
+    this.markActivity()
     this.broadcastMetaState()
     this.broadcastLobbyVoice()
     return player
@@ -152,6 +164,7 @@ export class MetaGame {
       }
     }
 
+    this.markActivity()
     this.broadcastMetaState()
     this.broadcastLobbyVoice()
   }
@@ -163,6 +176,7 @@ export class MetaGame {
     mp.socketId = newSocketId
     mp.isConnected = true
     this.io.to(newSocketId).socketsJoin(this.room)
+    this.markActivity()
     this.broadcastMetaState()
     this.broadcastLobbyVoice()
     return true
@@ -206,6 +220,7 @@ export class MetaGame {
     this.io.to(this.room).emit('open_voice', { playerIds: [] })
 
     this.currentMinigameIndex = 0
+    this.markActivity()
     this.startMinigameIntro()
   }
 
@@ -476,6 +491,34 @@ export class MetaGame {
       .filter(p => p.isConnected)
       .map(p => ({ playerId: p.id, name: p.name, avatarId: p.avatarId, avatarColor: p.avatarColor, accessoryId: p.accessoryId, globalScore: p.globalScore }))
       .sort((a, b) => b.globalScore - a.globalScore)
+  }
+
+  getConnectedPlayerCount(): number {
+    return Array.from(this.metaPlayers.values()).filter((p) => p.isConnected).length
+  }
+
+  isStaleEmptyPublicRoom(now: number = Date.now()): boolean {
+    return this.isPublic
+      && this.getConnectedPlayerCount() === 0
+      && now - this.lastActivityAt >= MetaGame.EMPTY_PUBLIC_ROOM_TTL_MS
+  }
+
+  getPublicSummary(): PublicRoomSummary | null {
+    if (!this.isPublic || this.metaPhase !== MetaGamePhase.LOBBY) return null
+
+    const host = this.hostId ? this.metaPlayers.get(this.hostId) : null
+    const playerCount = this.getConnectedPlayerCount()
+
+    if (!host || !host.isConnected || playerCount === 0 || playerCount >= DEFAULT_CONFIG.maxPlayers) {
+      return null
+    }
+
+    return {
+      gameId: this.id,
+      hostName: host.name,
+      playerCount,
+      maxPlayers: DEFAULT_CONFIG.maxPlayers,
+    }
   }
 
   getMetaSnapshot(): MetaGameStateSnapshot {

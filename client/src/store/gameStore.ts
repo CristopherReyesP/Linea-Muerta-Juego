@@ -4,6 +4,7 @@ import {
   PlayerData, CallData, RoundResult, GameStateSnapshot,
   MiniGameInfo, MinigameResult, DiscussionData, SessionCompleteData,
   MetaGameStateSnapshot, BombStateData, BombOutcomeData, EmergencyStateData,
+  PublicRoomSummary,
   EmojiStateData
 } from '../types'
 
@@ -115,6 +116,7 @@ interface GameStore {
   // Global activity (welcome screen)
   globalStats: { totalRooms: number; totalPlayers: number } | null
   globalNotifications: Array<{ id: number; playerName: string; action: string }>
+  publicRooms: PublicRoomSummary[]
 
   // Error
   error: string | null
@@ -156,6 +158,7 @@ interface GameStore {
   setEmergencyState: (data: EmergencyStateData | null) => void
   setEmojiState: (data: EmojiStateData | null) => void
   setGlobalStats: (stats: { totalRooms: number; totalPlayers: number }) => void
+  setPublicRooms: (rooms: PublicRoomSummary[]) => void
   addGlobalNotification: (notification: { playerName: string; action: string }) => void
   removeGlobalNotification: (id: number) => void
   setError: (error: string | null) => void
@@ -210,6 +213,7 @@ const initialState = {
   emojiState: null,
   globalStats: null,
   globalNotifications: [],
+  publicRooms: [],
   error: null,
   ambientVolume: 0.35,
   playerVolume: 1,
@@ -308,6 +312,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setEmergencyState: (data) => set({ emergencyState: data }),
   setEmojiState: (data) => set({ emojiState: data }),
   setGlobalStats: (stats) => set({ globalStats: stats }),
+  setPublicRooms: (rooms) => set({ publicRooms: rooms }),
   addGlobalNotification: (notification) => set((s) => ({
     globalNotifications: [{ ...notification, id: Date.now() }, ...s.globalNotifications].slice(0, 5),
   })),

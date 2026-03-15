@@ -138,6 +138,13 @@ export interface SessionCompleteData {
   history: MinigameResult[]
 }
 
+export interface PublicRoomSummary {
+  gameId: string
+  hostName: string
+  playerCount: number
+  maxPlayers: number
+}
+
 export interface BombStateData {
   holderId: string
   holderName: string
@@ -210,7 +217,7 @@ export interface EmojiStateData {
 
 // Socket events
 export interface ClientToServerEvents {
-  create_game: (data: { name: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => void
+  create_game: (data: { name: string; isPublic?: boolean; avatarId?: string; avatarColor?: string; accessoryId?: string }) => void
   join_game: (data: { name: string; gameId: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => void
   start_game: (data?: { selectedMinigameIds?: string[] }) => void
   call_player: (targetId: string) => void
@@ -236,6 +243,7 @@ export interface ClientToServerEvents {
 
 export interface ServerToClientEvents {
   game_joined: (data: { gameId: string; playerId: string }) => void
+  public_rooms_update: (data: { rooms: PublicRoomSummary[] }) => void
   game_state_update: (state: GameStateSnapshot) => void
   meta_state_update: (state: MetaGameStateSnapshot) => void
   incoming_call: (data: { callId: string; callerId: string; callerName: string }) => void

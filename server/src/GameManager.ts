@@ -1,19 +1,26 @@
 import { Server } from 'socket.io'
 import { MetaGame } from './MetaGame'
 import { MetaPlayer } from './MetaPlayer'
+import { PublicRoomSummary } from './types'
 import { v4 as uuid } from 'uuid'
 
 export class GameManager {
   private games: Map<string, MetaGame> = new Map()
   private io: Server
+  private cleanupTimer: NodeJS.Timeout
 
   constructor(io: Server) {
     this.io = io
+    this.cleanupTimer = setInterval(() => {
+      if (this.cleanupEmptyGames()) {
+        this.broadcastPublicRooms()
+      }
+    }, 60 * 1000)
   }
 
-  createGame(): MetaGame {
+  createGame(isPublic: boolean = false, creatorKey: string | null = null): MetaGame {
     const id = uuid().slice(0, 6).toUpperCase()
-    const game = new MetaGame(id, this.io)
+    const game = new MetaGame(id, this.io, isPublic, creatorKey)
     this.games.set(id, game)
     return game
   }
@@ -37,13 +44,21 @@ export class GameManager {
     this.cleanupEmptyGames()
   }
 
-  cleanupEmptyGames(): void {
+  cleanupEmptyGames(): boolean {
+    let removedAny = false
+    const now = Date.now()
+
     for (const [id, game] of this.games) {
       const hasConnected = Array.from(game.players.values()).some(p => p.isConnected)
-      if (!hasConnected) {
+      const shouldDelete = !hasConnected && (!game.isPublic || game.isStaleEmptyPublicRoom(now))
+
+      if (shouldDelete) {
         this.games.delete(id)
+        removedAny = true
       }
     }
+
+    return removedAny
   }
 
   getGlobalStats(): { totalRooms: number; totalPlayers: number } {
@@ -62,11 +77,36 @@ export class GameManager {
     return { totalRooms, totalPlayers }
   }
 
+  getPublicRooms(): PublicRoomSummary[] {
+    return Array.from(this.games.values())
+      .map((game) => game.getPublicSummary())
+      .filter((room): room is PublicRoomSummary => Boolean(room))
+      .sort((a, b) => {
+        if (b.playerCount !== a.playerCount) return b.playerCount - a.playerCount
+        return a.gameId.localeCompare(b.gameId)
+      })
+  }
+
+  canCreatePublicGame(creatorKey: string): boolean {
+    for (const game of this.games.values()) {
+      if (game.isPublic && game.creatorKey === creatorKey) {
+        return false
+      }
+    }
+    return true
+  }
+
   broadcastGlobalActivity(notification?: { playerName: string; action: string }): void {
     const stats = this.getGlobalStats()
     this.io.emit('global_activity', {
       ...stats,
       notification,
+    })
+  }
+
+  broadcastPublicRooms(): void {
+    this.io.emit('public_rooms_update', {
+      rooms: this.getPublicRooms(),
     })
   }
 }

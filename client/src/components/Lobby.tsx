@@ -10,7 +10,7 @@ type LobbyView = 'welcome' | 'create' | 'join'
 type CustomizeTab = 'masks' | 'accessories'
 
 interface Props {
-  onCreateGame: (name: string, avatarId?: string, avatarColor?: string, accessoryId?: string) => void
+  onCreateGame: (name: string, avatarId?: string, avatarColor?: string, accessoryId?: string, isPublic?: boolean) => void
   onJoinGame: (name: string, code: string, avatarId?: string, avatarColor?: string, accessoryId?: string) => void
   onStart: (data?: { selectedMinigameIds?: string[] }) => void
   onShowRules: () => void
@@ -118,6 +118,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
   const openVoicePlayerIds = useGameStore(s => s.openVoicePlayerIds)
   const globalStats = useGameStore(s => s.globalStats)
   const globalNotifications = useGameStore(s => s.globalNotifications)
+  const publicRooms = useGameStore(s => s.publicRooms)
   const removeGlobalNotification = useGameStore(s => s.removeGlobalNotification)
   const isHost = playerId === hostId
   const hasJoined = !!playerId
@@ -136,14 +137,19 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
     return () => timers.forEach(clearTimeout)
   }, [globalNotifications, removeGlobalNotification])
 
-  const handleCreate = () => {
+  const handleCreate = (isPublic: boolean = false) => {
     if (!name.trim()) return
-    onCreateGame(name.trim(), selectedAvatarId, selectedAvatarColor, selectedAccessoryId)
+    onCreateGame(name.trim(), selectedAvatarId, selectedAvatarColor, selectedAccessoryId, isPublic)
   }
 
   const handleJoin = () => {
     if (!name.trim() || !roomCode.trim()) return
     onJoinGame(name.trim(), roomCode.trim(), selectedAvatarId, selectedAvatarColor, selectedAccessoryId)
+  }
+
+  const handleJoinPublicRoom = (publicGameId: string) => {
+    if (!name.trim()) return
+    onJoinGame(name.trim(), publicGameId, selectedAvatarId, selectedAvatarColor, selectedAccessoryId)
   }
 
   const toggleMinigameSelection = (id: string) => {
@@ -538,10 +544,17 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                   <div style={{ display: 'flex', gap: 12 }}>
                     <button
                       className="btn btn-green"
-                      onClick={handleCreate}
+                      onClick={() => handleCreate(false)}
                       disabled={!name.trim()}
                     >
-                      CREAR
+                      PRIVADA
+                    </button>
+                    <button
+                      className="btn btn-cyan"
+                      onClick={() => handleCreate(true)}
+                      disabled={!name.trim()}
+                    >
+                      PUBLICA
                     </button>
                     <button
                       className="btn btn-red"
@@ -763,6 +776,74 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                           </div>
                         )}
                       </>
+                    )}
+                  </div>
+
+                  <div style={{
+                    width: '100%',
+                    maxWidth: 420,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    padding: 12,
+                    border: '1px solid rgba(0,229,255,0.18)',
+                    background: 'rgba(0,0,0,0.28)',
+                  }}>
+                    <div style={{
+                      fontSize: 10,
+                      color: 'var(--gray-text)',
+                      letterSpacing: 2,
+                      textAlign: 'center',
+                    }}>
+                      SALAS PUBLICAS DISPONIBLES
+                    </div>
+
+                    {publicRooms.length === 0 ? (
+                      <div style={{
+                        fontSize: 11,
+                        color: 'var(--gray-shadow)',
+                        textAlign: 'center',
+                        lineHeight: 1.5,
+                      }}>
+                        No hay salas publicas abiertas ahora mismo.
+                      </div>
+                    ) : (
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                        maxHeight: 180,
+                        overflowY: 'auto',
+                      }}>
+                        {publicRooms.map((room) => (
+                          <button
+                            key={room.gameId}
+                            type="button"
+                            onClick={() => handleJoinPublicRoom(room.gameId)}
+                            disabled={!name.trim()}
+                            style={{
+                              width: '100%',
+                              border: '1px solid rgba(0,229,255,0.3)',
+                              background: 'rgba(0,229,255,0.08)',
+                              color: 'var(--cyan)',
+                              padding: '10px 12px',
+                              cursor: name.trim() ? 'pointer' : 'not-allowed',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: 12,
+                              opacity: name.trim() ? 1 : 0.6,
+                            }}
+                          >
+                            <span style={{ textAlign: 'left', fontSize: 11, letterSpacing: 1 }}>
+                              {room.hostName}
+                            </span>
+                            <span style={{ fontSize: 10, color: 'var(--gray-text)', letterSpacing: 1.5 }}>
+                              {room.playerCount}/{room.maxPlayers} · {room.gameId}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
 

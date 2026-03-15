@@ -114,6 +114,13 @@ export interface SessionCompleteData {
   history: MinigameResult[]
 }
 
+export interface PublicRoomSummary {
+  gameId: string
+  hostName: string
+  playerCount: number
+  maxPlayers: number
+}
+
 export interface BombStateData {
   holderId: string
   holderName: string

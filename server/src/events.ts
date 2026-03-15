@@ -6,6 +6,13 @@ import { LaBomba } from './minigames/LaBomba'
 import { CentralDeEmergencias } from './minigames/CentralDeEmergencias'
 import { EmojiDiferente } from './minigames/EmojiDiferente'
 
+function getCreatorKey(socket: Socket): string {
+  const forwardedFor = socket.handshake.headers['x-forwarded-for']
+  const forwardedValue = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor
+  const ip = forwardedValue?.split(',')[0]?.trim() || socket.handshake.address || socket.conn.remoteAddress || socket.id
+  return ip
+}
+
 export function registerEvents(io: Server, gameManager: GameManager): void {
   io.on('connection', (socket: Socket) => {
     console.log(`[Connect] ${socket.id}`)
@@ -13,9 +20,17 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
     // Send current global stats to the newly connected socket
     const initialStats = gameManager.getGlobalStats()
     socket.emit('global_activity', { ...initialStats })
+    socket.emit('public_rooms_update', { rooms: gameManager.getPublicRooms() })
 
-    socket.on('create_game', ({ name, avatarId, avatarColor, accessoryId }: { name: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => {
-      const game = gameManager.createGame()
+    socket.on('create_game', ({ name, isPublic, avatarId, avatarColor, accessoryId }: { name: string; isPublic?: boolean; avatarId?: string; avatarColor?: string; accessoryId?: string }) => {
+      const creatorKey = getCreatorKey(socket)
+
+      if (isPublic && !gameManager.canCreatePublicGame(creatorKey)) {
+        socket.emit('error', 'Ya tienes una sala publica activa o en enfriamiento. Reutilizala o espera a que expire.')
+        return
+      }
+
+      const game = gameManager.createGame(Boolean(isPublic), creatorKey)
       const metaPlayer = game.addPlayer(socket.id, name, avatarId ?? 'neon-eyes', avatarColor ?? '#00e5ff', accessoryId ?? 'none')
 
       if (!metaPlayer) {
@@ -25,7 +40,8 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
 
       socket.emit('game_joined', { gameId: game.id, playerId: metaPlayer.id })
       game.broadcastMetaState()
-      gameManager.broadcastGlobalActivity({ playerName: name, action: 'creo una sala' })
+      gameManager.broadcastPublicRooms()
+      gameManager.broadcastGlobalActivity({ playerName: name, action: game.isPublic ? 'creo una sala publica' : 'creo una sala' })
     })
 
     socket.on('join_game', ({ name, gameId, avatarId, avatarColor, accessoryId }: { name: string; gameId: string; avatarId?: string; avatarColor?: string; accessoryId?: string }) => {
@@ -51,6 +67,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
 
       socket.emit('game_joined', { gameId: game.id, playerId: metaPlayer.id })
       game.broadcastMetaState()
+      gameManager.broadcastPublicRooms()
       gameManager.broadcastGlobalActivity({ playerName: name, action: 'se unio a una sala' })
     })
 
@@ -66,6 +83,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
       result.game.startSession({
         selectedMinigameIds: data?.selectedMinigameIds,
       })
+      gameManager.broadcastPublicRooms()
     })
 
     socket.on('call_player', (targetId: string) => {
@@ -286,6 +304,7 @@ export function registerEvents(io: Server, gameManager: GameManager): void {
     socket.on('disconnect', () => {
       console.log(`[Disconnect] ${socket.id}`)
       gameManager.handleDisconnect(socket.id)
+      gameManager.broadcastPublicRooms()
       gameManager.broadcastGlobalActivity()
     })
   })

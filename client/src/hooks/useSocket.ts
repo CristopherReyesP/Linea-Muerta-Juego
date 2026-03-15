@@ -36,6 +36,10 @@ export function useSocket() {
       store.setPlayerInfo(playerId, gameId)
     })
 
+    socket.on('public_rooms_update', ({ rooms }) => {
+      store.setPublicRooms(rooms)
+    })
+
     // Meta-game state updates
     socket.on('meta_state_update', (state) => {
       store.updateMetaState(state)
@@ -217,8 +221,8 @@ export function useSocket() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const createGame = useCallback((name: string, avatarId?: string, avatarColor?: string, accessoryId?: string) => {
-    socketRef.current?.emit('create_game', { name, avatarId, avatarColor, accessoryId })
+  const createGame = useCallback((name: string, avatarId?: string, avatarColor?: string, accessoryId?: string, isPublic?: boolean) => {
+    socketRef.current?.emit('create_game', { name, avatarId, avatarColor, accessoryId, isPublic })
   }, [])
 
   const joinGame = useCallback((name: string, gameId: string, avatarId?: string, avatarColor?: string, accessoryId?: string) => {

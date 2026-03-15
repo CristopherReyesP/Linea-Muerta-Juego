@@ -531,15 +531,35 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     paddingTop: 8,
                   }}
                 >
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value.slice(0, 15))}
-                    placeholder="Tu nombre para entrar o chatear"
-                    maxLength={15}
-                    autoFocus
-                    style={inputStyle}
-                  />
+                  <div style={{
+                    width: '100%',
+                    maxWidth: 420,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    alignItems: 'center',
+                  }}>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={e => setName(e.target.value.slice(0, 15))}
+                      placeholder="Tu nombre para entrar o chatear"
+                      maxLength={15}
+                      autoFocus
+                      style={inputStyle}
+                    />
+                    {globalStats && (
+                      <div style={{
+                        fontSize: 10,
+                        color: 'var(--gray-shadow)',
+                        letterSpacing: 1,
+                        textAlign: 'center',
+                        lineHeight: 1.4,
+                      }}>
+                        {globalStats.totalMenuPlayers} jugador{globalStats.totalMenuPlayers !== 1 ? 'es' : ''} en menu principal
+                      </div>
+                    )}
+                  </div>
 
                   <div style={{
                     width: '100%',
@@ -673,12 +693,10 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                       color: 'var(--gray-shadow)',
                       letterSpacing: 1,
                       textAlign: 'center',
-                      lineHeight: 1.6,
+                      lineHeight: 1.5,
                     }}>
                       {globalStats.totalLobbyRooms} sala{globalStats.totalLobbyRooms !== 1 ? 's' : ''} en lobby · {globalStats.totalLobbyPlayers} jugador{globalStats.totalLobbyPlayers !== 1 ? 'es' : ''} en espera
-                      <br />
-                      {globalStats.totalMenuPlayers} jugador{globalStats.totalMenuPlayers !== 1 ? 'es' : ''} en menu principal
-                      <br />
+                      {' · '}
                       {globalStats.totalActiveRooms} sala{globalStats.totalActiveRooms !== 1 ? 's' : ''} en partida · {globalStats.totalActivePlayers} jugador{globalStats.totalActivePlayers !== 1 ? 'es' : ''} jugando
                     </div>
                   )}
@@ -686,10 +704,9 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                   <div style={{
                     width: '100%',
                     maxWidth: 420,
-                    display: 'grid',
-                    gridTemplateColumns: '1fr auto',
+                    display: 'flex',
+                    flexDirection: 'column',
                     gap: 12,
-                    alignItems: 'start',
                   }}>
                     <button
                       type="button"
@@ -701,11 +718,11 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                     </button>
 
                     <div style={{
-                      width: 148,
+                      width: '100%',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 6,
-                      padding: 8,
+                      gap: 8,
+                      padding: 10,
                       border: '1px solid rgba(140,155,176,0.18)',
                       background: 'rgba(0,0,0,0.22)',
                     }}>
@@ -715,38 +732,38 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                         gap: 8,
                         alignItems: 'center',
                       }}>
-                        <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 1.6 }}>
-                          EMOJI
+                        <div style={{ fontSize: 10, color: 'var(--cyan)', letterSpacing: 1.6 }}>
+                          FANTASMA EMOJI
                         </div>
-                        <div style={{ fontSize: 9, color: 'var(--gray-text)' }}>
-                          {menuEmojiPhase === 'guessing' ? `${menuEmojiGuessSeconds}s` : menuEmojiScore}
+                        <div style={{ fontSize: 10, color: 'var(--gray-text)' }}>
+                          {menuEmojiPhase === 'guessing' ? `${menuEmojiGuessSeconds}s` : `score ${menuEmojiScore}`}
                         </div>
                       </div>
 
                       <div style={{
-                        minHeight: 42,
+                        minHeight: 54,
                         border: '1px solid rgba(255,255,255,0.06)',
                         background: 'linear-gradient(180deg, rgba(0,229,255,0.05), rgba(0,0,0,0.16))',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: 6,
+                        padding: 8,
                       }}>
                         {menuEmojiPhase === 'showing' && (
-                          <div className="broadcast-pop" style={{ fontSize: 24 }}>
+                          <div className="broadcast-pop" style={{ fontSize: 28 }}>
                             {menuEmojiRound.target}
                           </div>
                         )}
 
                         {menuEmojiPhase === 'guessing' && (
-                          <div style={{ fontSize: 9, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.4 }}>
+                          <div style={{ fontSize: 10, color: 'var(--gray-text)', textAlign: 'center', lineHeight: 1.4 }}>
                             ¿Cual fue?
                           </div>
                         )}
 
                         {menuEmojiPhase === 'result' && menuEmojiResult && (
                           <div style={{
-                            fontSize: 9,
+                            fontSize: 10,
                             color: menuEmojiResult.correct ? 'var(--green-neon)' : 'var(--red-danger)',
                             textAlign: 'center',
                             lineHeight: 1.4,
@@ -758,8 +775,8 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
 
                       <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                        gap: 4,
+                        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                        gap: 6,
                       }}>
                         {menuEmojiRound.options.map((emoji) => (
                           <button
@@ -777,9 +794,9 @@ export function Lobby({ onCreateGame, onJoinGame, onStart, onSendLobbyChat, onSe
                                 ? 'rgba(0,229,255,0.06)'
                                 : 'rgba(255,255,255,0.03)',
                               color: 'var(--white)',
-                              minHeight: 28,
+                              minHeight: 38,
                               cursor: menuEmojiPhase === 'guessing' ? 'pointer' : 'default',
-                              fontSize: 16,
+                              fontSize: 20,
                             }}
                           >
                             {emoji}

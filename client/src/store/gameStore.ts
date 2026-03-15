@@ -60,6 +60,7 @@ interface GameStore {
   currentMinigameIndex: number
   totalMinigames: number
   currentMinigameInfo: MiniGameInfo | null
+  lobbyPlayers: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string }>
   globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   hostId: string | null
   isPublicRoom: boolean
@@ -195,6 +196,7 @@ const initialState = {
   currentMinigameIndex: 0,
   totalMinigames: 5,
   currentMinigameInfo: null,
+  lobbyPlayers: [],
   globalScoreboard: [],
   hostId: null,
   isPublicRoom: false,
@@ -251,6 +253,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     currentMinigameIndex: state.currentMinigameIndex,
     totalMinigames: state.totalMinigames,
     currentMinigameInfo: state.currentMinigameInfo,
+    lobbyPlayers: state.lobbyPlayers,
     globalScoreboard: state.globalScoreboard,
     hostId: state.hostId,
     isPublicRoom: state.isPublicRoom,

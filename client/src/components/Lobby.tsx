@@ -110,6 +110,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
   const [devMode, setDevMode] = useState(false)
   const [selectedMinigameIds, setSelectedMinigameIds] = useState<string[]>([])
   const gameId = useGameStore(s => s.gameId)
+  const lobbyPlayers = useGameStore(s => s.lobbyPlayers)
   const globalScoreboard = useGameStore(s => s.globalScoreboard)
   const playerId = useGameStore(s => s.playerId)
   const connected = useGameStore(s => s.connected)
@@ -126,6 +127,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
   const removeGlobalNotification = useGameStore(s => s.removeGlobalNotification)
   const isHost = playerId === hostId
   const hasJoined = !!playerId
+  const connectedLobbyPlayers = lobbyPlayers.length > 0 ? lobbyPlayers : globalScoreboard
 
   // Clear error when changing view
   useEffect(() => {
@@ -1032,7 +1034,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                 justifyContent: 'center',
                 maxWidth: 420,
               }}>
-                {globalScoreboard.map(p => (
+                {connectedLobbyPlayers.map(p => (
                   <div
                     key={p.playerId}
                     style={{
@@ -1077,7 +1079,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
               </div>
 
               <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>
-                {globalScoreboard.length} jugador{globalScoreboard.length !== 1 ? 'es' : ''} conectado{globalScoreboard.length !== 1 ? 's' : ''}
+                {connectedLobbyPlayers.length} jugador{connectedLobbyPlayers.length !== 1 ? 'es' : ''} conectado{connectedLobbyPlayers.length !== 1 ? 's' : ''}
               </div>
 
               {openVoicePlayerIds.length >= 2 && (
@@ -1155,7 +1157,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                         SELECCIONA MINIJUEGOS A PROBAR
                       </div>
                       {minigameOptions.map((minigame) => {
-                        const disabled = globalScoreboard.length < minigame.minPlayers
+                        const disabled = connectedLobbyPlayers.length < minigame.minPlayers
                         return (
                           <label key={minigame.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: disabled ? 'var(--gray-shadow)' : 'var(--white)', cursor: disabled ? 'not-allowed' : 'pointer' }}>
                             <input
@@ -1175,7 +1177,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                   <button
                     className="btn btn-green"
                     onClick={() => onStart(devMode ? { selectedMinigameIds } : undefined)}
-                    disabled={globalScoreboard.length < 2 || (devMode && selectedMinigameIds.length === 0)}
+                    disabled={connectedLobbyPlayers.length < 2 || (devMode && selectedMinigameIds.length === 0)}
                     style={{ fontSize: 16 }}
                   >
                     INICIAR PARTIDA
@@ -1193,7 +1195,7 @@ export function Lobby({ onCreateGame, onJoinGame, onStart }: Props) {
                 </div>
               )}
 
-              {isHost && globalScoreboard.length < 2 && (
+              {isHost && connectedLobbyPlayers.length < 2 && (
                 <div style={{ fontSize: 10, color: 'var(--gray-text)' }}>
                   Comparte el codigo para que otros se unan
                 </div>

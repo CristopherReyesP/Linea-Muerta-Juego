@@ -529,6 +529,18 @@ export class MetaGame {
       .sort((a, b) => b.globalScore - a.globalScore)
   }
 
+  private getLobbyPlayers(): Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string }> {
+    return Array.from(this.metaPlayers.values())
+      .filter((p) => p.isConnected)
+      .map((p) => ({
+        playerId: p.id,
+        name: p.name,
+        avatarId: p.avatarId,
+        avatarColor: p.avatarColor,
+        accessoryId: p.accessoryId,
+      }))
+  }
+
   getConnectedPlayerCount(): number {
     return Array.from(this.metaPlayers.values()).filter((p) => p.isConnected).length
   }
@@ -571,6 +583,7 @@ export class MetaGame {
       currentMinigameIndex: this.currentMinigameIndex,
       totalMinigames: this.TOTAL_MINIGAMES,
       currentMinigameInfo: this.selectedMinigames[this.currentMinigameIndex] ?? null,
+      lobbyPlayers: this.getLobbyPlayers(),
       globalScoreboard: this.getGlobalScoreboard(),
       hostId: this.hostId,
       isPublicRoom: this.isPublic,

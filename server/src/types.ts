@@ -163,6 +163,7 @@ export interface MetaGameStateSnapshot {
   currentMinigameIndex: number
   totalMinigames: number
   currentMinigameInfo: MiniGameInfo | null
+  lobbyPlayers: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string }>
   globalScoreboard: Array<{ playerId: string; name: string; avatarId: string; avatarColor: string; accessoryId: string; globalScore: number }>
   hostId: string | null
   isPublicRoom: boolean
